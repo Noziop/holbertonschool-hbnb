@@ -95,7 +95,7 @@ Key points:
 
 ### 4.2 Place Creation
 
-![Place Creation](place-creation.png)
+![Place Creation](place-cration.png)
 
 Step-by-step explanation:
 1. Authenticated user sends place details to the API
