@@ -43,7 +43,7 @@ Key benefits of using the Facade pattern in HBnB Evolution:
 
 ### 3.1 Class Diagram
 
-[Insert your detailed class diagram here]
+![Class Diagram](class-diagram.png)
 
 ### 3.2 Entity Descriptions
 
@@ -80,7 +80,7 @@ Key benefits of using the Facade pattern in HBnB Evolution:
 
 ### 4.1 User Registration
 
-[Insert sequence diagram for user registration]
+![User Registration](user-registration.png)
 
 Step-by-step explanation:
 1. User sends registration data to the API
@@ -95,7 +95,7 @@ Key points:
 
 ### 4.2 Place Creation
 
-[Insert sequence diagram for place creation]
+![Place Creation](place-creation.png)
 
 Step-by-step explanation:
 1. Authenticated user sends place details to the API
@@ -110,7 +110,7 @@ Key points:
 
 ### 4.3 Review Submission
 
-[Insert sequence diagram for review submission]
+![Review Submission](review-submission.png)
 
 Step-by-step explanation:
 1. Authenticated user sends review data for a specific place
@@ -126,7 +126,7 @@ Key points:
 
 ### 4.4 Fetching List of Places
 
-[Insert sequence diagram for fetching places]
+![Fetch Places](Fetch-list_of_place.png)
 
 Step-by-step explanation:
 1. User sends request for places with optional filter criteria
