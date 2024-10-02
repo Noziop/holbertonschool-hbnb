@@ -22,7 +22,7 @@ This document is organized into four main sections:
 
 ### 2.1 Package Diagram
 
-[Insert your package diagram here]
+![Package Diagram](package_diagramme.png)
 
 ### 2.2 Layer Explanations
 
