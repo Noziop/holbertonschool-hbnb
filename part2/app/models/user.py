@@ -1,5 +1,5 @@
 from werkzeug.security import generate_password_hash, check_password_hash
-from .base_model import BaseModel
+from .basemodel import BaseModel
 
 class User(BaseModel):
     def __init__(self, username, email, password):

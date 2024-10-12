@@ -1,4 +1,4 @@
-from .base_model import BaseModel
+from .basemodel import BaseModel
 
 class Amenity(BaseModel):
     def __init__(self, name):

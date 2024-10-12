@@ -1,4 +1,4 @@
-from .base_model import BaseModel
+from .basemodel import BaseModel
 
 class Place(BaseModel):
     def __init__(self, name, description, number_rooms, number_bathrooms, max_guest, price_by_night, latitude, longitude, city="", country="", owner_id=None):
