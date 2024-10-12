@@ -1,5 +1,10 @@
+#!usr/bin/python3
+'''Module that creates a user class'''
+
+
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
+
 
 class User:
     def __init__(self, username, email, password):
