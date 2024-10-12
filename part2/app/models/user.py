@@ -1,14 +1,9 @@
-#!usr/bin/python3
-'''Module that creates a user class'''
-
-
 from werkzeug.security import generate_password_hash, check_password_hash
-import uuid
+from .base_model import BaseModel
 
-
-class User:
+class User(BaseModel):
     def __init__(self, username, email, password):
-        self.id = str(uuid.uuid4())
+        super().__init__()
         self.username = username
         self.email = email
         self.password_hash = self.hash_password(password)
@@ -20,8 +15,9 @@ class User:
         return check_password_hash(self.password_hash, password)
 
     def to_dict(self):
-        return {
-            'id': self.id,
+        user_dict = super().to_dict()
+        user_dict.update({
             'username': self.username,
             'email': self.email
-        }
+        })
+        return user_dict
