@@ -1,5 +1,9 @@
 import os
 import inspect
+import sys
+
+# Add the parent directory to sys.path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def generate_test_file(model_name, model_class):
     test_file_content = f"""
@@ -9,7 +13,7 @@ from app.models.{model_name.lower()} import {model_name}
 class Test{model_name}(unittest.TestCase):
 
     def setUp(self):
-        self.{model_name.lower()} = {model_name}(**{{}})  # Add necessary parameters here
+        self.{model_name.lower()} = {model_name}()  # Remove parameters for now
 
     def test_attributes(self):
         # Test that all attributes are present
@@ -36,14 +40,15 @@ class Test{model_name}(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 """
-    with open(f"tests/test_{model_name.lower()}.py", "w") as f:
+    os.makedirs(os.path.dirname(f"app/tests/test_models/test_{model_name.lower()}.py"), exist_ok=True)
+    with open(f"app/tests/test_models/test_{model_name.lower()}.py", "w") as f:
         f.write(test_file_content)
 
 # Main script
 models_dir = "app/models"
 for filename in os.listdir(models_dir):
     if filename.endswith(".py") and filename != "__init__.py":
-        model_name = filename[:-3].capitalize()
+        model_name = ''.join(word.capitalize() for word in filename[:-3].split('_'))
         module = __import__(f"app.models.{filename[:-3]}", fromlist=[model_name])
         model_class = getattr(module, model_name)
         generate_test_file(model_name, model_class)
