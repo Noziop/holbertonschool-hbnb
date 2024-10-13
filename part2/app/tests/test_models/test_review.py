@@ -5,7 +5,7 @@ from app.models.review import Review
 class TestReview(unittest.TestCase):
 
     def setUp(self):
-        self.review = Review()
+        self.review = Review(**{'place_id': 'test_place_id', 'user_id': 'test_user_id', 'text': 'test_text'})
 
     def test_attributes(self):
         attrs = []

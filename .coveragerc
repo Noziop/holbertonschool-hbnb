@@ -1,0 +1,14 @@
+[run]
+omit = 
+    /usr/lib/python3/dist-packages/*
+    */site-packages/*
+    */dist-packages/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    raise NotImplementedError
+    pass
+    if __name__ == .__main__.:

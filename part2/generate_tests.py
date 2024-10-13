@@ -53,7 +53,15 @@ for filename in os.listdir(models_dir):
     if filename.endswith(".py") and filename != "__init__.py":
         model_name = filename[:-3]
         module = __import__(f"app.models.{model_name}", fromlist=[model_name.capitalize()])
-        model_class = getattr(module, model_name.capitalize())
+        
+    if model_name == "basemodel":
+        class_name = "BaseModel"
+    elif model_name == "placeamenity":
+        class_name = "PlaceAmenity"
+    else:
+        class_name = model_name.capitalize()
+        
+        model_class = getattr(module, class_name)
         generate_test_file(model_name, model_class)
 
 print("Test files generated successfully!")

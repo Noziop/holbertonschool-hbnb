@@ -1,55 +1,54 @@
-#!/usr/bin/python3
-'''Module that creates a persistance model'''
+from app.persistence.repository import InMemoryRepository
+from app.models.basemodel import BaseModel
+from werkzeug.security import generate_password_hash, check_password_hash
 
-from abc import ABC, abstractmethod
+class User(BaseModel):
+    repository = InMemoryRepository()
 
-class Repository(ABC):
-    @abstractmethod
-    def add(self, obj):
-        pass
+    def __init__(self, username, email, password):
+        super().__init__()
+        self.username = username
+        self.email = email
+        self.password_hash = self.hash_password(password)
 
-    @abstractmethod
-    def get(self, obj_id):
-        pass
+    @classmethod
+    def create(cls, username, email, password):
+        user = cls(username, email, password)
+        cls.repository.add(user)
+        return user
 
-    @abstractmethod
-    def get_all(self):
-        pass
+    @classmethod
+    def get_by_username(cls, username):
+        return cls.repository.get_by_attribute('username', username)
 
-    @abstractmethod
-    def update(self, obj_id, data):
-        pass
+    @classmethod
+    def get_by_id(cls, user_id):
+        return cls.repository.get(user_id)
 
-    @abstractmethod
-    def delete(self, obj_id):
-        pass
+    @classmethod
+    def get_all(cls):
+        return cls.repository.get_all()
 
-    @abstractmethod
-    def get_by_attribute(self, attr_name, attr_value):
-        pass
+    def update(self, data):
+        for key, value in data.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        self.repository.update(self.id, self)
 
+    def delete(self):
+        self.repository.delete(self.id)
 
-class InMemoryRepository(Repository):
-    def __init__(self):
-        self._storage = {}
+    def hash_password(self, password):
+        return generate_password_hash(password)
 
-    def add(self, obj):
-        self._storage[obj.id] = obj
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
-    def get(self, obj_id):
-        return self._storage.get(obj_id)
-
-    def get_all(self):
-        return list(self._storage.values())
-
-    def update(self, obj_id, data):
-        obj = self.get(obj_id)
-        if obj:
-            obj.update(data)
-
-    def delete(self, obj_id):
-        if obj_id in self._storage:
-            del self._storage[obj_id]
-
-    def get_by_attribute(self, attr_name, attr_value):
-        return next((obj for obj in self._storage.values() if getattr(obj, attr_name) == attr_value), None)
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }

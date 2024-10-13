@@ -5,7 +5,7 @@ from app.models.user import User
 class TestUser(unittest.TestCase):
 
     def setUp(self):
-        self.user = User()
+        self.user = User(**{'username': 'test_username', 'email': 'test_email', 'password': 'test_password'})
 
     def test_attributes(self):
         attrs = []
