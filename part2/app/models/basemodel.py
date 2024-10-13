@@ -7,7 +7,6 @@ class BaseModel:
         self.created_at = datetime.now(timezone.utc)
         self.updated_at = datetime.now(timezone.utc)
 
-
     def to_dict(self):
         return {
             'id': self.id,
@@ -17,3 +16,11 @@ class BaseModel:
 
     def save(self):
         self.updated_at = datetime.now(timezone.utc)
+
+    def __str__(self):
+        return f"<{self.__class__.__name__} {self.id}>"
+
+    def __eq__(self, other):
+        if isinstance(other, BaseModel):
+            return self.id == other.id
+        return False
