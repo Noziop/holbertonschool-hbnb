@@ -29,7 +29,7 @@ class Review(BaseModel):
             rating = int(rating)
             if not 1 <= rating <= 5:
                 raise ValueError
-        except ValueError:
+        except (ValueError, TypeError):
             raise ValueError("Rating must be an integer between 1 and 5")
         return rating
 

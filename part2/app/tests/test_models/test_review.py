@@ -8,7 +8,7 @@ class TestReview(unittest.TestCase):
     def setUp(self):
         self.repository = InMemoryRepository()
         Review.repository = self.repository
-        self.valid_params = {'place_id': '5bfd2342-8a7b-47c5-ab35-9400eb36ba4a', 'user_id': '887b4379-64d0-4d13-bcd6-73aea30b5963', 'text': 'Down street help country. Leg fund fire hope risk. Scientist leave send fight heart.', 'rating': 'executive'}
+        self.valid_params = {'place_id': '41e1c85e-b474-4aad-bf5e-8468f441d505', 'user_id': '761775dd-dd12-48a1-9b05-7bbb6dd69320', 'text': 'Cut left there radio threat. Call partner exist stuff wide.', 'rating': 'land'}
         self.review = Review(**self.valid_params)
 
     def tearDown(self):

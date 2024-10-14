@@ -8,7 +8,7 @@ class TestUser(unittest.TestCase):
     def setUp(self):
         self.repository = InMemoryRepository()
         User.repository = self.repository
-        self.valid_params = {'username': 'christophermedina', 'email': 'marcrangel@example.net', 'password': 'q$90IiIlYn'}
+        self.valid_params = {'username': 'patrickwilson', 'email': 'matthewvaughan@example.com', 'password': '&0(XGSr^0X'}
         self.user = User(**self.valid_params)
 
     def tearDown(self):

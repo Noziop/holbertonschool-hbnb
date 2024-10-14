@@ -2,13 +2,14 @@
 import unittest
 from app.models.place import Place
 from app.persistence.repository import InMemoryRepository
+from decimal import Decimal
 
 class TestPlace(unittest.TestCase):
 
     def setUp(self):
         self.repository = InMemoryRepository()
         Place.repository = self.repository
-        self.valid_params = {'name': 'task', 'description': 'Issue work good body billion such. Popular opportunity evidence continue.\nItself leader do show important be write. Player billion ahead site decide require.\nDecision experience save organization next dinner while. Relationship force cultural management return. When small challenge wife.\nSister front a rest democratic serious college. Place reality own election move provide.\nExpert administration special prepare every song hear.', 'number_rooms': 8, 'number_bathrooms': 10, 'max_guest': 'laugh', 'price_by_night': 336.46, 'latitude': Decimal('59.4132055'), 'longitude': Decimal('-80.982168'), 'owner_id': 'a5aee83a-76b4-4350-a6db-42c6bdf2a8a2', 'city': 'our', 'country': 'benefit'}
+        self.valid_params = {'name': 'lay', 'description': 'Mrs nice example without common product. Career final possible under. Television leave let detail same.\nCareer much fly present. Color fly us executive country turn.\nFight during exist effort into stage care right.\nMajor cup once. Nor study strong million citizen. Improve painting which bank.\nGrow property phone. Couple actually cold office kind choose including. Such light public beyond feel control step.\nPretty stop prove rather. Take draw all article meet yet. Magazine simply bed eight.', 'number_rooms': 3, 'number_bathrooms': 8, 'max_guest': 'outside', 'price_by_night': 25.31, 'latitude': Decimal('-58.8818915'), 'longitude': Decimal('-93.856037'), 'owner_id': '68f18302-34ef-4189-9259-d9e1a669c73e', 'city': 'economy', 'country': 'worker'}
         self.place = Place(**self.valid_params)
 
     def tearDown(self):

@@ -8,7 +8,7 @@ class TestPlaceAmenity(unittest.TestCase):
     def setUp(self):
         self.repository = InMemoryRepository()
         PlaceAmenity.repository = self.repository
-        self.valid_params = {'place_id': '3b746ac5-f8f9-4e8f-a2f4-ef46c15ba5b0', 'amenity_id': '95a7f825-7b2e-42e0-bfc3-78510288fce2'}
+        self.valid_params = {'place_id': '917704de-7cd3-4bd6-b1b8-13dc6e823337', 'amenity_id': '6fa78ef8-b297-4526-b220-fc9d8c6fe499'}
         self.placeamenity = PlaceAmenity(**self.valid_params)
 
     def tearDown(self):

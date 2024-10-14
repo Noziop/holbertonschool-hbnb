@@ -15,12 +15,12 @@ class TestBaseModel(unittest.TestCase):
         BaseModel.repository = InMemoryRepository()
 
     def test_attributes(self):
-        attrs = []
+        attrs = ['repository']
         for attr in attrs:
             self.assertTrue(hasattr(self.basemodel, attr))
 
     def test_methods(self):
-        methods = ['save', 'to_dict']
+        methods = ['create', 'get_by_id', 'save', 'to_dict', 'update']
         for method in methods:
             self.assertTrue(hasattr(self.basemodel, method))
 

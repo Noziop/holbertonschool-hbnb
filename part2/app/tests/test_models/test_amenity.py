@@ -8,7 +8,7 @@ class TestAmenity(unittest.TestCase):
     def setUp(self):
         self.repository = InMemoryRepository()
         Amenity.repository = self.repository
-        self.valid_params = {'name': 'road player'}
+        self.valid_params = {'name': 'blue join'}
         self.amenity = Amenity(**self.valid_params)
 
     def tearDown(self):
