@@ -1,4 +1,5 @@
 from .basemodel import BaseModel
+from datetime import datetime, timezone
 from app.persistence.repository import InMemoryRepository
 
 class Place(BaseModel):
@@ -53,17 +54,37 @@ class Place(BaseModel):
 
     @classmethod
     def get_by_id(cls, place_id):
-        return cls.repository.get(place_id)
+        place = cls.repository.get(place_id)
+        if place is None:
+            raise ValueError(f"No place found with id: {place_id}")
+        return place
 
     @classmethod
     def get_all(cls):
         return cls.repository.get_all()
 
     def update(self, data):
-        for key, value in data.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-        self.repository.update(self.id, self)
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if key == 'max_guest':
+                    self.max_guest = self._validate_positive_integer(value, "max_guest")
+                elif key == 'number_rooms':
+                    self.number_rooms = self._validate_positive_integer(value, "number_rooms")
+                elif key == 'number_bathrooms':
+                    self.number_bathrooms = self._validate_positive_integer(value, "number_bathrooms")
+                elif key == 'price_by_night':
+                    self.price_by_night = self._validate_positive_float(value, "price_by_night")
+                elif key == 'latitude':
+                    self.latitude = self._validate_latitude(value)
+                elif key == 'longitude':
+                    self.longitude = self._validate_longitude(value)
+                elif hasattr(self, key):
+                    setattr(self, key, value)
+                else:
+                    raise ValueError(f"Invalid attribute: {key}")
+        else:
+            raise ValueError("Update data must be a dictionary")
+        self.updated_at = datetime.now(timezone.utc)
 
     def delete(self):
         self.repository.delete(self.id)

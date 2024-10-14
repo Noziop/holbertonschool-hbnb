@@ -20,20 +20,26 @@ class BaseModel:
     def get_by_id(cls, id):
         obj = cls.repository.get(id)
         if obj is None:
-            raise ValueError(f"No {cls.__name__} found with id: {id}")
+            return None
         return obj
 
     def update(self, data):
-        try:
+        if isinstance(data, dict):
             for key, value in data.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-                else:
-                    raise ValueError(f"Invalid attribute: {key}")
-            self.updated_at = datetime.now(timezone.utc)
-            self.repository.update(self.id, self)
-        except Exception as e:
-            raise ValueError(f"Update failed: {str(e)}")
+                if key not in ['id', 'created_at']:
+                    if hasattr(self, key):
+                        setattr(self, key, value)
+                    else:
+                        raise AttributeError(f"Invalid attribute: {key}")
+        else:
+            # Si data n'est pas un dictionnaire, on suppose que c'est un objet
+            for key in dir(data):
+                if not key.startswith('_') and key not in ['id', 'created_at', 'update']:
+                    if hasattr(self, key):
+                        setattr(self, key, getattr(data, key))
+                    else:
+                        raise AttributeError(f"Invalid attribute: {key}")
+        self.updated_at = datetime.now(timezone.utc)
 
     def to_dict(self):
         return {
@@ -44,4 +50,4 @@ class BaseModel:
 
     def save(self):
         self.updated_at = datetime.now(timezone.utc)
-        self.repository.update(self.id, self)
+        self.repository.update(self.id, self.to_dict())

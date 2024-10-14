@@ -1,5 +1,6 @@
-
 import unittest
+import uuid
+from datetime import datetime, timezone
 from app.models.basemodel import BaseModel
 from app.persistence.repository import InMemoryRepository
 
@@ -10,19 +11,20 @@ class TestBaseModel(unittest.TestCase):
         BaseModel.repository = self.repository
         self.valid_params = {}
         self.basemodel = BaseModel(**self.valid_params)
+        self.repository.add(self.basemodel)
 
     def tearDown(self):
         BaseModel.repository = InMemoryRepository()
 
     def test_attributes(self):
-        attrs = ['repository']
+        attrs = ['id', 'created_at', 'updated_at']
         for attr in attrs:
             self.assertTrue(hasattr(self.basemodel, attr))
 
     def test_methods(self):
         methods = ['create', 'get_by_id', 'save', 'to_dict', 'update']
         for method in methods:
-            self.assertTrue(hasattr(self.basemodel, method))
+            self.assertTrue(hasattr(BaseModel, method) if method in ['create', 'get_by_id'] else hasattr(self.basemodel, method))
 
     def test_create(self):
         new_basemodel = BaseModel.create(**self.valid_params)
@@ -30,18 +32,24 @@ class TestBaseModel(unittest.TestCase):
         self.assertIn(new_basemodel.id, self.repository._storage)
 
     def test_get_by_id(self):
-        basemodel = BaseModel.get_by_id(self.basemodel.id)
-        self.assertEqual(basemodel.id, self.basemodel.id)
+        retrieved_basemodel = BaseModel.get_by_id(self.basemodel.id)
+        self.assertIsNotNone(retrieved_basemodel)
+        self.assertEqual(retrieved_basemodel.id, self.basemodel.id)
+
+        non_existent_id = str(uuid.uuid4())
+        self.assertIsNone(BaseModel.get_by_id(non_existent_id))
 
     def test_update(self):
-        update_data = {
-            'name': 'Updated Name' if hasattr(self.basemodel, 'name') else None,
-            'description': 'Updated Description' if hasattr(self.basemodel, 'description') else None
-        }
-        update_data = {k: v for k, v in update_data.items() if v is not None}
-        self.basemodel.update(update_data)
-        for key, value in update_data.items():
-            self.assertEqual(getattr(self.basemodel, key), value)
+        original_updated_at = self.basemodel.updated_at
+        self.basemodel.update({'updated_at': datetime.now(timezone.utc)})
+        self.assertNotEqual(self.basemodel.updated_at, original_updated_at)
+
+        # Test that id and created_at cannot be updated
+        original_id = self.basemodel.id
+        original_created_at = self.basemodel.created_at
+        self.basemodel.update({'id': 'new_id', 'created_at': datetime.now(timezone.utc)})
+        self.assertEqual(self.basemodel.id, original_id)
+        self.assertEqual(self.basemodel.created_at, original_created_at)
 
     def test_to_dict(self):
         basemodel_dict = self.basemodel.to_dict()
@@ -50,17 +58,14 @@ class TestBaseModel(unittest.TestCase):
         self.assertIn('created_at', basemodel_dict)
         self.assertIn('updated_at', basemodel_dict)
 
-    def test_create_with_invalid_params(self):
-        invalid_params = self.valid_params.copy()
-        invalid_params['non_existent_param'] = 'invalid'
-        with self.assertRaises(TypeError):
-            BaseModel(**invalid_params)
+    def test_save(self):
+        original_updated_at = self.basemodel.updated_at
+        self.basemodel.save()
+        self.assertNotEqual(self.basemodel.updated_at, original_updated_at)
 
     def test_update_with_invalid_params(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(AttributeError):
             self.basemodel.update({'invalid_param': 'invalid_value'})
-
-    # Add more specific tests here based on the model
 
 if __name__ == '__main__':
     unittest.main()

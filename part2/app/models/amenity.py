@@ -1,5 +1,6 @@
 from .basemodel import BaseModel
 from app.persistence.repository import InMemoryRepository
+from datetime import datetime, timezone
 import re
 
 class Amenity(BaseModel):
@@ -25,16 +26,25 @@ class Amenity(BaseModel):
 
     @classmethod
     def get_by_id(cls, amenity_id):
-        return cls.repository.get(amenity_id)
+        amenity = cls.repository.get(amenity_id)
+        if amenity is None:
+            raise ValueError(f"No Amenity found with id: {amenity_id}")
+        return amenity
 
     @classmethod
     def get_all(cls):
         return cls.repository.get_all()
 
     def update(self, data):
-        if 'name' in data:
-            self.name = self._validate_name(data['name'])
-        self.repository.update(self.id, self)
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if key == 'name':
+                    self.name = self._validate_name(value)
+                elif key not in ['id', 'created_at', 'updated_at']:
+                    raise ValueError(f"Invalid attribute: {key}")
+        else:
+            raise ValueError("Update data must be a dictionary")
+        self.updated_at = datetime.now(timezone.utc)
 
     def delete(self):
         self.repository.delete(self.id)

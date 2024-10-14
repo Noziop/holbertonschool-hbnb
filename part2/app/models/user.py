@@ -23,7 +23,10 @@ class User(BaseModel):
 
     @classmethod
     def get_by_id(cls, user_id):
-        return cls.repository.get(user_id)
+        user = cls.repository.get(user_id)
+        if user is None:
+            raise ValueError(f"No user found with id: {user_id}")
+        return user
 
     @classmethod
     def get_all(cls):
@@ -33,6 +36,8 @@ class User(BaseModel):
         for key, value in data.items():
             if hasattr(self, key):
                 setattr(self, key, value)
+            else:
+                raise ValueError(f"Invalid attribute: {key}")
         self.repository.update(self.id, self)
 
     def delete(self):
