@@ -59,16 +59,16 @@ class TestPlace(unittest.TestCase):
 
     def test_update_with_invalid_params(self):
         with self.assertRaises(ValueError) as context:
+            self.place.update({'invalid_param': 'invalid_value'})
+        self.assertIn("Invalid attribute", str(context.exception))
+
+        with self.assertRaises(ValueError) as context:
             self.place.update({'max_guest': -1})
-        self.assertIn("Invalid value for max_guest", str(context.exception))
+        self.assertIn("must be a valid positive integer", str(context.exception))
 
         with self.assertRaises(ValueError) as context:
             self.place.update({'latitude': 100})
-        self.assertIn("Invalid value for latitude", str(context.exception))
-
-        with self.assertRaises(ValueError) as context:
-            self.place.update({'invalid_param': 'invalid_value'})
-        self.assertIn("Invalid attribute", str(context.exception))
+        self.assertIn("must be a number between -90 and 90", str(context.exception))
 
     def test_delete(self):
         place_id = self.place.id

@@ -36,10 +36,10 @@ class Place(BaseModel):
         try:
             value = int(value)
             if value <= 0:
-                raise ValueError
-        except (ValueError, TypeError):
-            raise ValueError(f"{field_name} must be a positive integer")
-        return value
+                raise ValueError(f"{field_name} must be a positive integer")
+            return value
+        except ValueError:
+            raise ValueError(f"{field_name} must be a valid positive integer")
 
     @staticmethod
     def _validate_positive_float(value, field_name):
@@ -187,18 +187,19 @@ class Place(BaseModel):
             if key in ['id', 'created_at', 'updated_at']:
                 continue  # Skip these fields
             elif hasattr(self, f'_validate_{key}'):
-                try:
-                    validated_value = getattr(self, f'_validate_{key}')(value)
-                    setattr(self, key, validated_value)
-                except ValueError as e:
-                    raise ValueError(f"Invalid value for {key}: {str(e)}")
+                validated_value = getattr(self, f'_validate_{key}')(value)
+            elif key in ['number_rooms', 'number_bathrooms', 'max_guest']:
+                validated_value = self._validate_positive_integer(value, key)
+            elif key == 'price_by_night':
+                validated_value = self._validate_positive_float(value, key)
             elif hasattr(self, key):
-                setattr(self, key, value)
+                validated_value = value
             else:
                 raise ValueError(f"Invalid attribute: {key}")
+            
+            setattr(self, key, validated_value)
         
         self.updated_at = datetime.now(timezone.utc)
-        # We don't call self.repository.update here to avoid the infinite loop
 
 
     def delete(self):
