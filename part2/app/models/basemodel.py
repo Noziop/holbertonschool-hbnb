@@ -27,6 +27,10 @@ class BaseModel:
         if obj is None:
             raise ValueError(f"No {cls.__name__} found with id: {id}")
         return obj
+    
+    @classmethod
+    def get_all(cls):
+        return cls.repository.get_all()
 
     def update(self, data):
         if not isinstance(data, dict):
@@ -48,13 +52,6 @@ class BaseModel:
             raise ValueError(f"No {self.__class__.__name__} found with id: {self.id}")
         self.repository.delete(self.id)
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat()
-        }
-
     def save(self):
         self.updated_at = datetime.now(timezone.utc)
         try:
@@ -64,3 +61,10 @@ class BaseModel:
             self.repository.update(self.id, data)
         except Exception as e:
             raise ValueError(f"Failed to save: {str(e)}")
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }

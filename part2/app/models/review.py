@@ -4,8 +4,8 @@ from app.persistence.repository import InMemoryRepository
 class Review(BaseModel):
     repository = InMemoryRepository()
 
-    def __init__(self, place_id, user_id, text, rating):
-        super().__init__()
+    def __init__(self, place_id, user_id, text, rating, **kwargs):
+        super().__init__(**kwargs)
         self.place_id = self._validate_id(place_id, "place_id")
         self.user_id = self._validate_id(user_id, "user_id")
         self.text = self._validate_text(text)
@@ -34,18 +34,13 @@ class Review(BaseModel):
         return rating
 
     @classmethod
-    def create(cls, place_id, user_id, text, rating):
-        review = cls(place_id, user_id, text, rating)
-        cls.repository.add(review)
-        return review
-
-    @classmethod
-    def get_by_id(cls, review_id):
-        return cls.repository.get(review_id)
-
-    @classmethod
-    def get_all(cls):
-        return cls.repository.get_all()
+    def create(cls, place_id, user_id, text, rating, **kwargs):
+        try:
+            review = cls(place_id, user_id, text, rating, **kwargs)
+            cls.repository.add(review)
+            return review
+        except ValueError as e:
+            raise ValueError(f"Failed to create review: {str(e)}")
 
     @classmethod
     def get_by_place(cls, place_id):
@@ -56,14 +51,23 @@ class Review(BaseModel):
         return [review for review in cls.get_all() if review.user_id == user_id]
 
     def update(self, data):
-        if 'text' in data:
-            self.text = self._validate_text(data['text'])
-        if 'rating' in data:
-            self.rating = self._validate_rating(data['rating'])
-        self.repository.update(self.id, self)
-
-    def delete(self):
-        self.repository.delete(self.id)
+        try:
+            if 'place_id' in data:
+                self.place_id = self._validate_id(data['place_id'], "place_id")
+            if 'user_id' in data:
+                self.user_id = self._validate_id(data['user_id'], "user_id")
+            if 'text' in data:
+                self.text = self._validate_text(data['text'])
+            if 'rating' in data:
+                self.rating = self._validate_rating(data['rating'])
+            
+            # Retirer les attributs spécifiques à Review avant d'appeler super().update()
+            for attr in ['place_id', 'user_id', 'text', 'rating']:
+                data.pop(attr, None)
+            
+            super().update(data)
+        except ValueError as e:
+            raise ValueError(f"Failed to update review: {str(e)}")
 
     def to_dict(self):
         review_dict = super().to_dict()
