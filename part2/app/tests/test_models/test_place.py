@@ -58,12 +58,17 @@ class TestPlace(unittest.TestCase):
         self.assertEqual(self.place.price_by_night, 120.75)
 
     def test_update_with_invalid_params(self):
-        with self.assertRaises(ValueError):
-            self.place.update({'invalid_param': 'invalid_value'})
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as context:
             self.place.update({'max_guest': -1})
-        with self.assertRaises(ValueError):
+        self.assertIn("Invalid value for max_guest", str(context.exception))
+
+        with self.assertRaises(ValueError) as context:
             self.place.update({'latitude': 100})
+        self.assertIn("Invalid value for latitude", str(context.exception))
+
+        with self.assertRaises(ValueError) as context:
+            self.place.update({'invalid_param': 'invalid_value'})
+        self.assertIn("Invalid attribute", str(context.exception))
 
     def test_delete(self):
         place_id = self.place.id

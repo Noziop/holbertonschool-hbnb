@@ -143,18 +143,19 @@ class Place(BaseModel):
     def get_by_capacity(cls, min_guests):
         return [place for place in cls.get_all() if place.max_guest >= min_guests]
     
-    classmethod
+    @classmethod
     def get_by_location(cls, latitude, longitude, radius):
         def distance(lat1, lon1, lat2, lon2):
             R = 6371  # Rayon de la Terre en km
-            dLat = math.radians(lat2 - lat1)
-            dLon = math.radians(lon2 - lon1)
-            a = math.sin(dLat/2) * math.sin(dLat/2) + math.cos(math.radians(lat1)) \
-                * math.cos(math.radians(lat2)) * math.sin(dLon/2) * math.sin(dLon/2)
+            dLat = math.radians(float(lat2) - float(lat1))
+            dLon = math.radians(float(lon2) - float(lon1))
+            a = math.sin(dLat/2) * math.sin(dLat/2) + math.cos(math.radians(float(lat1))) \
+                * math.cos(math.radians(float(lat2))) * math.sin(dLon/2) * math.sin(dLon/2)
             c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
             return R * c
 
-        return [place for place in cls.get_all() 
+        all_places = cls.get_all()
+        return [place for place in all_places 
                 if distance(latitude, longitude, place.latitude, place.longitude) <= radius]
 
     def calculate_average_rating(self):
@@ -186,14 +187,19 @@ class Place(BaseModel):
             if key in ['id', 'created_at', 'updated_at']:
                 continue  # Skip these fields
             elif hasattr(self, f'_validate_{key}'):
-                setattr(self, key, getattr(self, f'_validate_{key}')(value))
+                try:
+                    validated_value = getattr(self, f'_validate_{key}')(value)
+                    setattr(self, key, validated_value)
+                except ValueError as e:
+                    raise ValueError(f"Invalid value for {key}: {str(e)}")
             elif hasattr(self, key):
                 setattr(self, key, value)
             else:
                 raise ValueError(f"Invalid attribute: {key}")
         
         self.updated_at = datetime.now(timezone.utc)
-        self.repository.update(self.id, self)
+        # We don't call self.repository.update here to avoid the infinite loop
+
 
     def delete(self):
         self.repository.delete(self.id)
