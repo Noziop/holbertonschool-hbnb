@@ -1,5 +1,6 @@
 from .basemodel import BaseModel
 from app.persistence.repository import InMemoryRepository
+from datetime import datetime, timezone
 
 class Review(BaseModel):
     repository = InMemoryRepository()
@@ -49,25 +50,34 @@ class Review(BaseModel):
     @classmethod
     def get_by_user(cls, user_id):
         return [review for review in cls.get_all() if review.user_id == user_id]
+    
+    @classmethod
+    def get_average_rating(cls, place_id):
+        reviews = cls.get_by_place(place_id)
+        if not reviews:
+            return 0
+        return sum(review.rating for review in reviews) / len(reviews)
+
+    @classmethod
+    def get_recent_reviews(cls, limit=5):
+        all_reviews = cls.get_all()
+        return sorted(all_reviews, key=lambda x: x.created_at, reverse=True)[:limit]
 
     def update(self, data):
-        try:
-            if 'place_id' in data:
-                self.place_id = self._validate_id(data['place_id'], "place_id")
-            if 'user_id' in data:
-                self.user_id = self._validate_id(data['user_id'], "user_id")
-            if 'text' in data:
-                self.text = self._validate_text(data['text'])
-            if 'rating' in data:
-                self.rating = self._validate_rating(data['rating'])
-            
-            # Retirer les attributs spécifiques à Review avant d'appeler super().update()
-            for attr in ['place_id', 'user_id', 'text', 'rating']:
-                data.pop(attr, None)
-            
-            super().update(data)
-        except ValueError as e:
-            raise ValueError(f"Failed to update review: {str(e)}")
+        if not isinstance(data, dict):
+            raise ValueError("Update data must be a dictionary")
+        
+        for key, value in data.items():
+            if key in ['id', 'created_at', 'updated_at', 'place_id', 'user_id']:
+                continue  # Skip these fields
+            elif key == 'text':
+                self.text = self._validate_text(value)
+            elif key == 'rating':
+                self.rating = self._validate_rating(value)
+            else:
+                raise ValueError(f"Invalid attribute: {key}")
+        
+        self.updated_at = datetime.now(timezone.utc)
 
     def to_dict(self):
         review_dict = super().to_dict()
