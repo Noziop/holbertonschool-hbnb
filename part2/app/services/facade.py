@@ -3,12 +3,16 @@ from app.models.place import Place
 from app.models.user import User
 from app.models.amenity import Amenity
 from app.models.review import Review
+from app.models.placeamenity import PlaceAmenity
 from app.persistence.repository import InMemoryRepository
 
 class HBnBFacade:
     def __init__(self):
         self.user_repository = User.repository
         self.place_repository = Place.repository
+        self.amenity_repository = Amenity.repository
+        self.review_repository = Review.repository
+        self.placemaneity_repository = PlaceAmenity.repository
         # Initialiser d'autres repositories si nécessaire
 
     # User methods
@@ -127,3 +131,137 @@ class HBnBFacade:
         place_dict['reviews'] = [review.to_dict() for review in reviews]
         
         return place_dict
+
+    # Review methods
+    def create_review(self, review_data):
+        try:
+            # Vérifier si le place_id et le user_id existent
+            Place.get_by_id(review_data['place_id'])
+            User.get_by_id(review_data['user_id'])
+            return Review.create(**review_data)
+        except ValueError as e:
+            raise ValueError(f"Failed to create review: {str(e)}")
+
+    def get_review(self, review_id):
+        try:
+            return Review.get_by_id(review_id)
+        except ValueError as e:
+            raise ValueError(f"Failed to get review: {str(e)}")
+
+    def update_review(self, review_id, review_data):
+        try:
+            review = self.get_review(review_id)
+            review.update(review_data)
+            return review
+        except ValueError as e:
+            raise ValueError(f"Failed to update review: {str(e)}")
+
+    def get_all_reviews(self):
+        return Review.get_all()
+
+    def get_reviews_by_place(self, place_id):
+        return Review.get_by_place(place_id)
+
+    def get_reviews_by_user(self, user_id):
+        return Review.get_by_user(user_id)
+
+    def delete_review(self, review_id):
+        try:
+            review = self.get_review(review_id)
+            review.delete()
+        except ValueError as e:
+            raise ValueError(f"Failed to delete review: {str(e)}")
+
+    # Méthode pour obtenir la note moyenne d'un lieu
+    def get_place_average_rating(self, place_id):
+        reviews = self.get_reviews_by_place(place_id)
+        if not reviews:
+            return 0
+        return sum(review.rating for review in reviews) / len(reviews)
+
+    # Méthode pour obtenir les avis les plus récents
+    def get_recent_reviews(self, limit=5):
+        all_reviews = self.get_all_reviews()
+        return sorted(all_reviews, key=lambda x: x.created_at, reverse=True)[:limit]
+    
+    # Amenity methods
+    def create_amenity(self, amenity_data):
+        try:
+            return Amenity.create(**amenity_data)
+        except ValueError as e:
+            raise ValueError(f"Failed to create amenity: {str(e)}")
+
+    def get_amenity(self, amenity_id):
+        try:
+            return Amenity.get_by_id(amenity_id)
+        except ValueError as e:
+            raise ValueError(f"Failed to get amenity: {str(e)}")
+
+    def update_amenity(self, amenity_id, amenity_data):
+        try:
+            amenity = self.get_amenity(amenity_id)
+            amenity.update(amenity_data)
+            return amenity
+        except ValueError as e:
+            raise ValueError(f"Failed to update amenity: {str(e)}")
+
+    def get_all_amenities(self):
+        return Amenity.get_all()
+
+    def get_amenities_by_name(self, name):
+        return Amenity.get_by_name(name)
+
+    def search_amenities(self, keyword):
+        return Amenity.search(keyword)
+
+    # Méthode pour obtenir les lieux associés à une aménité
+    def get_places_with_amenity(self, amenity_id):
+        from app.models.placeamenity import PlaceAmenity
+        from app.models.place import Place
+        place_amenities = PlaceAmenity.get_by_amenity(amenity_id)
+        return [Place.get_by_id(pa.place_id) for pa in place_amenities]
+
+    # PlaceAmenity methods
+    def create_place_amenity(self, place_id, amenity_id):
+        try:
+            # Vérifier si le place_id et le amenity_id existent
+            Place.get_by_id(place_id)
+            Amenity.get_by_id(amenity_id)
+            return PlaceAmenity.create(place_id=place_id, amenity_id=amenity_id)
+        except ValueError as e:
+            raise ValueError(f"Failed to create place amenity: {str(e)}")
+
+    def get_place_amenities(self, place_id):
+        return PlaceAmenity.get_by_place(place_id)
+
+    def get_amenity_places(self, amenity_id):
+        return PlaceAmenity.get_by_amenity(amenity_id)
+
+    def get_places_with_amenity(self, amenity_id):
+        return PlaceAmenity.get_places(amenity_id)
+
+    def delete_place_amenity(self, place_id, amenity_id):
+        place_amenities = PlaceAmenity.get_by_place(place_id)
+        for pa in place_amenities:
+            if pa.amenity_id == amenity_id:
+                pa.delete()
+                return
+        raise ValueError(f"No PlaceAmenity found for place_id {place_id} and amenity_id {amenity_id}")
+
+    # Méthode pour obtenir tous les aménités d'un lieu
+    def get_amenities_for_place(self, place_id):
+        place = self.get_place(place_id)  # This will raise ValueError if place doesn't exist
+        place_amenities = self.get_place_amenities(place_id)
+        return [Amenity.get_by_id(pa.amenity_id) for pa in place_amenities]
+
+    # Méthode pour ajouter un aménité à un lieu
+    def add_amenity_to_place(self, place_id, amenity_id):
+        place_amenities = PlaceAmenity.get_by_place(place_id)
+        for pa in place_amenities:
+            if pa.amenity_id == amenity_id:
+                return pa  # L'association existe déjà, on la retourne
+        return self.create_place_amenity(place_id, amenity_id)
+
+    # Méthode pour retirer un aménité d'un lieu
+    def remove_amenity_from_place(self, place_id, amenity_id):
+        self.delete_place_amenity(place_id, amenity_id)
