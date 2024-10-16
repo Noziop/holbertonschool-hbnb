@@ -35,13 +35,6 @@ class Amenity(BaseModel):
     def search(cls, keyword):
         return [amenity for amenity in cls.get_all() if keyword.lower() in amenity.name.lower()]
 
-    @classmethod
-    def get_places(cls, amenity_id):
-        from .placeamenity import PlaceAmenity
-        from .place import Place
-        place_amenities = PlaceAmenity.get_by_amenity(amenity_id)
-        return [Place.get_by_id(pa.place_id) for pa in place_amenities]
-
     def update(self, data):
         if not isinstance(data, dict):
             raise ValueError("Update data must be a dictionary")

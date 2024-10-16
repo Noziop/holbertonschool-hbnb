@@ -1,66 +1,66 @@
-
 import unittest
 from app.models.placeamenity import PlaceAmenity
 from app.persistence.repository import InMemoryRepository
+from app.models.place import Place
+from app.models.amenity import Amenity
 
 class TestPlaceAmenity(unittest.TestCase):
 
     def setUp(self):
         self.repository = InMemoryRepository()
         PlaceAmenity.repository = self.repository
-        self.valid_params = {'place_id': '917704de-7cd3-4bd6-b1b8-13dc6e823337', 'amenity_id': '6fa78ef8-b297-4526-b220-fc9d8c6fe499'}
-        self.placeamenity = PlaceAmenity(**self.valid_params)
+        self.place = Place.create(name="Test Place", description="Test Description", number_rooms=2, number_bathrooms=1, max_guest=4, price_by_night=100, latitude=45.5, longitude=-73.5, owner_id="test_owner")
+        self.amenity = Amenity.create(name="Test Amenity")
+        self.valid_params = {
+            'place_id': self.place.id,
+            'amenity_id': self.amenity.id
+        }
+        self.place_amenity = PlaceAmenity.create(**self.valid_params)
 
     def tearDown(self):
         PlaceAmenity.repository = InMemoryRepository()
 
-    def test_attributes(self):
-        attrs = ['repository']
-        for attr in attrs:
-            self.assertTrue(hasattr(self.placeamenity, attr))
-
-    def test_methods(self):
-        methods = ['_validate_id', 'create', 'delete', 'get_all', 'get_by_amenity', 'get_by_id', 'get_by_place', 'save', 'to_dict', 'update']
-        for method in methods:
-            self.assertTrue(hasattr(self.placeamenity, method))
-
     def test_create(self):
-        new_placeamenity = PlaceAmenity.create(**self.valid_params)
-        self.assertIsInstance(new_placeamenity, PlaceAmenity)
-        self.assertIn(new_placeamenity.id, self.repository._storage)
-
-    def test_get_by_id(self):
-        placeamenity = PlaceAmenity.get_by_id(self.placeamenity.id)
-        self.assertEqual(placeamenity.id, self.placeamenity.id)
-
-    def test_update(self):
-        update_data = {
-            'name': 'Updated Name' if hasattr(self.placeamenity, 'name') else None,
-            'description': 'Updated Description' if hasattr(self.placeamenity, 'description') else None
-        }
-        update_data = {k: v for k, v in update_data.items() if v is not None}
-        self.placeamenity.update(update_data)
-        for key, value in update_data.items():
-            self.assertEqual(getattr(self.placeamenity, key), value)
-
-    def test_to_dict(self):
-        placeamenity_dict = self.placeamenity.to_dict()
-        self.assertIsInstance(placeamenity_dict, dict)
-        self.assertIn('id', placeamenity_dict)
-        self.assertIn('created_at', placeamenity_dict)
-        self.assertIn('updated_at', placeamenity_dict)
+        new_place_amenity = PlaceAmenity.create(**self.valid_params)
+        self.assertIsInstance(new_place_amenity, PlaceAmenity)
+        self.assertIn(new_place_amenity.id, self.repository._storage)
 
     def test_create_with_invalid_params(self):
         invalid_params = self.valid_params.copy()
-        invalid_params['non_existent_param'] = 'invalid'
-        with self.assertRaises(TypeError):
-            PlaceAmenity(**invalid_params)
+        invalid_params['place_id'] = ''
+        with self.assertRaises(ValueError):
+            PlaceAmenity.create(**invalid_params)
+
+    def test_get_by_place(self):
+        results = PlaceAmenity.get_by_place(self.place.id)
+        self.assertIn(self.place_amenity, results)
+
+    def test_get_by_amenity(self):
+        results = PlaceAmenity.get_by_amenity(self.amenity.id)
+        self.assertIn(self.place_amenity, results)
+
+    def test_get_places(self):
+        places = PlaceAmenity.get_places(self.amenity.id)
+        self.assertIn(self.place, places)
+
+    def test_update(self):
+        new_place = Place.create(name="New Place", description="New Description", number_rooms=1, number_bathrooms=1, max_guest=2, price_by_night=50, latitude=40.7, longitude=-74.0, owner_id="new_owner")
+        update_data = {'place_id': new_place.id}
+        self.place_amenity.update(update_data)
+        self.assertEqual(self.place_amenity.place_id, new_place.id)
 
     def test_update_with_invalid_params(self):
         with self.assertRaises(ValueError):
-            self.placeamenity.update({'invalid_param': 'invalid_value'})
+            self.place_amenity.update({'invalid_param': 'invalid_value'})
 
-    # Add more specific tests here based on the model
+    def test_to_dict(self):
+        place_amenity_dict = self.place_amenity.to_dict()
+        self.assertIsInstance(place_amenity_dict, dict)
+        self.assertIn('id', place_amenity_dict)
+        self.assertIn('place_id', place_amenity_dict)
+        self.assertIn('amenity_id', place_amenity_dict)
+        self.assertIn('created_at', place_amenity_dict)
+        self.assertIn('updated_at', place_amenity_dict)
 
 if __name__ == '__main__':
     unittest.main()
