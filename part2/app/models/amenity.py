@@ -1,4 +1,4 @@
-from .basemodel import BaseModel
+from app.models.basemodel import BaseModel
 from app.persistence.repository import InMemoryRepository
 from datetime import datetime, timezone
 import re
