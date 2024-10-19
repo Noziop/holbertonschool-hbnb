@@ -27,6 +27,10 @@ class BaseModel:
         if obj is None:
             raise ValueError(f"No {cls.__name__} found with id: {id}")
         return obj
+
+    @classmethod
+    def get_by_name(cls, name):
+        return cls.repository.get_by_attribute('name', name)
     
     @classmethod
     def get_all(cls):
