@@ -1,18 +1,14 @@
 from app.persistence.repository import InMemoryRepository
-from app.models.basemodel import BaseModel
+from .basemodel import BaseModel
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.utils.magic_wands import log_action, validate_input, error_handler, to_dict, update_timestamp, magic_wand
+from app.utils import *
 import re
 
 class User(BaseModel):
     repository = InMemoryRepository()
 
  
-    @magic_wand(
-        log_action,
-        validate_input(username=str, email=str, password=str, first_name=str, last_name=str, phone_number=(str, type(None))),
-        error_handler
-    )
+    @magic_wand(validate_input(UserValidation))
     def __init__(self, username, email, password, first_name, last_name, phone_number=None, **kwargs):
         if not all([username, email, password, first_name, last_name]):
             raise ValueError("All required fields must be provided")
@@ -26,10 +22,7 @@ class User(BaseModel):
         self.phone_number = self._validate_phone_number(phone_number) if phone_number else None
 
     @staticmethod
-    @magic_wand(
-        log_action,
-        error_handler
-    )
+    @magic_wand()
     def _validate_username(username):
         if not isinstance(username, str):
             raise ValueError("Username must be a string")
@@ -40,10 +33,7 @@ class User(BaseModel):
         return username
 
     @staticmethod
-    @magic_wand(
-        log_action,
-        error_handler
-    )
+    @magic_wand()
     def _validate_password(password):
         if len(password) < 8:
             raise ValueError("Password must be at least 8 characters long")
@@ -58,10 +48,7 @@ class User(BaseModel):
         return password
     
     @staticmethod
-    @magic_wand(
-        log_action,
-        error_handler
-    )
+    @magic_wand()
     def _validate_email(email):
         if not isinstance(email, str):
             raise ValueError("Email must be a string")
@@ -71,10 +58,7 @@ class User(BaseModel):
         return email
 
     @staticmethod
-    @magic_wand(
-        log_action,
-        error_handler
-    )
+    @magic_wand()
     def _validate_name(name, field_name):
         if not isinstance(name, str):
             raise ValueError(f"{field_name} must be a string")
@@ -85,29 +69,20 @@ class User(BaseModel):
         return name
 
     @staticmethod
-    @magic_wand(
-        log_action,
-        error_handler
-    )
+    @magic_wand()
     def _validate_phone_number(phone_number):
         if not re.match(r'^\+?1?\d{10,14}$', phone_number):
             raise ValueError("Invalid phone number format")
         return phone_number
 
-    @magic_wand(
-        log_action,
-        error_handler
-    )
+    @magic_wand()
     def hash_password(self, password):
         try:
             return generate_password_hash(password)
         except Exception as e:
             raise ValueError(f"Failed to hash password: {str(e)}")
 
-    @magic_wand(
-        log_action,
-        error_handler
-    )
+    @magic_wand()
     def check_password(self, password):
         if not self.password_hash:
             raise ValueError("Password hash is not set")
@@ -115,11 +90,7 @@ class User(BaseModel):
 
 
     @classmethod
-    @magic_wand(
-        log_action,
-        validate_input(username=str, email=str, password=str, first_name=str, last_name=str, phone_number=(str, type(None))),
-        error_handler
-    )
+    @magic_wand(validate_input(UserValidation))
     def create(cls, username, email, password, first_name, last_name, phone_number=None, **kwargs):
         if cls.get_by_username(username):
             raise ValueError(f"User with username '{username}' already exists")
@@ -129,31 +100,19 @@ class User(BaseModel):
         # Les validations de base seront effectuées par le constructeur
         user = cls(username, email, password, first_name, last_name, phone_number, **kwargs)
         cls.repository.add(user)
-        log_action.info(f"User created: {user.username}")
         return user
 
     @classmethod
-    @magic_wand(
-        log_action,
-        error_handler
-    )
+    @magic_wand()
     def get_by_username(cls, username):
         return cls.repository.get_by_attribute('username', username)
 
     @classmethod
-    @magic_wand(
-        log_action,
-        error_handler
-    )
+    @magic_wand()
     def get_by_email(cls, email):
         return cls.repository.get_by_attribute('email', email)
 
-    @magic_wand(
-        log_action,
-        validate_input(data=dict),
-        error_handler,
-        update_timestamp
-    )
+    @magic_wand(validate_input(UserValidation), update_timestamp)
     def update(self, data):
         password = data.pop('password', None)  # Retire le mot de passe du dictionnaire
         if password is not None:
@@ -170,7 +129,8 @@ class User(BaseModel):
         
         super().update(data)  # Appelle update de BaseModel sans le mot de passe
 
-    @magic_wand(to_dict(exclude=['password_hash']))
+    @magic_wand()
+    @to_dict(exclude=['password_hash'])
     def to_dict(self):
         user_dict = super().to_dict()
         user_dict.update({

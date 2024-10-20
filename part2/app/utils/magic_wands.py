@@ -1,130 +1,136 @@
-import logging, json, traceback, socket, os
-from functools import wraps
+import logging, json, os
 from datetime import datetime, timezone
+from functools import wraps
+from .model_validations import *
 
 
-
-def magic_wand(*wrappers):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            for wrap in wrappers:
-                result = wrap(*args, **kwargs)
-                if result is False:
-                    return
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
-
-def validate_entity(get_entity_func):
-    def wrapper(*args, **kwargs):
-        if not get_entity_func(*args, **kwargs):
-            raise ValueError(f"Entity does not exist")
-        return True
-    return wrapper
-
-def validate_input(**validators):
-    def wrapper(*args, **kwargs):
-        for param, validator in validators.items():
-            if param in kwargs:
-                kwargs[param] = validator(kwargs[param])
-        return True
-    return wrapper
-
-def error_handler(*args, **kwargs):
-    try:
-        return True
-    except Exception as e:
-        raise ValueError(f"Error: {str(e)}")
-
-def update_timestamp(*args, **kwargs):
-    self = args[0] if args else None
-    if self:
-        self.updated_at = datetime.now(timezone.utc)
-    return True
-
-def to_dict(exclude=[]):
-    def wrapper(self):
-        result = self.__dict__.copy()
-        return {k: v for k, v in result.items() if k not in exclude}
-    return wrapper
-
-def validate_types(**type_checks):
-    def wrapper(*args, **kwargs):
-        for param, expected_type in type_checks.items():
-            if param in kwargs and not isinstance(kwargs[param], expected_type):
-                raise TypeError(f"{param} must be of type {expected_type}")
-        return True
-    return wrapper
+# Création du répertoire pour les logs
+log_directory = 'app/logs'
+if not os.path.exists(log_directory):
+    os.makedirs(log_directory)
 
 # Configuration du logging
-def setup_logging(log_file_prefix='hbnb'):
+def setup_logging():
     logger = logging.getLogger('hbnb_logger')
     logger.setLevel(logging.DEBUG)
 
-    handlers = {
-        'info': logging.FileHandler(f'{log_file_prefix}_info.log'),
-        'debug': logging.FileHandler(f'{log_file_prefix}_debug.log'),
-        'error': logging.FileHandler(f'{log_file_prefix}_error.log')
-    }
+    # Handler pour les logs de debug
+    debug_handler = logging.FileHandler(f'{log_directory}/debug.log')
+    debug_handler.setLevel(logging.DEBUG)
 
-    handlers['info'].setLevel(logging.INFO)
-    handlers['debug'].setLevel(logging.DEBUG)
-    handlers['error'].setLevel(logging.ERROR)
+    # Handler pour les logs d'info
+    info_handler = logging.FileHandler(f'{log_directory}/info.log')
+    info_handler.setLevel(logging.INFO)
 
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    for handler in handlers.values():
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+    # Handler pour les logs d'erreur
+    error_handler = logging.FileHandler(f'{log_directory}/error.log')
+    error_handler.setLevel(logging.ERROR)
+
+    # Formateur pour les logs
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    debug_handler.setFormatter(formatter)
+    info_handler.setFormatter(formatter)
+    error_handler.setFormatter(formatter)
+
+    # Ajout des handlers au logger
+    logger.addHandler(debug_handler)
+    logger.addHandler(info_handler)
+    logger.addHandler(error_handler)
 
     return logger
 
 # Initialisation du logger
 logger = setup_logging()
+print("Logger initialized")
 
-# Wrapper de logging amélioré
-def log_action(func):
-    @wraps(func)
+def magic_wand(*wrappers):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            log_data = _prepare_log_data(func, args, kwargs)
+            try:
+                for wrap in sorted(wrappers, key=lambda w: getattr(w, 'priority', 0), reverse=True):
+                    result = wrap(*args, **kwargs)
+                    if isinstance(result, dict):
+                        kwargs.update(result)
+                    elif result is False:
+                        logger.debug(json.dumps({**log_data, 'status': 'validation_failed', 'wrapper': wrap.__name__}))
+                        return
+                result = func(*args, **kwargs)
+                logger.info(json.dumps({**log_data, 'status': 'success', 'result': str(result)}))
+                return result
+            except ValueError as e:
+                logger.debug(json.dumps({**log_data, 'status': 'value_error', 'error': str(e)}))
+                raise
+            except Exception as e:
+                logger.error(json.dumps({**log_data, 'status': 'error', 'error': str(e)}))
+                raise
+        return wrapper
+    return decorator
+
+def validate_entity(model_name, id_field):
     def wrapper(*args, **kwargs):
-        func_name = func.__name__
-        class_name = args[0].__class__.__name__ if args else ''
-        
-        log_data = {
-            'timestamp': datetime.now().isoformat(),
-            'class': class_name,
-            'method': func_name,
-            'args': str(args[1:]),
-            'kwargs': {k: v for k, v in kwargs.items() if k != 'password'},
-            'hostname': socket.gethostname(),
-            'process_id': os.getpid(),
-            'thread_id': threading.get_ident()
-        }
-        
-        if 'user_id' in kwargs:
-            log_data['user_id'] = kwargs['user_id']
-        if 'session_id' in kwargs:
-            log_data['session_id'] = kwargs['session_id']
-        
-        logger.debug(json.dumps(log_data))
-        
-        try:
-            result = func(*args, **kwargs)
-            log_data['status'] = 'success'
-            if isinstance(result, dict):
-                log_data['result_summary'] = {k: v for k, v in result.items() if k != 'password'}
-            logger.info(json.dumps(log_data))
-            return result
-        except ValueError as e:
-            log_data['status'] = 'value_error'
-            log_data['error_message'] = str(e)
-            log_data['traceback'] = traceback.format_exc()
-            logger.warning(json.dumps(log_data))
-            raise
-        except Exception as e:
-            log_data['status'] = 'error'
-            log_data['error_message'] = str(e)
-            log_data['traceback'] = traceback.format_exc()
-            logger.error(json.dumps(log_data))
-            raise
+        if id_field in kwargs:
+            # Import dynamique du modèle
+            import importlib
+            module = importlib.import_module(f'app.models.{model_name.lower()}')
+            model_class = getattr(module, model_name)
+            entity = model_class.get_by_id(kwargs[id_field])
+            if not entity:
+                raise ValueError(f"{model_name} with id {kwargs[id_field]} does not exist")
+        return True
+    wrapper.priority = 1
     return wrapper
 
+def validate_input(*args, **kwargs):
+    if args:
+        # Si des arguments positionnels sont fournis, on suppose que c'est un seul dictionnaire
+        validators = args[0]
+    else:
+        # Sinon, on utilise les arguments nommés
+        validators = kwargs
+
+    def wrapper(*func_args, **func_kwargs):
+        validated = {}
+        for param, expected_type in validators.items():
+            if param in func_kwargs:
+                try:
+                    value = func_kwargs[param]
+                    if isinstance(expected_type, tuple):
+                        if not isinstance(value, expected_type):
+                            raise ValueError(f"{param} must be one of types {expected_type}")
+                    elif not isinstance(value, expected_type):
+                        raise ValueError(f"{param} must be of type {expected_type.__name__}")
+                    validated[param] = value
+                except ValueError as e:
+                    raise ValueError(f"Invalid {param}: {str(e)}")
+        return validated
+    wrapper.priority = 2
+    return wrapper
+
+def _prepare_log_data(func, args, kwargs):
+    return {
+        'function': func.__name__,
+        'class': args[0].__class__.__name__ if args else '',
+        'args': str(args[1:]),
+        'kwargs': {k: v for k, v in kwargs.items() if k != 'password'}
+    }
+
+def update_timestamp(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        result = func(self, *args, **kwargs)
+        self.updated_at = datetime.now(timezone.utc)
+        return result
+    wrapper.priority = 3  # Ajuste la priorité selon tes besoins
+    return wrapper
+
+def to_dict(exclude=[]):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self):
+            result = func(self)
+            return {k: v for k, v in result.items() if k not in exclude}
+        wrapper.priority = 5  # Ajout de la priorité
+        return wrapper
+    return decorator

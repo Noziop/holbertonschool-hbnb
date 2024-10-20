@@ -1,22 +1,20 @@
-from app.models.basemodel import BaseModel
+from .basemodel import BaseModel
 from app.persistence.repository import InMemoryRepository
-from datetime import datetime, timezone
+# from datetime import datetime, timezone
 import re
-from app.utils.magic_wands import log_action, error_handler, validate_input, update_timestamp, to_dict_decorator
+from app.utils import *
 
 class Amenity(BaseModel):
     repository = InMemoryRepository()
 
-    @log_action
-    @error_handler
-    @validate_input(name=str)
+
+    @magic_wand(validate_input(AmenityValidation))
     def __init__(self, name, **kwargs):
         super().__init__(**kwargs)
         self.name = self._validate_name(name)
 
     @staticmethod
-    @log_action
-    @error_handler
+    @magic_wand()
     def _validate_name(name):
         if not name.strip():
             raise ValueError("Name must be a non-empty string")
@@ -25,32 +23,24 @@ class Amenity(BaseModel):
         return name.strip()
 
     @classmethod
-    @log_action
-    @error_handler
-    @validate_input(name=str)
+    @magic_wand(validate_input(AmenityValidation))
     def create(cls, **kwargs):
         amenity = cls(**kwargs)
         cls.repository.add(amenity)
         return amenity
 
     @classmethod
-    @log_action
-    @error_handler
-    @validate_input(name=str)
+    @magic_wand(validate_input(AmenityValidation))
     def get_by_name(cls, name):
         return [amenity for amenity in cls.get_all() if amenity.name.lower() == name.lower()]
 
     @classmethod
-    @log_action
-    @error_handler
-    @validate_input(keyword=str)
+    @magic_wand(validate_input({'keyword': str}))
     def search(cls, keyword):
         return [amenity for amenity in cls.get_all() if keyword.lower() in amenity.name.lower()]
 
-    @log_action
-    @error_handler
-    @update_timestamp
-    @validate_input(data=dict)
+
+    @magic_wand(validate_input({'data': dict}), update_timestamp)
     def update(self, data):
         for key, value in data.items():
             if key == 'name':
@@ -58,7 +48,9 @@ class Amenity(BaseModel):
             elif key not in ['id', 'created_at', 'updated_at']:
                 raise ValueError(f"Invalid attribute: {key}")
 
-    @to_dict_decorator()
+    
+    @magic_wand()
+    @to_dict(exclude=[])
     def to_dict(self):
         amenity_dict = super().to_dict()
         amenity_dict.update({
