@@ -1,8 +1,10 @@
-import logging, json, os
+import logging
+import json
+import os
 from datetime import datetime, timezone
 from functools import wraps
+from logging.handlers import RotatingFileHandler
 from .model_validations import *
-
 
 # Création du répertoire pour les logs
 log_directory = 'app/logs'
@@ -11,42 +13,57 @@ if not os.path.exists(log_directory):
 
 # Configuration du logging
 def setup_logging():
-    logger = logging.getLogger('hbnb_logger')
-    logger.setLevel(logging.DEBUG)
-
-    # Handler pour les logs de debug
-    debug_handler = logging.FileHandler(f'{log_directory}/debug.log')
-    debug_handler.setLevel(logging.DEBUG)
-
-    # Handler pour les logs d'info
-    info_handler = logging.FileHandler(f'{log_directory}/info.log')
-    info_handler.setLevel(logging.INFO)
-
-    # Handler pour les logs d'erreur
-    error_handler = logging.FileHandler(f'{log_directory}/error.log')
-    error_handler.setLevel(logging.ERROR)
-
-    # Formateur pour les logs
+    loggers = {}
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    debug_handler.setFormatter(formatter)
-    info_handler.setFormatter(formatter)
-    error_handler.setFormatter(formatter)
 
-    # Ajout des handlers au logger
-    logger.addHandler(debug_handler)
-    logger.addHandler(info_handler)
-    logger.addHandler(error_handler)
+    for module in ['models', 'facade', 'api']:
+        logger = logging.getLogger(f'hbnb_{module}')
+        logger.setLevel(logging.DEBUG)
 
-    return logger
+        # Handler pour les logs de debug
+        debug_handler = RotatingFileHandler(f'{log_directory}/{module}_debug.log', maxBytes=1024*1024, backupCount=5)
+        debug_handler.setLevel(logging.DEBUG)
+        debug_handler.setFormatter(formatter)
 
-# Initialisation du logger
-logger = setup_logging()
-print("Logger initialized")
+        # Handler pour les logs d'info
+        info_handler = RotatingFileHandler(f'{log_directory}/{module}_info.log', maxBytes=1024*1024, backupCount=5)
+        info_handler.setLevel(logging.INFO)
+        info_handler.setFormatter(formatter)
+
+        # Handler pour les logs d'erreur
+        error_handler = RotatingFileHandler(f'{log_directory}/{module}_error.log', maxBytes=1024*1024, backupCount=5)
+        error_handler.setLevel(logging.ERROR)
+        error_handler.setFormatter(formatter)
+
+        logger.addHandler(debug_handler)
+        logger.addHandler(info_handler)
+        logger.addHandler(error_handler)
+
+        loggers[module] = logger
+
+    return loggers
+
+# Initialisation des loggers
+loggers = setup_logging()
+print("Loggers initialized")
+
+def get_logger(module):
+    return loggers.get(module, logging.getLogger('hbnb_default'))
+
+def _prepare_log_data(func, args, kwargs):
+    return {
+        'function': func.__name__,
+        'class': args[0].__class__.__name__ if args else '',
+        'args': str(args[1:]),
+        'kwargs': {k: v for k, v in kwargs.items() if k != 'password'}
+    }
 
 def magic_wand(*wrappers):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
+            module = func.__module__.split('.')[-2]  # Obtient le nom du module (models, facade, api)
+            logger = get_logger(module)
             log_data = _prepare_log_data(func, args, kwargs)
             try:
                 for wrap in sorted(wrappers, key=lambda w: getattr(w, 'priority', 0), reverse=True):
@@ -107,14 +124,6 @@ def validate_input(*args, **kwargs):
         return validated
     wrapper.priority = 2
     return wrapper
-
-def _prepare_log_data(func, args, kwargs):
-    return {
-        'function': func.__name__,
-        'class': args[0].__class__.__name__ if args else '',
-        'args': str(args[1:]),
-        'kwargs': {k: v for k, v in kwargs.items() if k != 'password'}
-    }
 
 def update_timestamp(func):
     @wraps(func)

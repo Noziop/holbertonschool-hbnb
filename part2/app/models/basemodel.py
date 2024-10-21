@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+import datetime as dt
 from app.persistence.repository import InMemoryRepository
 from app.utils import *
 
@@ -9,8 +9,13 @@ class BaseModel:
     @magic_wand(validate_input(BaseModelValidation))
     def __init__(self, **kwargs):
         self.id = str(uuid.uuid4())
-        self.created_at = datetime.now(timezone.utc)
-        self.updated_at = datetime.now(timezone.utc)
+        print(f'ID: {self.id}')
+        date = dt.datetime.now(dt.timezone.utc)
+        print(f'Date: {date}')
+        self.created_at = dt.datetime.now(dt.timezone.utc)
+        print(f'Created At: {self.created_at}')
+        self.updated_at = dt.datetime.now(dt.timezone.utc)
+        print(f'Updated At: {self.updated_at}')
         for key, value in kwargs.items():
             if key in ['created_at', 'updated_at']:
                 setattr(self, key, datetime.fromisoformat(value))
@@ -57,6 +62,7 @@ class BaseModel:
         if not self.repository.get(self.id):
             raise ValueError(f"No {self.__class__.__name__} found with id: {self.id}")
         self.repository.delete(self.id)
+        return True
 
     @magic_wand(update_timestamp)
     def save(self):

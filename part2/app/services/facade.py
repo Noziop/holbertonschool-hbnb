@@ -3,6 +3,7 @@ from app.models.place import Place
 from app.models.amenity import Amenity
 from app.models.review import Review
 from app.models.placeamenity import PlaceAmenity
+from datetime import datetime, timezone
 from app.utils import *
 
 class HBnBFacade:
@@ -52,6 +53,15 @@ class HBnBFacade:
     def check_user_password(self, user_id, password):
         user = User.get_by_id(user_id)
         return user.check_password(password)
+    
+    @magic_wand(validate_input({'user_id': str}),
+            validate_entity('User', 'user_id'))
+    def delete_user(self, user_id):
+        user = User.get_by_id(user_id)
+        if user:
+            if user.delete():
+                return True, f"User {user.username} (ID: {user_id}) deleted successfully"
+        return False, f"User with ID {user_id} not found"
 
     # Place methods
     @magic_wand(validate_input({'place_data': dict}))

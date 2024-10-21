@@ -55,4 +55,17 @@ class User(Resource):
         except ValueError as e:
             abort(400, message=str(e))
 
+    @ns.doc('delete_user')
+    @ns.response(200, 'User deleted successfully')
+    @ns.response(404, 'User not found')
+    def delete(self, user_id):
+        try:
+            success, message = facade.delete_user(user_id)
+            if success:
+                return {'message': message}, 200
+            else:
+                ns.abort(404, message=message)
+        except ValueError as e:
+            ns.abort(404, message=str(e))
+
 api = ns
