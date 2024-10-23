@@ -41,14 +41,14 @@ class Review(BaseModel):
     @classmethod
     @magic_wand(
         validate_input(validator),
-        validate_entity('Place', 'place_id'), validate_entity('User', 'user_id')
+        validate_entity(('Place', 'place_id'),('User', 'user_id'))
     )
     def create(cls, place_id, user_id, text, rating, **kwargs):
         from .place import Place
         from .user import User
         review = cls(place_id, user_id, text, rating, **kwargs)
         cls.repository.add(review)
-        logger(f"Review created: {user_id} - {review.id} - {review.text}")
+        loggers(f"Review created: {user_id} - {review.id} - {review.text}")
         return review
 
     @classmethod

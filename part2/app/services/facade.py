@@ -15,7 +15,7 @@ class HBnBFacade:
         self.placeamenity_repository = PlaceAmenity.repository
 
     # User methods
-    @magic_wand(validate_input(UserValidation))
+    @magic_wand(validate_input(UserValidation), validate_entity('User', 'username'), validate_entity('User', 'email'))
     def create_user(self, user_data):
         return User.create(**user_data)
 
@@ -38,7 +38,7 @@ class HBnBFacade:
             raise ValueError(f"No user found with email: {email}")
         return user
 
-    @magic_wand(validate_input({'user_data': dict}, {'user_id': str}),
+    @magic_wand(validate_input({'user_data': dict, 'user_id': str}),
                 validate_entity('User', 'user_id'))
     def update_user(self, user_id, user_data):
         user = User.get_by_id(user_id)
@@ -79,9 +79,20 @@ class HBnBFacade:
         place = Place.get_by_id(place_id)
         place.update(place_data)
         return place
+    
+    @magic_wand(validate_input({'place_id': str}),
+                validate_entity('Place', 'place_id'))
+    def delete_place(self, place_id):
+        place = Place.get_by_id(place_id)
+        if place:
+            if place.delete():
+                return True, f"Place {place.name} (ID: {place_id}) deleted successfully"
+        return False, f"Place with ID {place_id} not found"
 
+    @magic_wand(validate_input({'place_id': str}))
     def get_all_places(self):
-        return Place.get_all()
+        places = Place.get_all()
+        return places if places else []
 
     @magic_wand(validate_input({'city': str}))
     def get_places_by_city(self, city):
@@ -211,9 +222,27 @@ class HBnBFacade:
     @magic_wand(validate_input({'amenity_id': str}, {'amenity_data': dict}),
                 validate_entity('Amenity', 'amenity_id'))
     def update_amenity(self, amenity_id, amenity_data):
+        try:
+            amenity = Amenity.get_by_id(amenity_id)
+            print(f"DEBUG Facade - Amenity before update: {amenity}")  # Debug
+            if not amenity:
+                return False, "Amenity not found", None
+            amenity.update(amenity_data)
+            print(f"DEBUG Facade - Amenity after update: {amenity}")  # Debug
+            return True, "Amenity updated successfully", amenity
+        except ValueError as e:
+            raise ValueError(f"Failed to update amenity: {str(e)}")
+        except Exception as e: 
+            raise ValueError(f"An error occurred: {str(e)}")
+    
+    @magic_wand(validate_input({'amenity_id': str}),
+                validate_entity('Amenity', 'amenity_id'))
+    def delete_amenity(self, amenity_id):
         amenity = Amenity.get_by_id(amenity_id)
-        amenity.update(amenity_data)
-        return amenity
+        if amenity:
+            if amenity.delete():
+                return True, f"Amenity {amenity.name} (ID: {amenity_id}) deleted successfully"
+        return False, f"Amenity with ID {amenity_id} not found"
 
     def get_all_amenities(self):
         return Amenity.get_all()

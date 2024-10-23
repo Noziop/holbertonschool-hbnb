@@ -67,12 +67,13 @@ def magic_wand(*wrappers):
             log_data = _prepare_log_data(func, args, kwargs)
             try:
                 for wrap in sorted(wrappers, key=lambda w: getattr(w, 'priority', 0), reverse=True):
-                    result = wrap(*args, **kwargs)
-                    if isinstance(result, dict):
-                        kwargs.update(result)
-                    elif result is False:
-                        logger.debug(json.dumps({**log_data, 'status': 'validation_failed', 'wrapper': wrap.__name__}))
-                        return
+                    if callable(wrap):
+                        result = wrap(*args, **kwargs)
+                        if isinstance(result, dict):
+                            kwargs.update(result)
+                        elif result is False:
+                            logger.debug(json.dumps({**log_data, 'status': 'validation_failed', 'wrapper': wrap.__name__}))
+                            return
                 result = func(*args, **kwargs)
                 logger.info(json.dumps({**log_data, 'status': 'success', 'result': str(result)}))
                 return result
@@ -85,27 +86,39 @@ def magic_wand(*wrappers):
         return wrapper
     return decorator
 
-def validate_entity(model_name, id_field):
-    def wrapper(*args, **kwargs):
-        if id_field in kwargs:
-            # Import dynamique du modèle
-            import importlib
-            module = importlib.import_module(f'app.models.{model_name.lower()}')
-            model_class = getattr(module, model_name)
-            entity = model_class.get_by_id(kwargs[id_field])
-            if not entity:
-                raise ValueError(f"{model_name} with id {kwargs[id_field]} does not exist")
-        return True
-    wrapper.priority = 1
+def validate_entity(*args):
+    entity_validations = {}
+    i = 0
+    while i < len(args):
+        if isinstance(args[i], tuple) and len(args[i]) == 2:
+            model_name, field = args[i]
+            entity_validations[field] = model_name
+            i += 1
+        elif i + 1 < len(args) and isinstance(args[i], str) and isinstance(args[i+1], str):
+            model_name, field = args[i], args[i+1]
+            entity_validations[field] = model_name
+            i += 2
+        else:
+            raise ValueError(f"Invalid arguments for validate_entity: {args[i]}")
+
+    def wrapper(*func_args, **func_kwargs):
+        for field, model_name in entity_validations.items():
+            if field in func_kwargs:
+                import importlib
+                module = importlib.import_module(f'app.models.{model_name.lower()}')
+                model_class = getattr(module, model_name)
+                entity = model_class.get_by_id(func_kwargs[field])
+                if not entity:
+                    raise ValueError(f"{model_name} with id {func_kwargs[field]} does not exist")
+        return func_args, func_kwargs
     return wrapper
 
 def validate_input(*args, **kwargs):
-    if args:
-        # Si des arguments positionnels sont fournis, on suppose que c'est un seul dictionnaire
-        validators = args[0]
-    else:
-        # Sinon, on utilise les arguments nommés
-        validators = kwargs
+    validators = {}
+    for arg in args:
+        if isinstance(arg, dict):
+            validators.update(arg)
+    validators.update(kwargs)
 
     def wrapper(*func_args, **func_kwargs):
         validated = {}
@@ -128,10 +141,12 @@ def validate_input(*args, **kwargs):
 def update_timestamp(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
+        now = datetime.now(timezone.utc)
         result = func(self, *args, **kwargs)
-        self.updated_at = datetime.now(timezone.utc)
+        if not hasattr(self, 'updated_at') or (now - self.updated_at).total_seconds() > 1:
+            self.updated_at = now
         return result
-    wrapper.priority = 3  # Ajuste la priorité selon tes besoins
+    wrapper.priority = 3
     return wrapper
 
 def to_dict(exclude=[]):

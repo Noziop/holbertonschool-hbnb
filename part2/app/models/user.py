@@ -48,10 +48,8 @@ class User(BaseModel):
         return password
     
     @staticmethod
-    @magic_wand()
+    @magic_wand(validate_input({'email': str}), validate_entity('User', 'email'))
     def _validate_email(email):
-        if not isinstance(email, str):
-            raise ValueError("Email must be a string")
         email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_regex, email):
             raise ValueError("Invalid email format")
@@ -112,7 +110,7 @@ class User(BaseModel):
     def get_by_email(cls, email):
         return cls.repository.get_by_attribute('email', email)
 
-    @magic_wand(validate_input(UserValidation), update_timestamp)
+    @magic_wand(validate_input(UserValidation))
     def update(self, data):
         password = data.pop('password', None)  # Retire le mot de passe du dictionnaire
         if password is not None:
@@ -127,7 +125,7 @@ class User(BaseModel):
                 raise ValueError(f"User with email '{data['email']}' already exists")
             self.email = self._validate_email(data['email'])
         
-        super().update(data)  # Appelle update de BaseModel sans le mot de passe
+        super().update(data)
 
     @magic_wand()
     @to_dict(exclude=['password_hash'])

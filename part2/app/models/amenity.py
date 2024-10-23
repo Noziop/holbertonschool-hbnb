@@ -24,14 +24,27 @@ class Amenity(BaseModel):
     @classmethod
     @magic_wand(validate_input(AmenityValidation))
     def create(cls, **kwargs):
-        amenity = cls(**kwargs)
-        cls.repository.add(amenity)
-        return amenity
+        try:
+            amenity_to_create = cls.get_by_name(kwargs['name'])
+            if amenity_to_create:
+                raise ValueError(f"Amenity with name '{kwargs['name']}' already exists")
+            else:
+                amenity = cls(**kwargs)
+                cls.repository.add(amenity)
+                return amenity
+        except KeyError:
+            raise ValueError("Missing required attribute: name")
+        except ValueError as e:
+            raise ValueError(str(e))
+        except Exception as e:
+            raise ValueError(f"Failed to create amenity: {str(e)}")
 
     @classmethod
     @magic_wand(validate_input(AmenityValidation))
     def get_by_name(cls, name):
-        return [amenity for amenity in cls.get_all() if amenity.name.lower() == name.lower()]
+        """Get amenity by name"""
+        result = cls.repository.get_by_field('name', name)
+        return result[0] if result else None  # Retourne le premier élément ou None
 
     @classmethod
     @magic_wand(validate_input({'keyword': str}))
@@ -39,14 +52,42 @@ class Amenity(BaseModel):
         return [amenity for amenity in cls.get_all() if keyword.lower() in amenity.name.lower()]
 
 
-    @magic_wand(validate_input({'data': dict}), update_timestamp)
+    @magic_wand(validate_input({'data': dict}))
     def update(self, data):
-        for key, value in data.items():
-            if key == 'name':
-                self.name = self._validate_name(value)
-            elif key not in ['id', 'created_at', 'updated_at']:
-                raise ValueError(f"Invalid attribute: {key}")
-
+        if getattr(self, '_is_updating', False):
+            return self
+        
+        self._is_updating = True
+        try:
+            print(f"DEBUG Model - Starting update with data: {data}")
+            if 'name' in data:
+                new_name = data['name']
+                print(f"DEBUG Model - Checking name: {new_name}")
+                existing_amenity = Amenity.get_by_name(new_name)
+                print(f"DEBUG Model - Existing amenity check: {existing_amenity}")  # Ajout de ce debug
+                
+                if existing_amenity:
+                    print(f"DEBUG Model - Comparing IDs: self={self.id}, existing={existing_amenity.id}")  # Et celui-ci
+                    if existing_amenity.id != self.id:
+                        print("DEBUG Model - Name already exists, raising error")  # Et celui-là
+                        raise ValueError(f"Amenity with name '{new_name}' already exists")
+                
+                self.name = self._validate_name(new_name)
+                print(f"DEBUG Model - Name updated to: {self.name}")
+            
+            for key, value in data.items():
+                if key not in ['id', 'created_at', 'updated_at']:
+                    setattr(self, key, value)
+            
+            return self
+        except ValueError as e:
+            print(f"DEBUG Model - ValueError caught: {str(e)}")  # Et celui-ci
+            raise  # Relance l'erreur telle quelle
+        except Exception as e:
+            print(f"DEBUG Model - Unexpected error: {str(e)}")  # Et celui-ci
+            raise
+        finally:
+            self._is_updating = False
     
     @magic_wand()
     @to_dict(exclude=[])

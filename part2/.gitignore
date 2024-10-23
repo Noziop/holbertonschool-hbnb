@@ -1,0 +1,28 @@
+# .gitignore
+echo "# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.coverage
+.coverage
+.env
+
+# Logs
+*.log
+app/logs/*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Virtual Environment
+venv/
+env/
+ENV/" > .gitignore
+
+# Personal project to dig
+facade_coverage_report/

@@ -1,17 +1,22 @@
+'''Module for Place class.'''
 from .basemodel import BaseModel
 from app.persistence.repository import InMemoryRepository
 from datetime import datetime, timezone
 from app.utils import *
 import math
 
+
 class Place(BaseModel):
     repository = InMemoryRepository()
 
     @magic_wand(validate_input(PlaceValidation), validate_entity('User', 'owner_id'))
-    def __init__(self, name, description, number_rooms, number_bathrooms, max_guest, 
-                 price_by_night, latitude, longitude, owner_id, city="", country="", **kwargs):
-        from .user import User
+    def __init__(self, name, description, number_rooms, number_bathrooms, 
+                max_guest, price_by_night, latitude, longitude, owner_id, 
+                city="", country="", is_available=True, status='active',
+                minimum_stay=1, property_type='apartment', **kwargs):
+        '''Initialize a new Place object.'''
         super().__init__(**kwargs)
+        #Attributs
         self.name = self._validate_string(name, "name")
         self.description = self._validate_string(description, "description")
         self.number_rooms = self._validate_positive_integer(number_rooms, "number_rooms")
@@ -23,12 +28,19 @@ class Place(BaseModel):
         self.city = self._validate_string(city, "city")
         self.country = self._validate_string(country, "country")
         self.owner_id = self._validate_string(owner_id, "owner_id")
+        self.is_available = self._validate_bool(is_available, "is_available")
+        self.status = self._validate_status(status)
+        self.minimum_stay = self._validate_positive_integer(minimum_stay, "minimum_stay")
+        self.property_type = self._validate_property_type(property_type)
+        
+        # Lists
         self.amenity_ids = []
         self.review_ids = []
 
     @staticmethod
     @magic_wand()
     def _validate_string(value, field_name):
+        '''Validate string fields.'''
         if not isinstance(value, str):
             raise ValueError(f"{field_name} must be a string")
         return value.strip()
@@ -36,6 +48,7 @@ class Place(BaseModel):
     @staticmethod
     @magic_wand()
     def _validate_positive_integer(value, field_name):
+        '''Validate positive integer fields.'''
         try:
             value = int(value)
             if value <= 0:
@@ -47,6 +60,7 @@ class Place(BaseModel):
     @staticmethod
     @magic_wand()
     def _validate_positive_float(value, field_name):
+        '''Validate positive float.'''
         try:
             value = float(value)
             if value <= 0:
@@ -58,6 +72,7 @@ class Place(BaseModel):
     @staticmethod
     @magic_wand()
     def _validate_latitude(value):
+        '''Validate latitude.'''
         try:
             value = float(value)
             if not -90 <= value <= 90:
@@ -69,6 +84,7 @@ class Place(BaseModel):
     @staticmethod
     @magic_wand()
     def _validate_longitude(value):
+        '''Validate longitude.'''
         try:
             value = float(value)
             if not -180 <= value <= 180:
@@ -76,9 +92,35 @@ class Place(BaseModel):
         except (ValueError, TypeError):
             raise ValueError("Longitude must be a number between -180 and 180")
         return value
+    
+    @staticmethod
+    @magic_wand()
+    def _validate_status(value):
+        """Validate place status."""
+        valid_status = ['active', 'maintenance', 'blocked']
+        if value not in valid_status:
+            raise ValueError(f"Status must be one of: {', '.join(valid_status)}")
+        return value
+
+    @staticmethod
+    @magic_wand()
+    def _validate_property_type(value):
+        """Validate property type."""
+        valid_types = ['house', 'apartment', 'villa']
+        if value not in valid_types:
+            raise ValueError(f"Property type must be one of: {', '.join(valid_types)}")
+        return value
+
+    @staticmethod
+    @magic_wand()
+    def _validate_bool(value, field_name):
+        """Validate boolean fields."""
+        if not isinstance(value, bool):
+            raise ValueError(f"{field_name} must be a boolean")
+        return value
 
     @classmethod
-    @magic_wand()
+    @magic_wand(validate_input(PlaceValidation), validate_entity(('User', 'owner_id')))
     def create(cls, **kwargs):
         try:
             place = cls(**kwargs)
@@ -86,16 +128,6 @@ class Place(BaseModel):
             return place
         except Exception as e:
             raise ValueError(f"Failed to create place: {str(e)}")
-
-    @classmethod
-    @magic_wand()
-    def get_by_city(cls, city):
-        return [place for place in cls.get_all() if place.city.lower() == city.lower()]
-
-    @classmethod
-    @magic_wand()
-    def get_by_country(cls, country):
-        return [place for place in cls.get_all() if place.country.lower() == country.lower()]
 
     @classmethod
     @magic_wand()
@@ -132,12 +164,15 @@ class Place(BaseModel):
                 or keywords in place.country.lower()]
     
 
-    @magic_wand(validate_input(PlaceValidation), validate_entity('User', 'owner_id'))
+    @magic_wand(validate_input(PlaceValidation), validate_entity(('User', 'owner_id'), ('Place', 'place_id'), ('Amenity', 'amenity_id')))
     def update(self, data):
         if not isinstance(data, dict):
             raise ValueError("Update data must be a dictionary")
         
         for key, value in data.items():
+            print(f"Updating {key} to {value}")
+            if 'owner_id' in data and data['owner_id'] != self.owner_id:
+                raise ValueError("Cannot change owner_id")
             if key in ['id', 'created_at', 'updated_at']:
                 continue  # Skip these fields
             elif hasattr(self, f'_validate_{key}'):
@@ -156,6 +191,7 @@ class Place(BaseModel):
                 raise ValueError(f"Invalid attribute: {key}")
         
         self.updated_at = datetime.now(timezone.utc)
+        return self
 
 
     @magic_wand(validate_entity('Amenity', 'amenity_id'))
@@ -164,6 +200,11 @@ class Place(BaseModel):
         from .amenity import Amenity
         place_amenities = PlaceAmenity.get_by_place(self.id)
         return [Amenity.get_by_id(pa.amenity_id) for pa in place_amenities]
+    
+    @magic_wand(validate_entity('Review', 'review_id'), update_timestamp)
+    def get_reviews(self):
+        from .review import Review
+        return Review.get_by_place(self.id)
 
 
     @magic_wand(validate_entity('Amenity', 'amenity_id'), update_timestamp)
@@ -179,11 +220,6 @@ class Place(BaseModel):
         from .amenity import Amenity
         PlaceAmenity.delete_by_place_and_amenity(self.id, amenity.id)
 
-
-    @magic_wand(validate_entity('Review', 'review_id'), update_timestamp)
-    def get_reviews(self):
-        from .review import Review
-        return Review.get_by_place(self.id)
 
     # Nous n'avons pas besoin de méthodes add_review ou remove_review ici,
     # car ces opérations seront gérées directement dans le modèle Review.
@@ -205,6 +241,10 @@ class Place(BaseModel):
             'city': self.city,
             'country': self.country,
             'amenity_ids': self.amenity_ids,
-            'review_ids': self.review_ids
+            'review_ids': self.review_ids,
+            'is_available': self.is_available,
+            'status': self.status,
+            'minimum_stay': self.minimum_stay,
+            'property_type': self.property_type
         })
         return place_dict

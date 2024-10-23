@@ -3,216 +3,132 @@ from app.models.user import User
 from app.persistence.repository import InMemoryRepository
 from werkzeug.security import generate_password_hash, check_password_hash
 
-class TestUser(unittest.TestCase):
+class TestUserModel(unittest.TestCase):
 
     def setUp(self):
         self.repository = InMemoryRepository()
-        User.repository = self.repository
-        self.valid_params = {'username': 'patrickSebastion', 'email': 'blabla@blibli.bla', 'password': '&0(XGSr^0X'}
-        self.user = User.create(**self.valid_params)
+        self.valid_user_data = {
+            'username': 'validuser',
+            'email': 'validuser@example.com',
+            'password': 'ValidPass123!',
+            'first_name': 'Valid',
+            'last_name': 'User',
+            'phone_number': '+12345678901'
+        }
 
-    def tearDown(self):
-        User.repository = InMemoryRepository()
+    def test_user_creation_with_valid_data(self):
+        user = User(**self.valid_user_data)
+        self.assertEqual(user.username, self.valid_user_data['username'])
+        self.assertEqual(user.email, self.valid_user_data['email'])
+        self.assertTrue(check_password_hash(user.password_hash, self.valid_user_data['password']))
+        self.assertEqual(user.first_name, self.valid_user_data['first_name'])
+        self.assertEqual(user.last_name, self.valid_user_data['last_name'])
+        self.assertEqual(user.phone_number, self.valid_user_data['phone_number'])
 
-    def test_create(self):
-        new_params = self.valid_params.copy()
-        new_params['username'] = 'newuser'
-        new_params['email'] = 'newuser@example.com'
-        new_user = User.create(**new_params)
-        self.assertIsInstance(new_user, User)
-        self.assertIn(new_user.id, self.repository._storage)
-
-    def test_create_with_existing_username(self):
+    def test_user_creation_with_missing_data(self):
+        invalid_user_data = self.valid_user_data.copy()
+        invalid_user_data.pop('username')
         with self.assertRaises(ValueError):
-            User.create(**self.valid_params)
+            User(**invalid_user_data)
 
-    def test_create_with_existing_email(self):
+    def test_username_validation(self):
         with self.assertRaises(ValueError):
-            User.create(username='newuser', email=self.valid_params['email'], password='password123')
-
-    def test_get_by_id(self):
-        user = User.get_by_id(self.user.id)
-        self.assertEqual(user.id, self.user.id)
-
+            User._validate_username('short')
         with self.assertRaises(ValueError):
-            User.get_by_id('non_existent_id')
-
-    def test_get_by_username(self):
-        user = User.get_by_username(self.valid_params['username'])
-        self.assertEqual(user.id, self.user.id)
-
-        non_existent_user = User.get_by_username('non_existent_username')
-        self.assertIsNone(non_existent_user)
-
-    def test_get_by_email(self):
-        user = User.get_by_email(self.valid_params['email'])
-        self.assertEqual(user.id, self.user.id)
-
-        non_existent_user = User.get_by_email('non_existent@email.com')
-        self.assertIsNone(non_existent_user)
-
-    def test_update(self):
-        update_data = {'email': 'newemail@example.com', 'password': 'newpassword'}
-        self.user.update(update_data)
-        self.assertEqual(self.user.email, 'newemail@example.com')
-        self.assertTrue(self.user.check_password('newpassword'))
-
+            User._validate_username('thisusernameiswaytoolong')
         with self.assertRaises(ValueError):
-            self.user.update({'non_existent_attr': 'value'})
+            User._validate_username('invalid username!')
 
-    def test_update_username(self):
-        self.user.update({'username': 'newusername'})
-        self.assertEqual(self.user.username, 'newusername')
-
+    def test_password_validation(self):
         with self.assertRaises(ValueError):
-            self.user.update({'username': 'a'})  # Too short
-
-    def test_update_email(self):
-        self.user.update({'email': 'newemail@example.com'})
-        self.assertEqual(self.user.email, 'newemail@example.com')
-
+            User._validate_password('short')
         with self.assertRaises(ValueError):
-            self.user.update({'email': 'invalid_email'})
-
-    def test_delete(self):
-        user_id = self.user.id
-        self.user.delete()
+            User._validate_password('NoNumber!')
         with self.assertRaises(ValueError):
-            User.get_by_id(user_id)
-
-    def test_to_dict(self):
-        user_dict = self.user.to_dict()
-        self.assertIn('id', user_dict)
-        self.assertIn('username', user_dict)
-        self.assertIn('email', user_dict)
-        self.assertIn('created_at', user_dict)
-        self.assertIn('updated_at', user_dict)
-        self.assertNotIn('password_hash', user_dict)
-
-    def test_password_hashing(self):
-        user = User.create(username='testuser', email='test@example.com', password='password123')
-        self.assertNotEqual(user.password_hash, 'password123')
-        self.assertTrue(user.check_password('password123'))
-
-        user.update({'password': 'newpassword'})
-        self.assertTrue(user.check_password('newpassword'))
-        self.assertFalse(user.check_password('password123'))
-
-    def test_validate_username(self):
+            User._validate_password('nonumber123!')
         with self.assertRaises(ValueError):
-            User.create(username='a', email='test@example.com', password='password')  # Too short
+            User._validate_password('NOLOWERCASE123!')
         with self.assertRaises(ValueError):
-            User.create(username='a'*19, email='test@example.com', password='password')  # Too long
+            User._validate_password('nouppercase123!')
         with self.assertRaises(ValueError):
-            User.create(username='invalid@username', email='test@example.com', password='password')  # Invalid characters
+            User._validate_password('NoSpecialChar123')
 
-    def test_validate_email(self):
+    def test_email_validation(self):
         with self.assertRaises(ValueError):
-            User.create(username='validuser', email='invalidemail', password='password')
+            User._validate_email('invalidemail.com')
         with self.assertRaises(ValueError):
-            User.create(username='validuser', email='invalid@email', password='password')
-
-    def test_hash_password_exception(self):
+            User._validate_email('invalid@com')
         with self.assertRaises(ValueError):
-            User.create(username='validuser', email='valid@email.com', password=None)
+            User._validate_email('invalid@.com')
 
-    def test_check_password_no_hash(self):
-        user = User(username='testuser', email='test@example.com', password='password')
-        user.password_hash = None
+    def test_name_validation(self):
         with self.assertRaises(ValueError):
-            user.check_password('password')
+            User._validate_name('A', 'First name')
+        with self.assertRaises(ValueError):
+            User._validate_name('ThisNameIsWayTooLongToBeValidBecauseItExceedsFiftyCharacters', 'First name')
+        with self.assertRaises(ValueError):
+            User._validate_name('Invalid123', 'First name')
 
-    def test_validate_username_type_error(self):
-        with self.assertRaises(ValueError) as context:
-            self.user._validate_username(123)
-        self.assertEqual(str(context.exception), "Username must be a string")
-
-    def test_validate_email_type_error(self):
-        with self.assertRaises(ValueError) as context:
-            self.user._validate_email(123)
-        self.assertEqual(str(context.exception), "Email must be a string")
-
-    def test_validate_email_invalid_domain(self):
-        with self.assertRaises(ValueError) as context:
-            self.user._validate_email("test@invalid")
-        self.assertEqual(str(context.exception), "Invalid email format")
-
-    def test_validate_email_invalid_format(self):
-        with self.assertRaises(ValueError) as context:
-            self.user._validate_email("test@invalid.h")
-        self.assertEqual(str(context.exception), "Invalid email format")
-
-    def test_init(self):
-        user = User(username="testuser", email="test@example.com", password="password")
-        self.assertEqual(user.username, "testuser")
-        self.assertEqual(user.email, "test@example.com")
-        self.assertTrue(user.check_password("password"))
+    def test_phone_number_validation(self):
+        with self.assertRaises(ValueError):
+            User._validate_phone_number('12345')
+        with self.assertRaises(ValueError):
+            User._validate_phone_number('invalidphone')
 
     def test_hash_password(self):
-        hashed = self.user.hash_password("testpassword")
-        self.assertNotEqual(hashed, "testpassword")
-        self.assertTrue(check_password_hash(hashed, "testpassword"))
+        user = User(**self.valid_user_data)
+        self.assertTrue(check_password_hash(user.password_hash, self.valid_user_data['password']))
 
     def test_check_password(self):
-        self.user.password_hash = generate_password_hash("testpassword")
-        self.assertTrue(self.user.check_password("testpassword"))
-        self.assertFalse(self.user.check_password("wrongpassword"))
+        user = User(**self.valid_user_data)
+        self.assertTrue(user.check_password(self.valid_user_data['password']))
+        self.assertFalse(user.check_password('WrongPassword123!'))
 
-    def test_init_valid_data(self):
-        user = User(username="testuser", email="test@example.com", password="password", first_name="Test", last_name="User", phone_number="+1234567890")
-        self.assertEqual(user.username, "testuser")
-        self.assertEqual(user.email, "test@example.com")
-        self.assertTrue(user.check_password("password"))
-        self.assertEqual(user.first_name, "Test")
-        self.assertEqual(user.last_name, "User")
-        self.assertEqual(user.phone_number, "+1234567890")
+    def test_create_user(self):
+        user = User.create(**self.valid_user_data)
+        self.assertIsNotNone(user)
+        self.assertEqual(user.username, self.valid_user_data['username'])
 
-    def test_init_invalid_username(self):
+    def test_create_user_with_existing_username(self):
+        User.create(**self.valid_user_data)
         with self.assertRaises(ValueError):
-            User(username="a", email="test@example.com", password="password")
+            User.create(**self.valid_user_data)
 
-    def test_init_invalid_email(self):
+    def test_create_user_with_existing_email(self):
+        User.create(**self.valid_user_data)
+        new_user_data = self.valid_user_data.copy()
+        new_user_data['username'] = 'newusername'
         with self.assertRaises(ValueError):
-            User(username="testuser", email="invalidemail", password="password")
+            User.create(**new_user_data)
 
-    def test_init_invalid_phone_number(self):
+    def test_update_user(self):
+        user = User.create(**self.valid_user_data)
+        update_data = {'username': 'newusername', 'email': 'newemail@example.com'}
+        user.update(update_data)
+        self.assertEqual(user.username, 'newusername')
+        self.assertEqual(user.email, 'newemail@example.com')
+
+    def test_update_user_with_existing_username(self):
+        User.create(**self.valid_user_data)
+        user = User.create(username='newuser', email='newuser@example.com', password='NewPass123!', first_name='New', last_name='User')
         with self.assertRaises(ValueError):
-            User(username="testuser", email="test@example.com", password="password", phone_number="invalidphone")
+            user.update({'username': 'validuser'})
 
-    def test_init_missing_username(self):
-        with self.assertRaises(TypeError):
-            User(email="test@example.com", password="password")
+    def test_update_user_with_existing_email(self):
+        User.create(**self.valid_user_data)
+        user = User.create(username='newuser', email='newuser@example.com', password='NewPass123!', first_name='New', last_name='User')
+        with self.assertRaises(ValueError):
+            user.update({'email': 'validuser@example.com'})
 
-    def test_init_missing_email(self):
-        with self.assertRaises(TypeError):
-            User(username="testuser", password="password")
-
-    def test_init_missing_password(self):
-        with self.assertRaises(TypeError):
-            User(username="testuser", email="test@example.com")
-
-    def test_validate_phone_number(self):
-        valid_phone_numbers = [
-            "+1234567890",
-            "1234567890",
-            "+11234567890",
-            "11234567890",
-            "+33601020304"
-        ]
-        for phone_number in valid_phone_numbers:
-            self.assertEqual(self.user._validate_phone_number(phone_number), phone_number)
-
-        invalid_phone_numbers = [
-            "12345",
-            "abcdefghij",
-            "+1234567890123456",  # Trop long
-            "123456789",  # Trop court
-            "+1234567a890"  # Contient une lettre
-        ]
-        for phone_number in invalid_phone_numbers:
-            with self.assertRaises(ValueError):
-                self.user._validate_phone_number(phone_number)
-
+    def test_to_dict(self):
+        user = User.create(**self.valid_user_data)
+        user_dict = user.to_dict()
+        self.assertEqual(user_dict['username'], self.valid_user_data['username'])
+        self.assertEqual(user_dict['email'], self.valid_user_data['email'])
+        self.assertEqual(user_dict['first_name'], self.valid_user_data['first_name'])
+        self.assertEqual(user_dict['last_name'], self.valid_user_data['last_name'])
+        self.assertEqual(user_dict['phone_number'], self.valid_user_data['phone_number'])
+        self.assertNotIn('password_hash', user_dict)
 
 if __name__ == '__main__':
     unittest.main()

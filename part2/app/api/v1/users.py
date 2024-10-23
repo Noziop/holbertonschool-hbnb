@@ -1,5 +1,7 @@
 from flask_restx import Namespace, Resource, fields, abort
+from flask import request
 from app.services.facade import HBnBFacade
+from app.utils import *
 
 ns = Namespace('users', description='User operations')
 facade = HBnBFacade()
@@ -11,6 +13,8 @@ user_model = ns.model('User', {
     'password': fields.String(required=True, description='The user password', attribute='_password')
 })
 
+
+@magic_wand()
 @ns.route('/')
 class UserList(Resource):
     @ns.doc('list_users')
@@ -28,10 +32,19 @@ class UserList(Resource):
         except ValueError as e:
             ns.abort(400, message=str(e))
 
+
+
 @ns.route('/<string:user_id>')
 @ns.response(404, 'User not found')
 @ns.param('user_id', 'The user identifier')
 class User(Resource):
+    @ns.doc('options_user')
+    def options(self, user_id):
+        return '', 200, {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
+        }
     @ns.doc('get_user')
     @ns.marshal_with(user_model)
     def get(self, user_id):
@@ -45,6 +58,8 @@ class User(Resource):
 
     @ns.doc('update_user')
     @ns.expect(user_model)
+    @ns.response(200, 'User updated successfully')
+    @ns.response(404, 'User not found')
     @ns.marshal_with(user_model)
     def put(self, user_id):
         try:
