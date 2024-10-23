@@ -98,3 +98,8 @@ ReviewEntityValidation = {
     'text': 'Review',
     'rating': 'Review'
 }
+
+PlaceAmenityValidation = {
+    'place_id': str,
+    'amenity_id': str
+}

@@ -1,6 +1,6 @@
 """Test module for Place class."""
 
-import unittest
+import unittest, uuid
 from datetime import datetime
 from app.models.place import Place
 from app.models.user import User
@@ -12,14 +12,14 @@ class TestPlace(unittest.TestCase):
     """Test cases for Place class."""
 
     def setUp(self):
-        """Set up test cases."""
-        # Créer un user pour owner_id
+        # Create unique username (max 18 chars) and email
+        unique_id = str(uuid.uuid4())[:6]  # Plus court pour rester dans la limite !
         self.owner = User.create(
-            username="testuser",  # Ajout du username manquant
-            email="test@test.com",
+            username=f"test_{unique_id}",  # test_ + 6 chars = 11 chars total
+            email=f"test_{unique_id}@test.com",
             password="Password123!",
             first_name="Test",
-            last_name="User"
+            last_name="Owner"
         )
         
         # Données de test pour Place
