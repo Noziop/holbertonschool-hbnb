@@ -1,16 +1,31 @@
+"""Review Module: Because everyone's a critic, honey! 💅"""
+from typing import List, Optional
+from datetime import datetime, timezone
 from .basemodel import BaseModel
 from app.persistence.repository import InMemoryRepository
-# from datetime import datetime, timezone
 from app.utils import *
 
 
 class Review(BaseModel):
+    """
+    Review Model: Where we spill the tea about places! ☕
+
+    Because if you can't say something nice...
+    make sure it's at least entertaining! 💅
+    """
     repository = InMemoryRepository()
     validator = ReviewValidation
 
-
     @magic_wand(validate_input(validator))
-    def __init__(self, place_id, user_id, text, rating, **kwargs):
+    def __init__(
+        self,
+        place_id: str,
+        user_id: str,
+        text: str,
+        rating: int,
+        **kwargs
+    ) -> None:
+        """Initialize a new Review. Time to judge! 📝"""
         super().__init__(**kwargs)
         self.place_id = self._validate_id(place_id, "place_id")
         self.user_id = self._validate_id(user_id, "user_id")
@@ -19,93 +34,131 @@ class Review(BaseModel):
 
     @staticmethod
     @magic_wand()
-    def _validate_id(id_value, field_name):
+    def _validate_id(id_value: str, field_name: str) -> str:
+        """Validate IDs. No empty tea here! 🫖"""
+        if not isinstance(id_value, str):
+            raise ValueError(
+                f"{field_name} must be a string, darling! 💅"
+            )
         if not id_value.strip():
-            raise ValueError(f"{field_name} must be a non-empty string")
+            msg = (f"{field_name} can't be empty, "
+                   "we're not that mysterious! 🕵️‍♀️")
+            raise ValueError(msg)
         return id_value.strip()
 
     @staticmethod
     @magic_wand()
-    def _validate_text(text):
+    def _validate_text(text: str) -> str:
+        """Validate review text. Make it worth reading! 📚"""
+        if not isinstance(text, str):
+            msg = "Review must be a string, not interpretive dance! 💃"
+            raise ValueError(msg)
         if len(text.strip()) < 10:
-            raise ValueError("Review text must be a string with at least 10 characters")
+            msg = "Honey, if you can't write 10 "
+            "characters, just leave 10 emojis! 🙄"
+            raise ValueError(msg)
         return text.strip()
 
     @staticmethod
     @magic_wand()
-    def _validate_rating(rating):
+    def _validate_rating(rating: int) -> int:
+        """Validate rating. Choose your stars wisely! ⭐"""
+        try:
+            rating = int(rating)
+        except (TypeError, ValueError):
+            msg = "Rating must be a number, not your life story! 📖"
+            raise ValueError(msg)
+
         if not 1 <= rating <= 5:
-            raise ValueError("Rating must be an integer between 1 and 5")
+            raise ValueError(
+                "Ratings 1-5 only! This isn't your dating history! 💘"
+            )
         return rating
 
     @classmethod
     @magic_wand(
         validate_input(validator),
-        validate_entity(('Place', 'place_id'),('User', 'user_id'))
+        validate_entity(('Place', 'place_id'), ('User', 'user_id'))
     )
-    def create(cls, place_id, user_id, text, rating, **kwargs):
-        from .place import Place
-        from .user import User
+    def create(cls, place_id: str, user_id: str, text: str,
+               rating: int, **kwargs) -> 'Review':
+        """Create a new review. Time to spill the tea! ☕"""
         review = cls(place_id, user_id, text, rating, **kwargs)
         cls.repository.add(review)
-        loggers(f"Review created: {user_id} - {review.id} - {review.text}")
         return review
 
     @classmethod
     @magic_wand(
-        validate_input({'place_id': str}), validate_entity('Place', 'place_id')
+        validate_input({'place_id': str}), 
+        validate_entity('Place', 'place_id')
     )
-    def get_by_place(cls, place_id):
-        from .place import Place
-        return [review for review in cls.get_all() if review.place_id == place_id]
+    def get_by_place(cls, place_id: str) -> List['Review']:
+        """Get reviews by place. Let's see what the people say! 👀"""
+        return [review for review in cls.get_all() 
+                if review.place_id == place_id]
 
     @classmethod
-    @magic_wand(validate_input({'user_id': str}), validate_entity('Place', 'user_id'))
-    def get_by_user(cls, user_id):
-        from .place import Place
-        return [review for review in cls.get_all() if review.user_id == user_id]
-    
+    @magic_wand(
+        validate_input({'user_id': str}), 
+        validate_entity('User', 'user_id')
+    )
+    def get_by_user(cls, user_id: str) -> List['Review']:
+        """Get reviews by user. Someone's been busy! 💅"""
+        return [review for review in cls.get_all() 
+                if review.user_id == user_id]
+
     @classmethod
-    @magic_wand(validate_input({'place_id': str}), validate_entity('Place', 'place_id'))
-    def get_average_rating(cls, place_id):
-        from .place import Place
+    @magic_wand(
+        validate_input({'place_id': str}), 
+        validate_entity('Place', 'place_id')
+    )
+    def get_average_rating(cls, place_id: str) -> float:
+        """Get average rating. Math but make it fashion! ✨"""
         reviews = cls.get_by_place(place_id)
         if not reviews:
-            return 0
-        return sum(review.rating for review in reviews) / len(reviews)
+            return 0.0
+        ratings = [review.rating for review in reviews]  # On extrait d'abord les ratings
+        return sum(ratings) / len(ratings)
 
     @classmethod
     @magic_wand(validate_input({'limit': int}))
-    def get_recent_reviews(cls, limit=5):
+    def get_recent_reviews(cls, limit: int = 5) -> List['Review']:
+        """Get recent reviews. Hot off the press! 🗞️"""
         all_reviews = cls.get_all()
-        return sorted(all_reviews, key=lambda x: x.created_at, reverse=True)[:limit]
-
+        return sorted(
+            all_reviews,
+            key=lambda x: x.created_at,
+            reverse=True
+        )[:limit]
 
     @magic_wand(
         validate_input({'data': dict}),
-        validate_entity('Place', 'place_id'),
-        validate_entity('User', 'user_id'),
-        update_timestamp
+        validate_entity(('Place', 'place_id'), ('User', 'user_id'))
     )
-    def update(self, data):
-        from .place import Place
-        from .user import User
+    def update(self, data: dict) -> 'Review':
+        """Update review. Changed your mind? We got you! 💅"""
         for key, value in data.items():
             if key in ['id', 'created_at', 'updated_at']:
-                continue  # Skip these fields
+                continue
             elif key == 'text':
                 self.text = self._validate_text(value)
             elif key == 'rating':
                 self.rating = self._validate_rating(value)
             elif key in ['place_id', 'user_id']:
-                setattr(self, key, value)  # We've already validated these with validate_entity
+                setattr(self, key, value)
             else:
-                raise ValueError(f"Invalid attribute: {key}")
-        super().update(data)
+                raise ValueError(
+                    f"Invalid attribute: {key}. Who are you trying to fool? 🤨"
+                )
+
+        self.updated_at = datetime.now(timezone.utc)
+        self.repository._storage[self.id] = self
+        return self
 
     @magic_wand()
     @to_dict(exclude=[])
-    def to_dict(self):
+    def to_dict(self) -> dict:
+        """Convert to dict. Serving looks in JSON format! 💃"""
         review_dict = super().to_dict()
         review_dict.update({
             'place_id': self.place_id,
