@@ -1,4 +1,4 @@
-"""Base model module providing core functionality for all models."""
+"""Base model module: The dark foundation of our haunted kingdom! 👻"""
 
 import uuid
 import datetime as dt
@@ -6,49 +6,38 @@ from typing import Optional, Any, TypeVar, List, Union
 from app.persistence.repository import InMemoryRepository
 from app.utils import *
 
-
-# Create a generic type for any class inheriting from BaseModel
+# Create a generic type for our supernatural entities
 T = TypeVar('T', bound='BaseModel')
-
 
 class BaseModel:
     """
-    BaseModel class providing basic CRUD operations and validation.
-
-    Attributes:
-        repository (InMemoryRepository):
-        Repository instance managing data storage.
-
-    Methods:
-        __init__(**kwargs): Initialize new instance with given attributes.
-        create(cls, **kwargs): Create new instance and add to repository.
-        get_by_id(cls, id): Retrieve instance by ID.
-        get_by_attr(cls, attr_name, value): Retrieve instance by attribute.
-        get_all(cls): Retrieve all instances.
-        update(self, data): Update instance with provided data.
-        delete(self): Delete instance from repository.
-        save(self): Save current state to repository.
-        to_dict(self): Convert instance to dictionary.
+    BaseModel: The supernatural ancestor of all our haunted models! 🏰
+    
+    Like a ghost whisperer for data, it provides the dark arts of:
+    - CRUD operations (Create, Raise from dead, Update curses, Delete souls)
+    - Validation (Even spirits need standards!)
+    - Storage management (Our ethereal database)
+    
+    Think of it as the Haunted Mansion's foundation - spooky but reliable! 🏚️
     """
-
     repository = InMemoryRepository()
 
     @magic_wand(validate_input(BaseModelValidation))
     def __init__(self, **kwargs):
         """
-        Initialize a new BaseModel instance.
-
+        Summon a new instance from the void! ✨
+        
         Args:
-            **kwargs: Arbitrary keyword arguments for object attributes.
-
+            **kwargs: The mystical ingredients for our creation ritual 🔮
+        
         Note:
-            Creates new id, created_at and updated_at timestamps.
-            Converts ISO format strings to datetime for timestamps.
+            Creates a unique soul (id) and timestamps its birth in our realm!
         """
-        self.id = str(uuid.uuid4())
-        self.created_at = dt.datetime.now(dt.timezone.utc)
-        self.updated_at = dt.datetime.now(dt.timezone.utc)
+        self.id = str(uuid.uuid4())  # Every spirit needs a unique identifier!
+        self.created_at = dt.datetime.now(dt.timezone.utc)  # Time of summoning
+        self.updated_at = dt.datetime.now(dt.timezone.utc)  # Last haunting
 
+        # Bind the ethereal attributes
         for key, value in kwargs.items():
             if key in ['created_at', 'updated_at']:
                 setattr(self, key, dt.datetime.fromisoformat(value))
@@ -59,63 +48,45 @@ class BaseModel:
     @magic_wand(validate_input({'id': str}))
     def get_by_id(cls: type[T], id: str) -> T:
         """
-        Retrieve an object by its unique identifier.
-
+        Find a spirit by their ethereal ID! 👻
+        
         Args:
-            id (str): The unique identifier of the object.
-
-        Returns:
-            T: The instance matching the ID.
-
+            id: The supernatural identifier
+        
         Raises:
-            ValueError: If no object is found with this ID.
+            ValueError: When the spirit has vanished into thin air! 👻
         """
         obj = cls.repository.get(id)
         if obj is None:
-            raise ValueError(f"No {cls.__name__} found with id: {id}")
+            raise ValueError(f"No {cls.__name__} found! The spirit has moved on! 👻")
         return obj
 
     @classmethod
     @magic_wand()
-    def get_by_attr(
-        cls: type[T],
-        multiple: bool = False,
-        **kwargs: Any
-    ) -> Union[Optional[T], List[T]]:
+    def get_by_attr(cls: type[T], multiple: bool = False, **kwargs: Any) -> Union[Optional[T], List[T]]:
         """
-        Summon entities by their attributes! 👻
+        Search the spirit realm by attributes! 🔮
         
         Args:
-            multiple: Want one ghost or a whole haunted house? 🏚️
-            **kwargs: Your supernatural search criteria! 🔮
+            multiple: Summon one spirit or the whole haunted house? 
+            **kwargs: The supernatural search criteria
         """
         return cls.repository.get_by_attribute(multiple=multiple, **kwargs)
 
     @classmethod
     @magic_wand()
     def get_all(cls: type[T]) -> List[T]:
-        """
-        Retrieve all objects of this type.
-
-        Returns:
-            List[T]: List of all instances.
-
-        Note:
-            Returns empty list if no objects exist.
-        """
+        """Summon ALL the spirits! A supernatural roll call! 👻"""
         return cls.repository.get_all()
 
     @classmethod
     @magic_wand(validate_input({'**kwargs': dict}))
     def create(cls: type[T], **kwargs) -> T:
         """
-        Create and store a new instance.
-
+        Bring a new entity into our haunted realm! 🌙
+        
         Args:
-            **kwargs: Attributes to initialize the instance.
-
-        Returns:
-            T: The newly created instance.
+            **kwargs: The dark ingredients for our creation
         """
         instance = cls(**kwargs)
         cls.repository.add(instance)
@@ -124,77 +95,50 @@ class BaseModel:
     @magic_wand(validate_input({'data': dict}))
     def update(self, data: dict) -> T:
         """
-        Update the instance with new data.
-
-        Args:
-            data (dict): Dictionary of attributes to update.
-
-        Returns:
-            T: The updated instance.
-
+        Update a spirit's attributes! Like a supernatural makeover! ✨
+        
         Raises:
-            ValueError: If updating protected attributes or invalid attribute.
+            ValueError: When the dark magic fails! 
         """
         for key, value in data.items():
             if key in ['id', 'created_at']:
-                raise ValueError(f"Cannot update {key} attribute")
+                raise ValueError(f"Cannot alter the {key}! Some curses are permanent! 🔮")
             elif hasattr(self, key):
                 setattr(self, key, value)
             else:
-                raise ValueError(f"Invalid attribute: {key}")
+                raise ValueError(f"Invalid attribute: {key}! What kind of dark magic is this? 🧙‍♀️")
         self.save()
         return self
 
     @magic_wand(validate_entity('BaseModel', 'id'))
     def delete(self) -> bool:
-        """
-        Delete the instance from storage.
-
-        Returns:
-            bool: True if deletion was successful.
-
-        Raises:
-            ValueError: If instance not found in storage.
-        """
+        """Banish this entity back to the void! ⚰️"""
         if not self.repository.get(self.id):
-            raise ValueError(
-                f"No {self.__class__.__name__} found with id: {self.id}"
-            )
+            raise ValueError(f"Cannot banish what's already gone! 👻")
         self.repository.delete(self.id)
         return True
 
     @magic_wand(validate_input({'data': dict}), update_timestamp)
     def save(self) -> T:
         """
-        Save the instance to storage.
-
-        Returns:
-            T: The saved instance.
-
+        Preserve this spirit in our ethereal storage! 📜
+        
         Raises:
-            ValueError: If save operation fails.
+            ValueError: When the preservation spell fails! 
         """
         try:
             data = self.to_dict()
-            data.pop('id', None)
-            data.pop('created_at', None)
+            data.pop('id', None)  # Some attributes are sacred
+            data.pop('created_at', None)  # Birth time is immutable
             self.repository.update(self.id, data)
             return self
         except Exception as e:
-            raise ValueError(f"Failed to save: {str(e)}")
+            raise ValueError(f"The preservation spell failed: {str(e)} 🔮")
 
     @magic_wand()
     @to_dict(exclude=[])
     def to_dict(self) -> dict:
-        """
-        Convert instance to dictionary.
-
-        Returns:
-            dict: Dictionary containing instance attributes.
-
-        Note:
-            Converts datetime objects to ISO format strings.
-        """
+        """Transform this supernatural entity into mortal-readable format! 📚"""
         return {
             'id': self.id,
             'created_at': (

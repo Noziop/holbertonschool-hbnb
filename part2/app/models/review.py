@@ -1,4 +1,4 @@
-"""Review Module: Because everyone's a critic, honey! 💅"""
+"""Review Module: Where we summon the spirits of criticism! 👻"""
 from typing import List, Optional
 from datetime import datetime, timezone
 from .basemodel import BaseModel
@@ -8,10 +8,8 @@ from app.utils import *
 
 class Review(BaseModel):
     """
-    Review Model: Where we spill the tea about places! ☕
-
-    Because if you can't say something nice...
-    make sure it's at least entertaining! 💅
+    Review Model: The haunted journal of our visitors! 📓
+    Where mortals share their supernatural experiences! 
     """
     repository = InMemoryRepository()
     validator = ReviewValidation
@@ -25,7 +23,7 @@ class Review(BaseModel):
         rating: int,
         **kwargs
     ) -> None:
-        """Initialize a new Review. Time to judge! 📝"""
+        """Initialize a new Review. Time to haunt this place! 👻"""
         super().__init__(**kwargs)
         self.place_id = self._validate_id(place_id, "place_id")
         self.user_id = self._validate_id(user_id, "user_id")
@@ -49,7 +47,11 @@ class Review(BaseModel):
     @staticmethod
     @magic_wand()
     def _validate_text(text: str) -> str:
-        """Validate review text. Make it worth reading! 📚"""
+        """
+        Validate review text. Like reading from a cursed diary! 📖
+        If you can't write 10 characters, 
+        just summon 10 ghost emojis! 👻👻👻
+        """
         if not isinstance(text, str):
             msg = "Review must be a string, not interpretive dance! 💃"
             raise ValueError(msg)
@@ -62,7 +64,11 @@ class Review(BaseModel):
     @staticmethod
     @magic_wand()
     def _validate_rating(rating: int) -> int:
-        """Validate rating. Choose your stars wisely! ⭐"""
+        """
+        Validate rating. Rate this haunting experience! 🏚️
+        1 ghost = Meh
+        5 ghosts = TERRIFYINGLY AMAZING! 
+        """
         try:
             rating = int(rating)
         except (TypeError, ValueError):
@@ -92,32 +98,8 @@ class Review(BaseModel):
         validate_input({'place_id': str}), 
         validate_entity('Place', 'place_id')
     )
-    def get_by_place(cls, place_id: str) -> List['Review']:
-        """
-        Get reviews by place. As dry as the desert! 🏜️
-        """
-        return cls.repository.get_by_attribute('place_id', place_id, multiple=True)
-
-    @classmethod
-    @magic_wand(
-        validate_input({'user_id': str}), 
-        validate_entity('User', 'user_id')
-    )
-    def get_by_user(cls, user_id: str) -> List['Review']:
-        """
-        Get reviews by user. In the desert, we're all critics! 🌵
-        """
-        return cls.repository.get_by_attribute('user_id', user_id, multiple=True)
-
-    @classmethod
-    @magic_wand(
-        validate_input({'place_id': str}), 
-        validate_entity('Place', 'place_id')
-    )
     def get_average_rating(cls, place_id: str) -> float:
-        """
-        Get average rating. Math in the desert! ✨
-        """
+        """Calculate the supernatural satisfaction level! 👻"""
         reviews = cls.repository.get_by_attribute('place_id', place_id, multiple=True)
         if not reviews:
             return 0.0
@@ -126,7 +108,7 @@ class Review(BaseModel):
     @classmethod
     @magic_wand(validate_input({'limit': int}))
     def get_recent_reviews(cls, limit: int = 5) -> List['Review']:
-        """Get recent reviews. Fresh tracks in the sand! 🐫"""
+        """Get the freshest haunting stories! 🦇"""
         all_reviews = cls.get_all()
         return sorted(
             all_reviews, 

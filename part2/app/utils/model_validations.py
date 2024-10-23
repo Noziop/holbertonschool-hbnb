@@ -14,7 +14,11 @@ UserValidation = {
     'password': str,
     'first_name': str,
     'last_name': str,
-    'phone_number': (str, type(None))
+    'phone_number': (str, type(None)),  # Optionnel
+    'address': str,                     # Optionnel
+    'postal_code': str,                 # Optionnel
+    'city': str,                        # Optionnel
+    'country': str                      # Optionnel
 }
 
 PlaceValidation = {
@@ -37,7 +41,8 @@ PlaceValidation = {
 
 AmenityValidation = {
     'amenity_id': str,
-    'name': str
+    'name': str,
+    'description': str  # Optionnel mais validé si présent
 }
 
 ReviewValidation = {
@@ -67,7 +72,11 @@ UserEntityValidation = {
     'password': 'User',
     'first_name': 'User',
     'last_name': 'User',
-    'phone_number': 'User',
+    'phone_number': 'User', # Optionnel
+    'address': 'User',      # Optionnel
+    'postal_code': 'User',  # Optionnel
+    'city': 'User',         # Optionnel
+    'country': 'User'       # Optionnel
 }
 PlaceEntityValidation = {
     'place_id': 'Place',
@@ -90,6 +99,7 @@ PlaceEntityValidation = {
 AmenityEntityValidation = {
     'amenity_id': 'Amenity',
     'name': 'Amenity',
+    'description': 'Amenity'  # Optionnel mais validé si présent
 }
 ReviewEntityValidation = {
     'review_id': 'Review',

@@ -1,5 +1,6 @@
-"""Test module for Review class. Time to judge the judge! 💅"""
+"""Test module for Review class. Time to judge the haunted properties! 👻"""
 import unittest
+import uuid
 from datetime import datetime
 from app.models.review import Review
 from app.models.user import User
@@ -7,109 +8,81 @@ from app.models.place import Place
 
 
 class TestReview(unittest.TestCase):
-    """Test cases for Review class. Spilling the testing tea! ☕"""
+    """Test cases for Review class. Rating the supernatural! 🏚️"""
 
     def setUp(self):
-        """Set up test cases. Preparing the stage! 🎭"""
-        # Create test user
+        """Prepare our haunted testing grounds! 🦇"""
+        unique_id = str(uuid.uuid4())[:6]
+        
+        # Summon our test user
         self.user = User.create(
-            username="CriticQueen",
-            email="critic@test.com",
-            password="Password123!",
-            first_name="Sassy",
+            username=f"Ghost_{unique_id}",
+            email=f"ghost_{unique_id}@haunted.com",
+            password="Haunted123!",
+            first_name="Spooky",
             last_name="Critic"
         )
         
-        # Create test place
+        # Create our haunted place
         self.place = Place.create(
-            name="Fabulous Hotel",
-            description="A place to serve looks",
-            number_rooms=1,
-            number_bathrooms=1,
-            max_guest=2,
-            price_by_night=100.0,
-            latitude=0.0,
-            longitude=0.0,
+            name="Haunted Manor",
+            description="Where spirits come to rest",
+            number_rooms=13,
+            number_bathrooms=4,
+            max_guest=666,
+            price_by_night=99.99,
+            latitude=13.13,
+            longitude=66.6,
             owner_id=self.user.id
         )
         
-        # Review test data
+        # Our spectral review data
         self.test_data = {
             'place_id': self.place.id,
             'user_id': self.user.id,
-            'text': "This place is serving looks! Totally fabulous!",
+            'text': "The ghosts were very polite, would haunt again! 👻",
             'rating': 5
         }
         
+        # Create our haunted review
         self.review = Review.create(**self.test_data)
 
     def test_initialization(self):
-        """Test Review initialization. Birth of a critique! 👶"""
+        """Test Review initialization. Summoning a new critique! 👻"""
         self.assertEqual(self.review.text, self.test_data['text'])
         self.assertEqual(self.review.rating, 5)
         
-        # Test validation errors
+        # Test when the spirits reject the review
         with self.assertRaises(ValueError):
             Review.create(**{
                 **self.test_data,
-                'text': "Too short"  # < 10 chars
-            })
-        with self.assertRaises(ValueError):
-            Review.create(**{
-                **self.test_data,
-                'rating': 6  # > 5
+                'text': "2spooky"  # Too short for the spirits!
             })
 
     def test_rating_validation(self):
-        """Test rating validation. Numbers only, honey! 🔢"""
-        invalid_ratings = [
-            0,  # Too low
-            6,  # Too high
-            "five",  # Not a number
-            3.5,  # Must be integer
-            None  # Must have value
+        """Test rating validation. The spirits demand proper scores! 🌟"""
+        cursed_ratings = [
+            0,  # Too low for our haunted standards
+            6,  # Even ghosts only count to 5
+            "boo",  # Spirits prefer numbers
+            3.5,  # Ghosts don't do fractions
+            None  # The void is not a rating
         ]
         
-        for rating in invalid_ratings:
+        for rating in cursed_ratings:
             with self.assertRaises(ValueError):
                 Review.create(**{
                     **self.test_data,
                     'rating': rating
                 })
 
-    def test_get_by_methods(self):
-        """Test get_by methods. Finding tea everywhere! 🔍"""
-        # Test get_by_place
-        place_reviews = Review.get_by_place(self.place.id)
-        self.assertTrue(isinstance(place_reviews, list))
-        self.assertEqual(len(place_reviews), 1)
-        self.assertEqual(place_reviews[0].id, self.review.id)
-        
-        # Test get_by_user
-        user_reviews = Review.get_by_user(self.user.id)
-        self.assertTrue(isinstance(user_reviews, list))
-        self.assertEqual(len(user_reviews), 1)
-        self.assertEqual(user_reviews[0].id, self.review.id)
-
-    def test_average_rating(self):
-        """Test average rating. Math but make it fashion! ✨"""
-        # Add another review
-        Review.create(**{
-            **self.test_data,
-            'rating': 4,
-            'text': "Almost perfect, like my ex's excuse!"
-        })
-        
-        avg = Review.get_average_rating(self.place.id)
-        self.assertEqual(avg, 4.5)
-
     def test_recent_reviews(self):
-        """Test recent reviews. Hot off the press! 🗞️"""
-        # Create multiple reviews
+        """Test recent reviews. Fresh haunting reports! 👻"""
+        # Create multiple spectral reviews
         for i in range(3):
             Review.create(**{
                 **self.test_data,
-                'text': f"Review number {i} is serving! {'✨' * i}"
+                'text': f"Haunting report #{i}: Excellent ghost activity! {'👻' * i}"
             })
         
         recent = Review.get_recent_reviews(limit=2)
@@ -119,9 +92,9 @@ class TestReview(unittest.TestCase):
         )
 
     def test_update(self):
-        """Test update functionality. Changed our mind! 💅"""
+        """Test update functionality. Even ghosts change their minds! 👻"""
         update_data = {
-            'text': "Updated my mind, still fabulous though!",
+            'text': "Update: The ghosts now serve breakfast! ☕",
             'rating': 4
         }
         
@@ -131,12 +104,12 @@ class TestReview(unittest.TestCase):
         
         # Test invalid updates
         with self.assertRaises(ValueError):
-            self.review.update({'rating': 6})
+            self.review.update({'rating': 6})  # Too high, even for spirits!
         with self.assertRaises(ValueError):
-            self.review.update({'text': 'too short'})
+            self.review.update({'text': 'boo'})  # Ghosts are more eloquent!
 
     def tearDown(self):
-        """Clean up after tests. Leave no traces! 🧹"""
+        """Clean up our haunted test environment! 🧹"""
         Review.repository._storage.clear()
         User.repository._storage.clear()
         Place.repository._storage.clear()

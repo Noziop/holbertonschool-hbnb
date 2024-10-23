@@ -1,4 +1,4 @@
-"""Module for Amenity class."""
+"""Module for Amenity class - Where features come back to haunt you! 👻"""
 from typing import List, Optional
 from datetime import datetime, timezone
 import re
@@ -9,54 +9,55 @@ from app.utils import *
 
 class Amenity(BaseModel):
     """
-    Amenity Model representing facilities or features available in places.
-
-    Attributes:
-        repository (InMemoryRepository):
-            Repository for storing Amenity instances
-        name (str): Name of the amenity
+    Amenity Model: The supernatural features that haunt our places! 🧟‍♀️
+    Like ghosts, they appear when you least expect them...
     """
     repository = InMemoryRepository()
 
     @magic_wand(validate_input(AmenityValidation))
-    def __init__(self, name: str, **kwargs):
+    def __init__(self, name: str, description: str = "", **kwargs):
         """
-        Initialize a new Amenity.
-
+        Summon a new Amenity from the depths! 🪦
+        
         Args:
-            name (str): Name of the amenity
-            **kwargs: Additional attributes
+            name: The cursed name of this feature
+            **kwargs: Dark magic attributes
         """
         super().__init__(**kwargs)
         self.name = self._validate_name(name)
+        self.description = self._validate_description(description)
 
     @staticmethod
     @magic_wand()
     def _validate_name(name: str) -> str:
         """
-        Validate amenity name.
-
-        Args:
-            name (str): Name to validate
-
-        Returns:
-            str: Validated name
-
+        Validate the dark name of this amenity! 🦇
+        
         Raises:
-            ValueError: If name is invalid
+            ValueError: When the spirits reject the name!
         """
         if not name.strip():
-            raise ValueError("Name must be a non-empty string")
+            raise ValueError("Empty names anger the spirits! 👻")
         if not re.match(r'^[\w\s-]+$', name):
-            msg = "Name can only contain letters, numbers, spaces, and hyphens"
+            msg = "The spirits only accept letters, numbers, spaces, and cursed hyphens! 💀"
             raise ValueError(msg)
         return name.strip()
+    
+    @staticmethod
+    @magic_wand()
+    def _validate_description(description: str) -> str:
+        """Validate the ghostly description! 👻"""
+        if not isinstance(description, str):
+            raise ValueError("Description must be a string, like a ghost story! 📖")
+        return description.strip() if description else None
 
-    # Dans Amenity
     @classmethod
     @magic_wand(validate_input(AmenityValidation))
     def create(cls, **kwargs) -> 'Amenity':
         """Create new amenity. Summoning a new feature! 👻"""
+        if 'name' not in kwargs:
+            raise ValueError("A ghost amenity needs a name! 👻")
+            
         if cls.get_by_attr(name=kwargs['name']):
             raise ValueError(
                 f"Amenity name '{kwargs['name']}' already exists! The spirits are confused! 👻"
@@ -66,22 +67,16 @@ class Amenity(BaseModel):
     @magic_wand(validate_input({'data': dict}))
     def update(self, data: dict) -> 'Amenity':
         """
-        Update Amenity instance.
-
-        Args:
-            data (dict): Updated attributes
-
-        Returns:
-            Amenity: Updated instance
-
+        Update this cursed feature! 🪦
+        
         Raises:
-            ValueError: If update fails or name already exists
+            ValueError: When the dark magic fails!
         """
         if 'name' in data:
-            existing = self.get_by_attr('name', data['name'])
+            existing = self.get_by_attr(name=data['name'])
             if existing and existing.id != self.id:
                 raise ValueError(
-                    f"Amenity with name '{data['name']}' already exists"
+                    f"The name '{data['name']}' is already haunting another amenity! 👻"
                 )
             self.name = self._validate_name(data['name'])
 
@@ -92,15 +87,7 @@ class Amenity(BaseModel):
     @classmethod
     @magic_wand()
     def search(cls, **criteria) -> List['Amenity']:
-        """
-        Search amenities based on criteria.
-
-        Args:
-            **criteria: Search criteria
-
-        Returns:
-            List[Amenity]: Matching amenities
-        """
+        """Search through the cursed features! Like a supernatural detective! 🔍"""
         if not criteria:
             return cls.get_all()
 
@@ -115,25 +102,15 @@ class Amenity(BaseModel):
 
     @magic_wand()
     def get_places(self) -> List['Place']:
-        """
-        Get all places with this amenity.
-
-        Returns:
-            List[Place]: Places having this amenity
-        """
+        """Find all places haunted by this feature! 🏚️"""
         from .placeamenity import PlaceAmenity
         from .place import Place
-        place_amenities = PlaceAmenity.get_by_amenity(self.id)
+        place_amenities = PlaceAmenity.get_by_attr(multiple=True, amenity_id=self.id)
         return [Place.get_by_id(pa.place_id) for pa in place_amenities]
 
     @magic_wand()
     @to_dict(exclude=[])
     def to_dict(self) -> dict:
-        """
-        Convert Amenity to dictionary.
-
-        Returns:
-            dict: Amenity attributes
-        """
+        """Transform this cursed feature into mortal-readable format! 📜"""
         base_dict = super().to_dict()
-        return {**base_dict, 'name': self.name}
+        return {**base_dict, 'name': self.name, 'description': self.description}

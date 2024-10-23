@@ -1,4 +1,4 @@
-"""PlaceAmenity Module: The matchmaker of our app! 💘"""
+"""PlaceAmenity Module: Where Places and Amenities come back from the dead! 🧟‍♀️"""
 from typing import List, Optional
 from datetime import datetime, timezone
 from .basemodel import BaseModel
@@ -7,11 +7,15 @@ from app.utils import *
 
 
 class PlaceAmenity(BaseModel):
-    """PlaceAmenity: Future DB-ready, currently serving looks! 💅"""
+    """
+    PlaceAmenity: The haunted matchmaker of our cursed app! 👻
+    Where Places and Amenities have their supernatural rendezvous!
+    """
     repository = InMemoryRepository()
 
     @magic_wand(validate_input(PlaceAmenityValidation))
     def __init__(self, place_id: str, amenity_id: str, **kwargs) -> None:
+        """Summon a new cursed relationship! 🪦"""
         super().__init__(**kwargs)
         self.place_id = self._validate_id(place_id, "place_id")
         self.amenity_id = self._validate_id(amenity_id, "amenity_id")
@@ -19,10 +23,11 @@ class PlaceAmenity(BaseModel):
     @staticmethod
     @magic_wand()
     def _validate_id(id_value: str, field_name: str) -> str:
+        """Validate IDs like a supernatural bouncer! 👻"""
         if not isinstance(id_value, str):
-            raise ValueError(f"{field_name} must be a string! 💅")
+            raise ValueError(f"{field_name} must be a string, mortal! 🧟‍♀️")
         if not id_value.strip():
-            raise ValueError(f"{field_name} cannot be empty!")
+            raise ValueError(f"Empty {field_name}? The spirits are displeased! 👻")
         return id_value.strip()
 
     @classmethod
@@ -31,6 +36,7 @@ class PlaceAmenity(BaseModel):
         validate_entity(('Place', 'place_id'), ('Amenity', 'amenity_id'))
     )
     def create(cls, place_id: str, amenity_id: str, **kwargs) -> 'PlaceAmenity':
+        """Create a new cursed bond! The spirits demand it! 🪦"""
         pa = cls(place_id, amenity_id, **kwargs)
         cls.repository.add(pa)
         return pa
@@ -41,7 +47,8 @@ class PlaceAmenity(BaseModel):
         validate_entity('Place', 'place_id')
     )
     def get_by_place(cls, place_id: str) -> List['PlaceAmenity']:
-        return cls.repository.get_by_attribute('place_id', place_id, multiple=True)
+        """Find all amenities haunting this place! 👻"""
+        return cls.get_by_attr(multiple=True, place_id=place_id)
 
     @classmethod
     @magic_wand(
@@ -49,17 +56,19 @@ class PlaceAmenity(BaseModel):
         validate_entity('Amenity', 'amenity_id')
     )
     def get_by_amenity(cls, amenity_id: str) -> List['PlaceAmenity']:
-        return cls.repository.get_by_attribute('amenity_id', amenity_id, multiple=True)
+        """Find all places cursed by this amenity! 🧟‍♀️"""
+        return cls.get_by_attr(multiple=True, amenity_id=amenity_id)
 
     @magic_wand(validate_input({'data': dict}))
     def update(self, data: dict) -> 'PlaceAmenity':
+        """Update the curse! The spirits are restless! 🦇"""
         for key, value in data.items():
             if key in ['id', 'created_at', 'updated_at']:
                 continue
             elif key in ['place_id', 'amenity_id']:
                 setattr(self, key, self._validate_id(value, key))
             else:
-                raise ValueError(f"Invalid attribute: {key}")
+                raise ValueError(f"Invalid attribute: {key}. The spirits reject it! 👻")
         
         self.updated_at = datetime.now(timezone.utc)
         return self
@@ -71,21 +80,22 @@ class PlaceAmenity(BaseModel):
         place_id: str, 
         amenity_id: str
     ) -> bool:
-        matches = cls.repository.get_by_attribute(
-            'place_id', 
-            place_id, 
-            multiple=True
+        """Break the supernatural bond! Time for an exorcism! 🕯️"""
+        cursed_bonds = cls.get_by_attr(
+            multiple=True,
+            place_id=place_id,
+            amenity_id=amenity_id
         )
-        if matches:
-            matches = [m for m in matches if m.amenity_id == amenity_id]
-            for m in matches:
-                m.delete()
+        if cursed_bonds:
+            for bond in cursed_bonds:
+                bond.delete()
             return True
         return False
 
     @magic_wand()
     @to_dict(exclude=[])
     def to_dict(self) -> dict:
+        """Transform this cursed bond into mortal-readable format! 📜"""
         return {
             **super().to_dict(),
             'place_id': self.place_id,
