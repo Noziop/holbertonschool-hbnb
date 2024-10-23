@@ -1,4 +1,8 @@
 from abc import ABC, abstractmethod
+from typing import Any, Union, List, TypeVar
+
+
+T = TypeVar('T', bound='BaseModel')
 
 class Repository(ABC):
     @abstractmethod
@@ -22,7 +26,26 @@ class Repository(ABC):
         pass
 
     @abstractmethod
-    def get_by_attribute(self, attr_name, attr_value):
+    def get_by_attribute(
+        self, 
+        attr: str, 
+        value: Any, 
+        multiple: bool = False
+    ) -> Union[Any, List[Any]]:
+        """
+        Get objects by attribute. Abstract but make it fashion! 💅
+        
+        Args:
+            attr: The attribute to search by (like a desperate housewife during the sales!)
+            value: The value to match (standards are high, honey!)
+            multiple: If True, returns all matches (like your dating history!)
+
+        WHY: 
+            Because repeating yourself is like wearing the same outfit twice:
+            YOU DON'T! 💅
+
+        WATCH ME CODE, DARLING! 💋
+        """
         pass
 
 
@@ -52,5 +75,32 @@ class InMemoryRepository(Repository):
         if obj_id in self._storage:
             del self._storage[obj_id]
 
-    def get_by_attribute(self, attr_name, attr_value, **kwargs):
-        return next((obj for obj in self._storage.values() if getattr(obj, attr_name) == attr_value), None)
+    def get_by_attribute(
+        self, 
+        attr: str, 
+        value: Any, 
+        multiple: bool = False
+    ) -> Union[Any, List[Any]]:
+        """
+        Get objects by attribute. Serving looks from storage! 💅
+        
+        Args:
+            attr: The attribute to search by (like a desperate housewife during the sales!)
+            value: The value to match (standards are high, honey!)
+            multiple: If True, returns all matches (like your dating history!)
+
+        WHY: 
+            Because repeating yourself is like wearing the same outfit twice:
+            YOU DON'T! 💅
+
+        WATCH ME CODE, DARLING! 💋
+        """
+        results = [
+            obj for obj in self._storage.values() 
+            if getattr(obj, attr, None) == value
+        ]
+        
+        if not results:
+            return [] if multiple else None
+            
+        return results if multiple else results[0]

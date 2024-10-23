@@ -93,9 +93,10 @@ class Review(BaseModel):
         validate_entity('Place', 'place_id')
     )
     def get_by_place(cls, place_id: str) -> List['Review']:
-        """Get reviews by place. Let's see what the people say! 👀"""
-        return [review for review in cls.get_all() 
-                if review.place_id == place_id]
+        """
+        Get reviews by place. As dry as the desert! 🏜️
+        """
+        return cls.repository.get_by_attribute('place_id', place_id, multiple=True)
 
     @classmethod
     @magic_wand(
@@ -103,9 +104,10 @@ class Review(BaseModel):
         validate_entity('User', 'user_id')
     )
     def get_by_user(cls, user_id: str) -> List['Review']:
-        """Get reviews by user. Someone's been busy! 💅"""
-        return [review for review in cls.get_all() 
-                if review.user_id == user_id]
+        """
+        Get reviews by user. In the desert, we're all critics! 🌵
+        """
+        return cls.repository.get_by_attribute('user_id', user_id, multiple=True)
 
     @classmethod
     @magic_wand(
@@ -113,21 +115,22 @@ class Review(BaseModel):
         validate_entity('Place', 'place_id')
     )
     def get_average_rating(cls, place_id: str) -> float:
-        """Get average rating. Math but make it fashion! ✨"""
-        reviews = cls.get_by_place(place_id)
+        """
+        Get average rating. Math in the desert! ✨
+        """
+        reviews = cls.repository.get_by_attribute('place_id', place_id, multiple=True)
         if not reviews:
             return 0.0
-        ratings = [review.rating for review in reviews]  # On extrait d'abord les ratings
-        return sum(ratings) / len(ratings)
+        return sum(review.rating for review in reviews) / len(reviews)
 
     @classmethod
     @magic_wand(validate_input({'limit': int}))
     def get_recent_reviews(cls, limit: int = 5) -> List['Review']:
-        """Get recent reviews. Hot off the press! 🗞️"""
+        """Get recent reviews. Fresh tracks in the sand! 🐫"""
         all_reviews = cls.get_all()
         return sorted(
-            all_reviews,
-            key=lambda x: x.created_at,
+            all_reviews, 
+            key=lambda x: x.created_at, 
             reverse=True
         )[:limit]
 

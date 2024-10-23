@@ -33,7 +33,7 @@ class User(BaseModel):
 
     @magic_wand(validate_input(UserValidation))
     def __init__(
-        self, 
+        self,
         username: str,
         email: str,
         password: str,
@@ -56,7 +56,7 @@ class User(BaseModel):
         if not all([username, email, password, first_name, last_name]):
             msg = "All required fields must be provided, darling! 💋"
             raise ValueError(msg)
-        
+
         super().__init__(**kwargs)
         self.username = self._validate_username(username)
         self.email = self._validate_email(email)
@@ -66,7 +66,7 @@ class User(BaseModel):
         self.first_name = self._validate_name(first_name, "First name")
         self.last_name = self._validate_name(last_name, "Last name")
         self.phone_number = (
-            self._validate_phone_number(phone_number) 
+            self._validate_phone_number(phone_number)
             if phone_number else None
         )
 
@@ -82,9 +82,9 @@ class User(BaseModel):
                 "Username length 6-18 chars. We have standards! 💅"
             )
         if not re.match(r'^[a-zA-Z0-9_-]+$', username):
-            raise ValueError(
-                "Letters, numbers, underscores, hyphens only. Keep it classy! ✨"
-            )
+            msg = ("Letters, numbers, underscores,"
+                   " hyphens only. Keep it classy! ✨")
+            raise ValueError(msg)
         return username
 
     @staticmethod
@@ -141,7 +141,7 @@ class User(BaseModel):
                 "Invalid phone format. Who are you trying to ghost? 👻"
             )
         return phone
-    
+
         # === GET/SEARCH METHODS === #
     @classmethod
     @magic_wand()
@@ -150,7 +150,7 @@ class User(BaseModel):
         Search users. Stalking made professional! 🕵️‍♀️
         """
         if not criteria:
-            return cls.get_all()  # Show me EVERYBODY! 
+            return cls.get_all()  # Show me EVERYBODY! 🎉
 
         results = cls.get_all()
         for attr, value in criteria.items():
@@ -170,9 +170,9 @@ class User(BaseModel):
         try:
             return generate_password_hash(password)
         except Exception as e:
-            raise ValueError(
-                f"Hash failed. Even the algorithm can't handle this! 💅 {str(e)}"
-            )
+            msg = (f"Hash failed. the algorithm"
+                   " can't handle this! 💅 {str(e)}")
+            raise ValueError(msg)
 
     @magic_wand()
     def check_password(self, password: str) -> bool:
@@ -192,7 +192,7 @@ class User(BaseModel):
         """
         username = kwargs.get('username')
         email = kwargs.get('email')
-        
+
         if cls.get_by_attr('username', username):
             raise ValueError(
                 f"Username '{username}' is taken. Be more creative! 💭"
@@ -201,7 +201,7 @@ class User(BaseModel):
             raise ValueError(
                 f"Email '{email}' exists. Nice try! 😏"
             )
-        
+
         user = cls(**kwargs)
         cls.repository.add(user)
         return user
@@ -214,27 +214,27 @@ class User(BaseModel):
         password = data.pop('password', None)
         if password:
             self.password_hash = self.hash_password(password)
-        
+
         if 'username' in data and data['username'] != self.username:
             if User.get_by_attr('username', data['username']):
                 raise ValueError("Username taken! Snooze you lose! 😴")
         if 'email' in data and data['email'] != self.email:
             if User.get_by_attr('email', data['email']):
                 raise ValueError("Email exists! Double life much? 🕵️‍♀️")
-        
+
         for key, value in data.items():
             if key in ['id', 'created_at', 'updated_at', 'password_hash']:
                 continue
-            
+
             if hasattr(self, f'_validate_{key}'):
                 value = getattr(self, f'_validate_{key}')(value)
             elif not hasattr(self, key):
                 raise ValueError(
                     f"Invalid attribute: {key}. Who you trying to fool? 🤨"
                 )
-                
+
             setattr(self, key, value)
-        
+
         self.updated_at = datetime.now(timezone.utc)
         self.repository._storage[self.id] = self
         return self
