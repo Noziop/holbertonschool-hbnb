@@ -28,23 +28,21 @@ class Repository(ABC):
     @abstractmethod
     def get_by_attribute(
         self, 
-        attr: str, 
-        value: Any, 
-        multiple: bool = False
+        multiple: bool = False,
+        **kwargs: Any
     ) -> Union[Any, List[Any]]:
         """
-        Get objects by attribute. Abstract but make it fashion! 💅
+        Get objects by attributes. Like a haunted treasure hunt! 👻
         
         Args:
-            attr: The attribute to search by (like a desperate housewife during the sales!)
-            value: The value to match (standards are high, honey!)
-            multiple: If True, returns all matches (like your dating history!)
+            multiple: Summon one spirit or the whole graveyard? 🪦
+            **kwargs: Your spooky search criteria (each one darker than the last!)
 
         WHY: 
-            Because repeating yourself is like wearing the same outfit twice:
-            YOU DON'T! 💅
+            Because searching through objects is like looking for ghosts:
+            You better have the right tools! 🔮
 
-        WATCH ME CODE, DARLING! 💋
+        BEWARE MORTAL, THIS CODE IS CURSED! 💀
         """
         pass
 
@@ -76,28 +74,27 @@ class InMemoryRepository(Repository):
             del self._storage[obj_id]
 
     def get_by_attribute(
-        self, 
-        attr: str, 
-        value: Any, 
-        multiple: bool = False
+        self,
+        multiple: bool = False,
+        **kwargs: Any
     ) -> Union[Any, List[Any]]:
         """
-        Get objects by attribute. Serving looks from storage! 💅
+        Get objects by attributes. Summoning entities from the storage beyond! 👻
         
         Args:
-            attr: The attribute to search by (like a desperate housewife during the sales!)
-            value: The value to match (standards are high, honey!)
-            multiple: If True, returns all matches (like your dating history!)
+            multiple: Want one ghost or a whole haunted house? 🏚️
+            **kwargs: The dark specifications (each more cursed than the last!)
 
         WHY: 
-            Because repeating yourself is like wearing the same outfit twice:
-            YOU DON'T! 💅
+            Because searching through storage is like necromancy:
+            You gotta be specific with your summons! 🧙‍♀️
 
-        WATCH ME CODE, DARLING! 💋
+        THE SPIRITS ARE WATCHING! 🦇
         """
         results = [
             obj for obj in self._storage.values() 
-            if getattr(obj, attr, None) == value
+            if all(getattr(obj, attr, None) == value 
+                for attr, value in kwargs.items())
         ]
         
         if not results:

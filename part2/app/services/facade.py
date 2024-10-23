@@ -3,6 +3,7 @@ from app.models.place import Place
 from app.models.amenity import Amenity
 from app.models.review import Review
 from app.models.placeamenity import PlaceAmenity
+from typing import List, Any, Tuple, Optional, Union
 from datetime import datetime, timezone
 from app.utils import *
 
@@ -15,252 +16,202 @@ class HBnBFacade:
         self.placeamenity_repository = PlaceAmenity.repository
 
     # User methods
-    @magic_wand(validate_input(UserValidation), validate_entity('User', 'username'), validate_entity('User', 'email'))
-    def create_user(self, user_data):
+    @magic_wand(validate_input(UserValidation))
+    def create_user(self, user_data: dict) -> User:
+        """Create a new user. Birth of a queen! 👑"""
         return User.create(**user_data)
 
-    @magic_wand(validate_input({'user_id': dict}), validate_entity('User', 'user_id'))
-    def get_user(self, user_id):
+    @magic_wand(validate_input({'user_id': str}))
+    def get_user(self, user_id: str) -> User:
+        """Get user by ID. Finding that special someone! 💫"""
         return User.get_by_id(user_id)
 
-
-    @magic_wand(validate_input({'username': str}))
-    def get_user_by_username(self, username):
-        user = User.get_by_username(username)
+    @magic_wand(validate_input({'attr': str, 'value': str}))
+    def get_user_by_attr(self, attr: str, value: str) -> User:
+        """Get user by any attribute. Like finding the perfect match! 💘"""
+        user = User.repository.get_by_attribute(attr, value)
         if not user:
-            raise ValueError(f"No user found with username: {username}")
+            raise ValueError(f"No user found with {attr}: {value}")
         return user
 
-    @magic_wand(validate_input({'email': str}))
-    def get_user_by_email(self, email):
-        user = User.get_by_email(email)
-        if not user:
-            raise ValueError(f"No user found with email: {email}")
-        return user
-
-    @magic_wand(validate_input({'user_data': dict, 'user_id': str}),
-                validate_entity('User', 'user_id'))
-    def update_user(self, user_id, user_data):
+    @magic_wand(validate_input({'user_id': str, 'user_data': dict}))
+    def update_user(self, user_id: str, user_data: dict) -> User:
+        """Update user. Glow up time! ✨"""
         user = User.get_by_id(user_id)
-        user.update(user_data)
-        return user
+        return user.update(user_data)
 
-    def get_all_users(self):
+    @magic_wand()
+    def get_all_users(self) -> List[User]:
+        """Get all users. The whole squad! 💃"""
         return User.get_all()
 
-    @magic_wand(validate_input({'user_id': str, 'password': str}),
-                validate_entity('User', 'user_id'))
-    def check_user_password(self, user_id, password):
+    @magic_wand(validate_input({'user_id': str, 'password': str}))
+    def check_user_password(self, user_id: str, password: str) -> bool:
+        """Check user password. No peeking! 🙈"""
         user = User.get_by_id(user_id)
         return user.check_password(password)
-    
-    @magic_wand(validate_input({'user_id': str}),
-            validate_entity('User', 'user_id'))
-    def delete_user(self, user_id):
+
+    @magic_wand(validate_input({'user_id': str}))
+    def delete_user(self, user_id: str) -> Tuple[bool, str]:
+        """Delete user. Bye Felicia! 👋"""
         user = User.get_by_id(user_id)
-        if user:
-            if user.delete():
-                return True, f"User {user.username} (ID: {user_id}) deleted successfully"
+        if user and user.delete():
+            return True, f"User {user.username} deleted successfully"
         return False, f"User with ID {user_id} not found"
 
     # Place methods
     @magic_wand(validate_input({'place_data': dict}))
-    def create_place(self, place_data):
+    def create_place(self, place_data: dict) -> Place:
+        """Create a new place. Home sweet home! 🏠"""
         return Place.create(**place_data)
 
-    @magic_wand(validate_input({'place_id': str}),
-                validate_entity('Place', 'place_id'))
-    def get_place(self, place_id):
+    @magic_wand(validate_input({'place_id': str}))
+    def get_place(self, place_id: str) -> Place:
+        """Get place by ID. Finding that dream spot! ✨"""
         return Place.get_by_id(place_id)
 
-    @magic_wand(validate_input({'place_id': str}, {'place_data': dict}),
-                validate_entity('Place', 'place_id'))
-    def update_place(self, place_id, place_data):
+    @magic_wand(validate_input({'attr': str, 'value': Any}))
+    def get_places_by_attr(self, attr: str, value: Any) -> List[Place]:
+        """Get places by any attribute. House hunting but make it fancy! 🔍"""
+        return Place.repository.get_by_attribute(attr, value, multiple=True)
+
+    @magic_wand(validate_input({'place_id': str, 'place_data': dict}))
+    def update_place(self, place_id: str, place_data: dict) -> Place:
+        """Update place. Renovation time! 🏗️"""
         place = Place.get_by_id(place_id)
-        place.update(place_data)
-        return place
-    
-    @magic_wand(validate_input({'place_id': str}),
-                validate_entity('Place', 'place_id'))
-    def delete_place(self, place_id):
-        place = Place.get_by_id(place_id)
-        if place:
-            if place.delete():
-                return True, f"Place {place.name} (ID: {place_id}) deleted successfully"
-        return False, f"Place with ID {place_id} not found"
+        return place.update(place_data)
 
     @magic_wand(validate_input({'place_id': str}))
-    def get_all_places(self):
-        places = Place.get_all()
-        return places if places else []
+    def delete_place(self, place_id: str) -> Tuple[bool, str]:
+        """Delete place. Moving out! 🚚"""
+        place = Place.get_by_id(place_id)
+        if place and place.delete():
+            return True, f"Place {place.name} deleted successfully"
+        return False, f"Place with ID {place_id} not found"
 
-    @magic_wand(validate_input({'city': str}))
-    def get_places_by_city(self, city):
-        return Place.get_by_city(city)
+    @magic_wand()
+    def get_all_places(self) -> List[Place]:
+        """Get all places. The whole real estate portfolio! 🏘️"""
+        return Place.get_all() or []
 
-    @magic_wand(validate_input({'country': str}))
-    def get_places_by_country(self, country):
-        return Place.get_by_country(country)
-
-    @magic_wand(validate_input({'min_price': float}, {'max_price': float}))
-    def get_places_by_price_range(self, min_price, max_price):
+    @magic_wand(validate_input({'min_price': float, 'max_price': float}))
+    def get_places_by_price_range(self, min_price: float, max_price: float) -> List[Place]:
+        """Get places by price range. Shopping with style! 💰"""
         return Place.get_by_price_range(min_price, max_price)
 
-    @magic_wand(validate_input({'min_guests': int}))
-    def get_places_by_capacity(self, min_guests):
-        return Place.get_by_capacity(min_guests)
-
-    @magic_wand(validate_input({'latitude': float}, {'longitude': float}, {'radius': float}))
-    def get_places_by_location(self, latitude, longitude, radius):
+    @magic_wand(validate_input({'latitude': float, 'longitude': float, 'radius': float}))
+    def get_places_by_location(self, latitude: float, longitude: float, radius: float) -> List[Place]:
+        """Get places by location. Location, location, location! 🌍"""
         return Place.get_by_location(latitude, longitude, radius)
 
     @magic_wand(validate_input({'keywords': str}))
-    def search_places(self, keywords):
+    def search_places(self, keywords: str) -> List[Place]:
+        """Search places. House hunting made fabulous! ✨"""
         return Place.search(keywords)
 
-    @magic_wand(validate_input({'place_id': str}), validate_entity('Place', 'place_id'))
-    def get_place_amenities(self, place_id):
-        place = Place.get_by_id(place_id)
-        return place.get_amenities()
-
-    @magic_wand(validate_input({'place_id': str}, {'amenity_id': str}),
-                validate_entity('Place', 'place_id'),
-                validate_entity('Amenity', 'amenity_id'))
-    def add_amenity_to_place(self, place_id, amenity_id):
-        place = Place.get_by_id(place_id)
-        amenity = Amenity.get_by_id(amenity_id)
-        place.add_amenity(amenity)
-
-    @magic_wand(validate_input({'place_id': str}, {'amenity_id': str}),
-                validate_entity('Place', 'place_id'),
-                validate_entity('Amenity', 'amenity_id'))
-    def remove_amenity_from_place(self, place_id, amenity_id):
-        place = Place.get_by_id(place_id)
-        amenity = Amenity.get_by_id(amenity_id)
-        place.remove_amenity(amenity)
-
-    @magic_wand(validate_input({'place_id': str}),
-                validate_entity('Place', 'place_id'))
-    def get_place_reviews(self, place_id):
-        place = Place.get_by_id(place_id)
-        return place.get_reviews()
-
-    @magic_wand(validate_input({'place_id': str}),
-                validate_entity('Place', 'place_id'))
-    def get_place_details(self, place_id):
-        place = Place.get_by_id(place_id)
-        owner = User.get_by_id(place.owner_id)
-        amenities = place.get_amenities()
-        reviews = place.get_reviews()
-        
-        place_dict = place.to_dict()
-        place_dict['owner'] = owner.to_dict()
-        place_dict['amenities'] = [amenity.to_dict() for amenity in amenities]
-        place_dict['reviews'] = [review.to_dict() for review in reviews]
-        
-        return place_dict
-
     # Review methods
-    @magic_wand(validate_input({'review_data': dict}),
-                validate_entity('Place', 'place_id'),
-                validate_entity('User', 'user_id'))
-    def create_review(self, review_data):
+    @magic_wand(validate_input({'review_data': dict}))
+    def create_review(self, review_data: dict) -> Review:
+        """Create a review. Time to spill the tea! ☕"""
         return Review.create(**review_data)
 
-    @magic_wand(validate_input({'review_id':str}), validate_entity('Review', 'review_id'))
-    def get_review(self, review_id):
+    @magic_wand(validate_input({'review_id': str}))
+    def get_review(self, review_id: str) -> Review:
+        """Get review by ID. Reading the receipts! 📝"""
         return Review.get_by_id(review_id)
 
-    @magic_wand(validate_input({'review_id':str}, {'review_data': dict}),
-                validate_entity('Review', 'review_id'), update_timestamp)
-    def update_review(self, review_id, review_data):
+    @magic_wand(validate_input({'attr': str, 'value': Any}))
+    def get_reviews_by_attr(self, attr: str, value: Any) -> List[Review]:
+        """Get reviews by any attribute. Gossip central! 💅"""
+        return Review.repository.get_by_attribute(attr, value, multiple=True)
+
+    @magic_wand(validate_input({'review_id': str, 'review_data': dict}))
+    def update_review(self, review_id: str, review_data: dict) -> Review:
+        """Update review. Changed your mind? We got you! 💭"""
         review = Review.get_by_id(review_id)
-        review.update(review_data)
-        return review
+        return review.update(review_data)
 
-    def get_all_reviews(self):
-        return Review.get_all()
-
-    @magic_wand(validate_input({'place_id': str}), validate_entity('Place', 'place_id'))
-    def get_reviews_by_place(self, place_id):
-        return Review.get_by_place(place_id)
-
-    @magic_wand(validate_input({'user_id': str}), validate_entity('User', 'user_id'))
-    def get_reviews_by_user(self, user_id):
-        return Review.get_by_user(user_id)
-
-    @magic_wand(validate_input({'review_id':str}),
-                validate_entity('Review', 'review_id'), update_timestamp)
-    def delete_review(self, review_id):
+    @magic_wand(validate_input({'review_id': str}))
+    def delete_review(self, review_id: str) -> Tuple[bool, str]:
+        """Delete review. Taking it back! ⏪"""
         review = Review.get_by_id(review_id)
-        review.delete()
+        if review and review.delete():
+            return True, f"Review deleted successfully"
+        return False, f"Review with ID {review_id} not found"
 
-    @magic_wand(validate_input({'place_id': str}),
-                validate_entity('Place', 'place_id'))
-    def get_place_average_rating(self, place_id):
-        reviews = self.get_reviews_by_place(place_id)
+    @magic_wand()
+    def get_all_reviews(self) -> List[Review]:
+        """Get all reviews. All the tea, all the time! 🫖"""
+        return Review.get_all() or []
+
+    @magic_wand(validate_input({'place_id': str}))
+    def get_place_average_rating(self, place_id: str) -> float:
+        """Get place average rating. The tea-meter! 📊"""
+        reviews = self.get_reviews_by_attr('place_id', place_id)
         if not reviews:
-            return 0
+            return 0.0
         return sum(review.rating for review in reviews) / len(reviews)
 
     @magic_wand(validate_input({'limit': int}))
-    def get_recent_reviews(self, limit=5):
-        all_reviews = self.get_all_reviews()
-        if not all_reviews:
-            raise ValueError("No reviews found")
-        return sorted(all_reviews, key=lambda x: x.created_at, reverse=True)[:limit]
+    def get_recent_reviews(self, limit: int = 5) -> List[Review]:
+        """Get recent reviews. Fresh tea, honey! 🍵"""
+        reviews = self.get_all_reviews()
+        if not reviews:
+            return []
+        return sorted(reviews, key=lambda x: x.created_at, reverse=True)[:limit]
 
     # Amenity methods
-    @magic_wand(validate_input({'amenity_data':dict}))
-    def create_amenity(self, amenity_data):
+    @magic_wand(validate_input({'amenity_data': dict}))
+    def create_amenity(self, amenity_data: dict) -> Amenity:
+        """Create amenity. Adding some spice to life! ✨"""
         return Amenity.create(**amenity_data)
 
-    @magic_wand(validate_input({'amenity_id': str}), validate_entity('Amenity', 'amenity_id'))
-    def get_amenity(self, amenity_id):
+    @magic_wand(validate_input({'amenity_id': str}))
+    def get_amenity(self, amenity_id: str) -> Amenity:
+        """Get amenity by ID. Finding that special feature! 🎯"""
         return Amenity.get_by_id(amenity_id)
 
-    @magic_wand(validate_input({'amenity_id': str}, {'amenity_data': dict}),
-                validate_entity('Amenity', 'amenity_id'))
-    def update_amenity(self, amenity_id, amenity_data):
+    @magic_wand(validate_input({'attr': str, 'value': Any}))
+    def get_amenities_by_attr(self, attr: str, value: Any) -> List[Amenity]:
+        """Get amenities by any attribute. Shopping for features! 🛍️"""
+        return Amenity.repository.get_by_attribute(attr, value, multiple=True)
+
+    @magic_wand(validate_input({'amenity_id': str, 'amenity_data': dict}))
+    def update_amenity(self, amenity_id: str, amenity_data: dict) -> tuple[bool, str, Optional[Amenity]]:
+        """Update amenity. Upgrade time! 🔄"""
         try:
             amenity = Amenity.get_by_id(amenity_id)
-            print(f"DEBUG Facade - Amenity before update: {amenity}")  # Debug
             if not amenity:
                 return False, "Amenity not found", None
             amenity.update(amenity_data)
-            print(f"DEBUG Facade - Amenity after update: {amenity}")  # Debug
             return True, "Amenity updated successfully", amenity
         except ValueError as e:
             raise ValueError(f"Failed to update amenity: {str(e)}")
-        except Exception as e: 
-            raise ValueError(f"An error occurred: {str(e)}")
-    
-    @magic_wand(validate_input({'amenity_id': str}),
-                validate_entity('Amenity', 'amenity_id'))
-    def delete_amenity(self, amenity_id):
+
+    @magic_wand(validate_input({'amenity_id': str}))
+    def delete_amenity(self, amenity_id: str) -> tuple[bool, str]:
+        """Delete amenity. Decluttering with style! 🧹"""
         amenity = Amenity.get_by_id(amenity_id)
-        if amenity:
-            if amenity.delete():
-                return True, f"Amenity {amenity.name} (ID: {amenity_id}) deleted successfully"
+        if amenity and amenity.delete():
+            return True, f"Amenity {amenity.name} deleted successfully"
         return False, f"Amenity with ID {amenity_id} not found"
 
-    def get_all_amenities(self):
-        return Amenity.get_all()
-
-    @magic_wand(validate_input({'name': str}))
-    def get_amenities_by_name(self, name):
-        return Amenity.get_by_name(name)
+    @magic_wand()
+    def get_all_amenities(self) -> List[Amenity]:
+        """Get all amenities. Feature parade! ✨"""
+        return Amenity.get_all() or []
 
     @magic_wand(validate_input({'keyword': str}))
-    def search_amenities(self, keyword):
+    def search_amenities(self, keyword: str) -> List[Amenity]:
+        """Search amenities. Feature hunting! 🔍"""
         return Amenity.search(keyword)
 
-    @magic_wand(validate_input({'amenity_id': str}),
-                validate_entity('Amenity', 'amenity_id'))
-    def get_places_with_amenity(self, amenity_id):
-        place_amenities = PlaceAmenity.get_by_amenity(amenity_id)
+    @magic_wand(validate_input({'amenity_id': str}))
+    def get_places_with_amenity(self, amenity_id: str) -> List[Place]:
+        """Get places with specific amenity. Match made in heaven! 💘"""
+        place_amenities = PlaceAmenity.repository.get_by_attribute('amenity_id', amenity_id, multiple=True)
         if not place_amenities:
-            raise ValueError(f"No places found with amenity id: {amenity_id}")
+            return []
         return [Place.get_by_id(pa.place_id) for pa in place_amenities]
 
     # PlaceAmenity methods

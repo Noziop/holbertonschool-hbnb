@@ -187,24 +187,19 @@ class User(BaseModel):
     @classmethod
     @magic_wand(validate_input(UserValidation))
     def create(cls, **kwargs) -> 'User':
-        """
-        Create new user. Fresh meat! 🥩... I mean, welcome! 🎉
-        """
+        """Create a new user. Birth of a new ghost! 👻"""
         username = kwargs.get('username')
         email = kwargs.get('email')
-
-        if cls.get_by_attr('username', username):
-            raise ValueError(
-                f"Username '{username}' is taken. Be more creative! 💭"
-            )
-        if cls.get_by_attr('email', email):
-            raise ValueError(
-                f"Email '{email}' exists. Nice try! 😏"
-            )
-
-        user = cls(**kwargs)
-        cls.repository.add(user)
-        return user
+        
+        # Check if username exists
+        if cls.get_by_attr(username=username):
+            raise ValueError(f"Username '{username}' is taken. The spirits are restless! 👻")
+        
+        # Check if email exists
+        if cls.get_by_attr(email=email):
+            raise ValueError(f"Email '{email}' is taken. The spirits are disturbed! 👻")
+        
+        return super().create(**kwargs)
 
     @magic_wand(validate_input(UserValidation))
     def update(self, data: dict) -> 'User':

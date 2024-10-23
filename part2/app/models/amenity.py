@@ -52,31 +52,16 @@ class Amenity(BaseModel):
             raise ValueError(msg)
         return name.strip()
 
+    # Dans Amenity
     @classmethod
     @magic_wand(validate_input(AmenityValidation))
     def create(cls, **kwargs) -> 'Amenity':
-        """
-        Create a new Amenity instance.
-
-        Args:
-            **kwargs: Amenity attributes
-
-        Returns:
-            Amenity: New amenity instance
-
-        Raises:
-            ValueError: If creation fails or amenity already exists
-        """
-        if 'name' not in kwargs:
-            raise ValueError("Missing required attribute: name")
-
-        if cls.get_by_attr('name', kwargs['name']):
-            msg = f"Amenity with name '{kwargs['name']}' already exists"
-            raise ValueError(msg)
-
-        amenity = cls(**kwargs)
-        cls.repository.add(amenity)
-        return amenity
+        """Create new amenity. Summoning a new feature! 👻"""
+        if cls.get_by_attr(name=kwargs['name']):
+            raise ValueError(
+                f"Amenity name '{kwargs['name']}' already exists! The spirits are confused! 👻"
+            )
+        return super().create(**kwargs)
 
     @magic_wand(validate_input({'data': dict}))
     def update(self, data: dict) -> 'Amenity':

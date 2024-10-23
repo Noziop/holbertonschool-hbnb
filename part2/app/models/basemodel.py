@@ -2,7 +2,7 @@
 
 import uuid
 import datetime as dt
-from typing import Optional, Any, TypeVar, List
+from typing import Optional, Any, TypeVar, List, Union
 from app.persistence.repository import InMemoryRepository
 from app.utils import *
 
@@ -76,23 +76,20 @@ class BaseModel:
         return obj
 
     @classmethod
-    @magic_wand(validate_input({'attr_name': str}))
+    @magic_wand()
     def get_by_attr(
         cls: type[T],
-        attr_name: str,
-        attr_value: Any
-    ) -> Optional[T]:
+        multiple: bool = False,
+        **kwargs: Any
+    ) -> Union[Optional[T], List[T]]:
         """
-        Retrieve an object by attribute value.
-
+        Summon entities by their attributes! 👻
+        
         Args:
-            attr_name (str): Name of the attribute to check.
-            attr_value (Any): Value to search for.
-
-        Returns:
-            Optional[T]: The found object or None.
+            multiple: Want one ghost or a whole haunted house? 🏚️
+            **kwargs: Your supernatural search criteria! 🔮
         """
-        return cls.repository.get_by_attribute(attr_name, attr_value)
+        return cls.repository.get_by_attribute(multiple=multiple, **kwargs)
 
     @classmethod
     @magic_wand()
