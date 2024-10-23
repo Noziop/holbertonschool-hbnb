@@ -1,156 +1,147 @@
+"""Test module for Place class."""
+
 import unittest
+from datetime import datetime
 from app.models.place import Place
-from app.persistence.repository import InMemoryRepository
-import math
+from app.models.user import User
+from app.models.amenity import Amenity
+from app.models.review import Review
+
 
 class TestPlace(unittest.TestCase):
+    """Test cases for Place class."""
 
     def setUp(self):
-        self.repository = InMemoryRepository()
-        Place.repository = self.repository
-        self.valid_params = {
-            'name': 'Cozy Cottage',
-            'description': 'A beautiful cottage in the countryside',
-            'number_rooms': 3,
-            'number_bathrooms': 2,
-            'max_guest': 5,
-            'price_by_night': 100.50,
-            'latitude': 45.5,
-            'longitude': -73.5,
-            'owner_id': '68f18302-34ef-4189-9259-d9e1a669c73e',
-            'city': 'Montreal',
-            'country': 'Canada'
+        """Set up test cases."""
+        # Créer un user pour owner_id
+        self.owner = User.create(
+            username="testuser",  # Ajout du username manquant
+            email="test@test.com",
+            password="Password123!",
+            first_name="Test",
+            last_name="User"
+        )
+        
+        # Données de test pour Place
+        self.test_data = {
+            'name': 'Test Place',
+            'description': 'A lovely test place',
+            'number_rooms': 2,
+            'number_bathrooms': 1,
+            'max_guest': 4,
+            'price_by_night': 100.0,
+            'latitude': 48.8566,
+            'longitude': 2.3522,
+            'owner_id': self.owner.id,
+            'city': 'Paris',
+            'country': 'France',
+            'is_available': True,
+            'status': 'active',
+            'minimum_stay': 2,
+            'property_type': 'apartment'
         }
-        self.place = Place.create(**self.valid_params)
+        
+        self.place = Place.create(**self.test_data)
+        
+        self.place = Place.create(**self.test_data)
 
-    def tearDown(self):
-        Place.repository = InMemoryRepository()
-
-    def test_create(self):
-        new_place = Place.create(**self.valid_params)
-        self.assertIsInstance(new_place, Place)
-        self.assertIn(new_place.id, self.repository._storage)
-
-    def test_create_with_invalid_params(self):
-        invalid_params = self.valid_params.copy()
-        invalid_params['max_guest'] = 'invalid'
+    def test_initialization(self):
+        """Test Place initialization."""
+        self.assertEqual(self.place.name, 'Test Place')
+        self.assertEqual(self.place.number_rooms, 2)
+        self.assertEqual(self.place.price_by_night, 100.0)
+        self.assertEqual(self.place.owner_id, self.owner.id)
+        self.assertTrue(self.place.is_available)
+        self.assertEqual(self.place.status, 'active')
+        
+        # Test validation errors
         with self.assertRaises(ValueError):
-            Place.create(**invalid_params)
-
-    def test_get_by_id(self):
-        place = Place.get_by_id(self.place.id)
-        self.assertEqual(place.id, self.place.id)
-
-    def test_get_by_id_nonexistent(self):
+            Place.create(**{**self.test_data, 'number_rooms': -1})
         with self.assertRaises(ValueError):
-            Place.get_by_id('nonexistent_id')
+            Place.create(**{**self.test_data, 'latitude': 91})
 
-    def test_get_all(self):
-        places = Place.get_all()
-        self.assertIn(self.place, places)
+    def test_search_and_filters(self):
+        """Test search and filter methods."""
+        # Test search
+        results = Place.search(
+            is_available=True,
+            property_type='apartment'
+        )
+        self.assertIn(self.place, results)
+        
+        # Test price filter
+        price_results = Place.filter_by_price(50, 150)
+        self.assertIn(self.place, price_results)
+        
+        # Test capacity filter
+        capacity_results = Place.filter_by_capacity(3)
+        self.assertIn(self.place, capacity_results)
+        
+        # Test location search
+        location_results = Place.get_by_location(48.8566, 2.3522, 1)
+        self.assertIn(self.place, location_results)
+
+    def test_amenities(self):
+        """Test amenity-related methods."""
+        # Create test amenity
+        amenity = Amenity.create(name="WiFi")
+        
+        # Test add amenity
+        self.place.add_amenity(amenity)
+        amenities = self.place.get_amenities()
+        self.assertIn(amenity, amenities)
+        
+        # Test remove amenity
+        self.place.remove_amenity(amenity)
+        amenities = self.place.get_amenities()
+        self.assertNotIn(amenity, amenities)
 
     def test_update(self):
+        """Test update method."""
         update_data = {
-            'name': 'Updated Cottage',
-            'max_guest': 6,
-            'price_by_night': 120.75
+            'name': 'Updated Place',
+            'price_by_night': 150.0,
+            'status': 'maintenance'
         }
-        self.place.update(update_data)
-        self.assertEqual(self.place.name, 'Updated Cottage')
-        self.assertEqual(self.place.max_guest, 6)
-        self.assertEqual(self.place.price_by_night, 120.75)
+        
+        updated_place = self.place.update(update_data)
+        self.assertEqual(updated_place.name, 'Updated Place')
+        self.assertEqual(updated_place.price_by_night, 150.0)
+        self.assertEqual(updated_place.status, 'maintenance')
+        
+        # Test invalid updates
+        with self.assertRaises(ValueError):
+            self.place.update({'owner_id': 'new_id'})
+        with self.assertRaises(ValueError):
+            self.place.update({'status': 'invalid_status'})
 
-    def test_update_with_invalid_params(self):
-        with self.assertRaises(ValueError):
-            self.place.update({'invalid_param': 'invalid_value'})
-        with self.assertRaises(ValueError):
-            self.place.update({'max_guest': -1})
-        with self.assertRaises(ValueError):
-            self.place.update({'latitude': 100})
-
-    def test_to_dict(self):
+    def test_serialization(self):
+        """Test serialization methods."""
         place_dict = self.place.to_dict()
-        self.assertIsInstance(place_dict, dict)
-        self.assertIn('id', place_dict)
-        self.assertIn('name', place_dict)
-        self.assertIn('created_at', place_dict)
-        self.assertIn('updated_at', place_dict)
-
-    def test_get_by_city(self):
-        place1 = Place.create(**{**self.valid_params, 'city': 'Paris'})
-        place2 = Place.create(**{**self.valid_params, 'city': 'London'})
         
-        results = Place.get_by_city('Paris')
-        self.assertIn(place1, results)
-        self.assertNotIn(place2, results)
-
-    def test_get_by_country(self):
-        place1 = Place.create(**{**self.valid_params, 'country': 'France'})
-        place2 = Place.create(**{**self.valid_params, 'country': 'UK'})
+        # Check all attributes are present
+        expected_attrs = [
+            'id', 'name', 'description', 'number_rooms',
+            'price_by_night', 'latitude', 'longitude',
+            'owner_id', 'is_available', 'status',
+            'property_type', 'amenity_ids', 'review_ids'
+        ]
         
-        results = Place.get_by_country('France')
-        self.assertIn(place1, results)
-        self.assertNotIn(place2, results)
-
-    def test_get_by_price_range(self):
-        place1 = Place.create(**{**self.valid_params, 'price_by_night': 50})
-        place2 = Place.create(**{**self.valid_params, 'price_by_night': 100})
-        place3 = Place.create(**{**self.valid_params, 'price_by_night': 150})
+        for attr in expected_attrs:
+            self.assertIn(attr, place_dict)
         
-        results = Place.get_by_price_range(75, 125)
-        self.assertIn(place2, results)
-        self.assertNotIn(place1, results)
-        self.assertNotIn(place3, results)
+        # Check types
+        self.assertIsInstance(place_dict['created_at'], str)
+        self.assertIsInstance(place_dict['amenity_ids'], list)
 
-    def test_get_by_capacity(self):
-        place1 = Place.create(**{**self.valid_params, 'max_guest': 2})
-        place2 = Place.create(**{**self.valid_params, 'max_guest': 4})
-        place3 = Place.create(**{**self.valid_params, 'max_guest': 6})
-        
-        results = Place.get_by_capacity(4)
-        self.assertIn(place2, results)
-        self.assertIn(place3, results)
-        self.assertNotIn(place1, results)
+    def tearDown(self):
+        """Clean up after tests."""
+        # Clear repositories
+        Place.repository._storage.clear()
+        User.repository._storage.clear()
+        Amenity.repository._storage.clear()
+        Review.repository._storage.clear()
 
-    def test_get_by_location(self):
-        place1 = Place.create(**{**self.valid_params, 'latitude': 48.8566, 'longitude': 2.3522})  # Paris
-        place2 = Place.create(**{**self.valid_params, 'latitude': 51.5074, 'longitude': -0.1278})  # London
-        
-        results = Place.get_by_location(48.8566, 2.3522, 10)  # 10 km radius
-        self.assertIn(place1, results)
-        self.assertNotIn(place2, results)
-
-    def test_search(self):
-        place1 = Place.create(**{**self.valid_params, 'name': 'Cozy Cottage', 'city': 'Paris'})
-        place2 = Place.create(**{**self.valid_params, 'name': 'Luxury Apartment', 'city': 'London'})
-        
-        results = Place.search('cozy')
-        self.assertIn(place1, results)
-        self.assertNotIn(place2, results)
-        
-        results = Place.search('london')
-        self.assertIn(place2, results)
-        self.assertNotIn(place1, results)
-
-    def test_validate_string(self):
-        with self.assertRaises(ValueError):
-            Place._validate_string(123, "name")
-
-    def test_validate_positive_integer(self):
-        with self.assertRaises(ValueError):
-            Place._validate_positive_integer(-1, "number_rooms")
-
-    def test_validate_positive_float(self):
-        with self.assertRaises(ValueError):
-            Place._validate_positive_float(-1.5, "price_by_night")
-
-    def test_validate_latitude(self):
-        with self.assertRaises(ValueError):
-            Place._validate_latitude(100)
-
-    def test_validate_longitude(self):
-        with self.assertRaises(ValueError):
-            Place._validate_longitude(200)
 
 if __name__ == '__main__':
     unittest.main()

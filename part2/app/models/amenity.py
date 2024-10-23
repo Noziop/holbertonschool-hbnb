@@ -43,8 +43,7 @@ class Amenity(BaseModel):
     @magic_wand(validate_input(AmenityValidation))
     def get_by_name(cls, name):
         """Get amenity by name"""
-        result = cls.repository.get_by_field('name', name)
-        return result[0] if result else None  # Retourne le premier élément ou None
+        return cls.repository.get_by_attribute('name', name)
 
     @classmethod
     @magic_wand(validate_input({'keyword': str}))

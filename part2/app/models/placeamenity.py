@@ -60,6 +60,27 @@ class PlaceAmenity(BaseModel):
                 data['amenity_id'], "amenity_id")
         super().update(data)
 
+    @classmethod
+    @magic_wand()
+    def delete_by_place_and_amenity(cls, place_id: str, amenity_id: str) -> bool:
+        """
+        Delete PlaceAmenity by place and amenity IDs.
+
+        Args:
+            place_id (str): ID of the place
+            amenity_id (str): ID of the amenity
+
+        Returns:
+            bool: True if deleted successfully
+        """
+        place_amenities = [pa for pa in cls.get_all() 
+                        if pa.place_id == place_id and pa.amenity_id == amenity_id]
+        
+        for pa in place_amenities:
+            pa.delete()
+        
+        return True
+
     @to_dict(exclude=[])
     def to_dict(self):
         place_amenity_dict = super().to_dict()
