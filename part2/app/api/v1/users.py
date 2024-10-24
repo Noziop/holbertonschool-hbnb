@@ -1,5 +1,6 @@
 """Users API routes - Where spirits create their accounts! 👻"""
 from flask_restx import Namespace, Resource, fields
+from flask import request
 from app.services.facade import HBnBFacade
 from app.utils import *
 
@@ -25,9 +26,14 @@ user_model = ns.model('User', {
 class UserList(Resource):
     @ns.doc('list_users')
     @ns.marshal_list_with(user_model)
+    @ns.doc(params= {'username': {'description': 'Filter by username', 'type': 'string'},
+        'email': {'description': 'Filter by email', 'type': 'string'},
+        'city': {'description': 'Filter by city', 'type': 'string'},
+        'status': {'description': 'Filter by status', 'type': 'string'}})
     def get(self):
         """List all spirits in our realm! 👻"""
-        return facade.find_users()
+        filters = {k: v for k, v in request.args.items() if v}
+        return facade.find_users(**filters)
 
     @ns.doc('create_user')
     @ns.expect(user_model)

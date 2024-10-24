@@ -75,6 +75,13 @@ const PlaceForm = () => {
       </Box>
 
       <TextField
+      label="City"
+        value={placeData.city}
+        onChange={(e) => setPlaceData({...placeData, city: e.target.value})}
+        required
+      />
+
+      <TextField
         label="Description"
         multiline
         rows={4}

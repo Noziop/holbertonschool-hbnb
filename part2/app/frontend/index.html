@@ -29,6 +29,14 @@
                     <input type="password" id="password" name="password" required>
                     <label for="phone">Phone:</label>
                     <input type="text" id="phone" name="phone">
+                    <label for="address">Address:</label>
+                    <input type="text" id="address" name="address">
+                    <label for="city">City:</label>
+                    <input type="text" id="city" name="city">
+                    <label for="postal_code">Postal Code:</label>
+                    <input type="text" id="postal_code" name="postal_code">
+                    <label for="country">Country:</label>
+                    <input type="text" id="country" name="country">
                     <button type="submit">Create User</button>
                 </form>
                 <div id="create-user-form-message"></div>
@@ -51,6 +59,15 @@
                     <label for="update-phone">Phone:</label>
                     <input type="text" id="update-phone" name="phone">
                     <button type="submit">Update User</button>
+                    <label for="address">Address:</label>
+                    <input type="text" id="address" name="address">
+                    <label for="city">City:</label>
+                    <input type="text" id="city" name="city">
+                    <label for="postal_code">Postal Code:</label>
+                    <input type="text" id="postal_code" name="postal_code">
+                    <label for="country">Country:</label>
+                    <input type="text" id="country" name="country">
+                    <button type="submit">Create User</button>
                 </form>
                 <div id="update-user-form-message"></div>
             </div>
@@ -62,6 +79,23 @@
                     <button type="submit">Delete User</button>
                 </form>
                 <div id="delete-user-form-message"></div>
+            </div>
+            <div class="find-user-container">
+                <form id="find-user-form">
+                    <h3>Find User</h3>
+                    <label for="find-user-id">User ID:</label>
+                    <input type="text" id="find-user-id" name="id">
+                    <label for="find-user-email">Email:</label>
+                    <input type="email" id="find-user-email" name="email">
+                    <label for="find-user-username">Username:</label>
+                    <input type="text" id="find-user-username" name="username">
+                    <label for="find-user-firstname">First Name:</label>
+                    <input type="text" id="find-user-firstname" name="first_name">
+                    <label for="find-user-lastname">Last Name:</label>
+                    <input type="text" id="find-user-lastname" name="last_name">
+                    <button type="submit">Find User</button>
+                </form>
+                <div id="find-user-form-message"></div>
             </div>
         </div>
 
@@ -348,6 +382,7 @@
         handleFormSubmit('create-user-form', 'http://localhost:5000/api/v1/users/', 'POST');
         handleFormSubmit('update-user-form', 'http://localhost:5000/api/v1/users/', 'PUT');
         handleFormSubmit('delete-user-form', 'http://localhost:5000/api/v1/users/', 'DELETE');
+        handleFormSubmit('find-user-form', 'http://localhost:5000/api/v1/users/', 'GET');
         handleFormSubmit('create-place-form', 'http://localhost:5000/api/v1/places/', 'POST');
         handleFormSubmit('update-place-form', 'http://localhost:5000/api/v1/places/', 'PUT');
         handleFormSubmit('delete-place-form', 'http://localhost:5000/api/v1/places/', 'DELETE');
@@ -355,6 +390,7 @@
         handleFormSubmit('update-amenity-form', 'http://localhost:5000/api/v1/amenities/', 'PUT');
         handleFormSubmit('delete-amenity-form', 'http://localhost:5000/api/v1/amenities/', 'DELETE');
         handleFormSubmit('create-review-form', 'http://localhost:5000/api/v1/reviews/', 'POST');
+
 
         // Configuration des boutons "Get All"
         handleGetAllButton('get-all-users', 'http://localhost:5000/api/v1/users/');

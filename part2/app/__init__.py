@@ -9,6 +9,7 @@ from app.api.v1.reviews import ns as reviews_ns
 def create_app():
     """Summon our haunted API! 👻"""
     app = Flask(__name__)
+    app.url_map.strict_slashes = False
     
     # Appliquer CORS à toute l'app
     CORS(app, resources={
