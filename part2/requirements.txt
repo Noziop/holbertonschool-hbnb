@@ -1,2 +1,4 @@
 flask
 flask-restx
+coverage
+flask-cors
