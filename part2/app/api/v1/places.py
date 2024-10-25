@@ -4,7 +4,7 @@ from flask_restx import Namespace, Resource, fields
 from app.services.facade import HBnBFacade
 from app.utils import *
 
-ns = Namespace('places', description='Haunted property operations 👻')
+ns = Namespace('places', validate=True, description='Haunted property operations 👻')
 facade = HBnBFacade()
 
 # Modèles Swagger/OpenAPI
@@ -25,6 +25,13 @@ place_model = ns.model('Place', {
 class PlaceList(Resource):
     @ns.doc('list_places')
     @ns.marshal_list_with(place_model)
+    @ns.doc(params={
+        'price_min': {'description': 'Minimum price per night', 'type': 'float'},
+        'price_max': {'description': 'Maximum price per night', 'type': 'float'},
+        'latitude': {'description': 'Latitude for location-based search', 'type': 'float'},
+        'longitude': {'description': 'Longitude for location-based search', 'type': 'float'},
+        'radius': {'description': 'Search radius in kilometers', 'type': 'float'}
+    })
     def get(self):
         """Browse our haunted catalog! 👻"""
         try:

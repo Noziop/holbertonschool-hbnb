@@ -2,6 +2,7 @@
 
 ## 📚 Table des Matières
 1. [Project Overview](#-project-overview)
+2. [Quick Start](#-quick-start)
 2. [Architecture](#-architecture)
    - [Layer Overview](#-layer-overview)
    - [Detailed Architecture Breakdown](#-detailed-architecture-breakdown)
@@ -21,6 +22,15 @@
 ## 🦇 Project Overview
 
 Haunted-BnB is a spooky twist on the classic Airbnb concept - a RESTful API that lets users rent haunted properties! Built with Flask and following a clean architecture pattern, this project demonstrates advanced Python development practices with a slightly supernatural touch.
+
+## 🚀 Quick Start
+```bash
+git clone https://github.com/Noziop/holbertonschool-hbnb.git
+cd holbertonschool-hbnb/part2
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python run.py
+```
 
 ## 👻 Architecture
 
@@ -59,6 +69,10 @@ class UserList(Resource):
         filters = {k: v for k, v in request.args.items() if v}
         return facade.find_users(**filters)
 ```
+
+**API Documentation (your very own book of spells)**
+
+Visit `http://localhost:5000/docs` after starting the server to access the interactive Swagger documentation.
 
 **Facade Pattern (Integration)**
 - Acts as a simplified interface between API and Business Logic
@@ -324,6 +338,11 @@ curl -X POST http://localhost:5000/api/v1/users \
 ```
 
 ## 🎃 Installation & Setup
+
+**🛠️ Prerquisites**
+- Python 3.8+
+- pip
+- virtualenv
 
 1. Clone the repository:
 ```bash

@@ -57,6 +57,9 @@ class Amenity(BaseModel):
         """Create new amenity. Summoning a new feature! 👻"""
         if 'name' not in kwargs:
             raise ValueError("A ghost amenity needs a name! 👻")
+        
+        if 'name' in kwargs and len(kwargs['name']) < 2:
+            raise ValueError("A proper gosthly Amenity name must be at least 2 characters long! 👻")
             
         if cls.get_by_attr(name=kwargs['name']):
             raise ValueError(

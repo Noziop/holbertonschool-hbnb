@@ -131,7 +131,8 @@ class HBnBFacade:
         review = self.get_review(review_id)
         return review.update(review_data)
 
-    @magic_wand(validate_input({'review_id': str}))
+    @magic_wand(validate_input({'review_id': str}),
+                validate_entity('Review', 'review_id'))
     def delete_review(self, review_id: str) -> bool:
         """Make a review disappear like a ghost! 👻"""
         review = self.get_review(review_id)

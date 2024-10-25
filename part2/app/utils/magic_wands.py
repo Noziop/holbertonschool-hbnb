@@ -6,6 +6,10 @@ from functools import wraps
 from logging.handlers import RotatingFileHandler
 from .model_validations import *
 
+class EntityNotFoundError(Exception):
+    """Raised when an entity is not found in the database 👻"""
+    pass
+
 # Création du répertoire pour les logs
 log_directory = 'app/logs'
 if not os.path.exists(log_directory):
@@ -62,7 +66,7 @@ def magic_wand(*wrappers):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            module = func.__module__.split('.')[-2]  # Obtient le nom du module (models, facade, api)
+            module = func.__module__.split('.')[-2]
             logger = get_logger(module)
             log_data = _prepare_log_data(func, args, kwargs)
             try:
@@ -108,9 +112,11 @@ def validate_entity(*args):
                 module = importlib.import_module(f'app.models.{model_name.lower()}')
                 model_class = getattr(module, model_name)
                 entity = model_class.get_by_id(func_kwargs[field])
-                if not entity:
-                    raise ValueError(f"{model_name} with id {func_kwargs[field]} does not exist")
+                raise EntityNotFoundError(
+                        f"{model_name} with id {func_kwargs[field]} does not exist! 👻"
+                    )
         return func_args, func_kwargs
+    wrapper.priority = 2
     return wrapper
 
 def validate_input(*args, **kwargs):
@@ -135,7 +141,7 @@ def validate_input(*args, **kwargs):
                 except ValueError as e:
                     raise ValueError(f"Invalid {param}: {str(e)}")
         return validated
-    wrapper.priority = 2
+    wrapper.priority = 1
     return wrapper
 
 def update_timestamp(func):
@@ -154,7 +160,10 @@ def to_dict(exclude=[]):
         @wraps(func)
         def wrapper(self):
             result = func(self)
-            return {k: v for k, v in result.items() if k not in exclude}
-        wrapper.priority = 5  # Ajout de la priorité
+            filtered = {k: v for k, v in result.items() 
+                      if k not in ['password', 'password_hash'] 
+                      and k not in exclude}
+            return filtered
+        wrapper.priority = 4
         return wrapper
     return decorator

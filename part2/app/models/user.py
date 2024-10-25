@@ -255,7 +255,6 @@ class User(BaseModel):
 
     # === SERIALIZATION === #
     @magic_wand()
-    @to_dict(exclude=['password_hash'])
     def to_dict(self) -> dict:
         """
         Transform this spirit into mortal-readable format! 📜
@@ -273,4 +272,7 @@ class User(BaseModel):
             'city': getattr(self, 'city', None),
             'country': getattr(self, 'country', None)
         }
-        return {**base_dict, **user_dict}
+        result = {**base_dict, **user_dict}
+        result.pop('password', None)
+        result.pop('password_hash', None)
+        return result

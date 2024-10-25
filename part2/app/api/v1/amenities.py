@@ -20,7 +20,7 @@ class AmenityList(Resource):
     def get(self):
         """Browse our catalog of supernatural features! 👻"""
         try:
-            amenities = facade.get_all_amenities()
+            amenities = facade.find_amenities()
             return amenities if amenities else ([], 404)
         except ValueError as e:
             ns.abort(400, f"Failed to summon features: {str(e)}")

@@ -21,10 +21,13 @@ review_model = ns.model('Review', {
 class ReviewList(Resource):
     @ns.doc('list_reviews')
     @ns.marshal_list_with(review_model)
+    @ns.doc(params={'place_id': {'description': 'Filter by place ID', 'type': 'string'},
+        'user_id': {'description': 'Filter by user ID', 'type': 'string'},
+        'rating': {'description': 'Filter by rating', 'type': 'integer'}})
     def get(self):
         """Read all ghostly feedback! 👻"""
         try:
-            reviews = facade.get_all_reviews()
+            reviews = facade.find_reviews()
             return reviews if reviews else ([], 404)
         except ValueError as e:
             ns.abort(400, f"Failed to summon reviews: {str(e)}")
@@ -69,8 +72,10 @@ class Review(Resource):
             if facade.delete_review(review_id):
                 return '', 204
             ns.abort(404, "Review already vanished!")
+        except EntityNotFoundError as e:
+            ns.abort(404, str(e))  # 404 pour entité non trouvée
         except ValueError as e:
-            ns.abort(400, str(e))
+            ns.abort(400, str(e))  # 400 pour autres erreurs
 
 @ns.route('/recent')
 class RecentReviews(Resource):
