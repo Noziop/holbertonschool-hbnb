@@ -44,3 +44,39 @@ def test_log_formatting():
     
     assert re.search(log_pattern, log_content) is not None
 
+def test_log_levels_separation():
+    """Test that different log levels go to different files! 📑"""
+    from app.utils.spooky_spells import setup_logging
+    
+    setup_logging()
+    logger = logging.getLogger('hbnb_api')
+    
+    # Send messages of different levels
+    debug_msg = "Debug ghost spotted!"
+    info_msg = "Info spirit passing by!"
+    error_msg = "Error demon encountered!"
+    
+    logger.debug(debug_msg)
+    logger.info(info_msg)
+    logger.error(error_msg)
+    
+    # Check debug.log (should contain all messages)
+    with open('logs/api/debug.log', 'r') as f:
+        debug_content = f.read()
+        assert debug_msg in debug_content
+        assert info_msg in debug_content
+        assert error_msg in debug_content
+    
+    # Check info.log (should contain info and error)
+    with open('logs/api/info.log', 'r') as f:
+        info_content = f.read()
+        assert debug_msg not in info_content
+        assert info_msg in info_content
+        assert error_msg in info_content
+    
+    # Check error.log (should contain only error)
+    with open('logs/api/error.log', 'r') as f:
+        error_content = f.read()
+        assert debug_msg not in error_content
+        assert info_msg not in error_content
+        assert error_msg in error_content
