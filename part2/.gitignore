@@ -22,7 +22,11 @@ app/logs/*
 # Virtual Environment
 venv/
 env/
-ENV/" > .gitignore
+ENV/
 
 # Personal project to dig
 facade_coverage_report/
+logs/
+*.pyc
+.coverage
+.pytest_cache/
