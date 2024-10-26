@@ -80,3 +80,33 @@ def test_log_levels_separation():
         assert debug_msg not in error_content
         assert info_msg not in error_content
         assert error_msg in error_content
+
+def test_log_rotation():
+    """Test that our logs rotate properly based on size and time! 📜"""
+    from app.utils.spooky_spells import setup_logging
+    import time
+    
+    setup_logging()
+    logger = logging.getLogger('hbnb_api')
+    
+    # Generate enough logs to trigger rotation (10KB per message, 100 messages)
+    large_message = "🦇" * 10240  # 10KB of ghost emojis!
+    for i in range(100):  # Should definitely create multiple log files
+        logger.info(f"Message {i}: {large_message}")
+    
+    # Check that rotation files exist
+    base_path = Path('logs/api')
+    assert (base_path / 'debug.log').exists()
+    assert (base_path / 'debug.log.1').exists()
+    
+    # Verify content separation
+    with open(base_path / 'debug.log', 'r') as f:
+        current_content = f.read()
+    with open(base_path / 'debug.log.1', 'r') as f:
+        rotated_content = f.read()
+        
+    # Messages should be different in each file
+    assert current_content != rotated_content
+    assert '🦇' in current_content
+    assert '🦇' in rotated_content
+
