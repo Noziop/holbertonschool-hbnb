@@ -30,13 +30,16 @@ def setup_logging():
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
 
-        # Create and configure rotating handlers for each level
+        # Create and configure handlers with strict level filtering
         debug_handler = RotatingFileHandler(
             f'logs/{log_type}/debug.log',
             maxBytes=MAX_BYTES,
             backupCount=BACKUP_COUNT
         )
         debug_handler.setLevel(logging.DEBUG)
+        debug_handler.addFilter(
+            lambda record: record.levelno == logging.DEBUG
+        )  # ONLY debug messages
         debug_handler.setFormatter(formatter)
 
         info_handler = RotatingFileHandler(
@@ -45,6 +48,9 @@ def setup_logging():
             backupCount=BACKUP_COUNT
         )
         info_handler.setLevel(logging.INFO)
+        info_handler.addFilter(
+            lambda record: record.levelno == logging.INFO
+        )  # ONLY info messages
         info_handler.setFormatter(formatter)
 
         error_handler = RotatingFileHandler(
@@ -53,6 +59,9 @@ def setup_logging():
             backupCount=BACKUP_COUNT
         )
         error_handler.setLevel(logging.ERROR)
+        error_handler.addFilter(
+            lambda record: record.levelno >= logging.ERROR
+        )  # ONLY error messages
         error_handler.setFormatter(formatter)
 
         # Remove existing handlers to avoid duplicates
