@@ -5,8 +5,8 @@ from pathlib import Path
 
 def test_logger_initialization():
     """Test that our logging system initializes correctly! 🎭"""
-    # Verfiy that the spooky_spells module is importable
-    from app.utils.spooky_spells import setup_logging
+    # Verfiy that the haunted_logger module is importable
+    from app.utils.haunted_logger import setup_logging
     
     setup_logging()
     
@@ -24,7 +24,7 @@ def test_logger_initialization():
 
 def test_log_formatting():
     """Test that our logs are properly formatted! 📝"""
-    from app.utils.spooky_spells import setup_logging
+    from app.utils.haunted_logger import setup_logging
     import re
 
     setup_logging()
@@ -46,7 +46,7 @@ def test_log_formatting():
 
 def test_log_levels_separation():
     """Test that different log levels go to different files! 📑"""
-    from app.utils.spooky_spells import setup_logging
+    from app.utils.haunted_logger import setup_logging
     
     setup_logging()
     logger = logging.getLogger('hbnb_api')
@@ -83,7 +83,7 @@ def test_log_levels_separation():
 
 def test_log_rotation():
     """Test that our logs rotate properly based on size and time! 📜"""
-    from app.utils.spooky_spells import setup_logging
+    from app.utils.haunted_logger import setup_logging
     import time
 
     setup_logging()
@@ -107,7 +107,7 @@ def test_log_rotation():
 
 def test_exception_logging():
     """Test that exceptions are properly logged in appropriate files! 🎭"""
-    from app.utils.spooky_spells import setup_logging
+    from app.utils.haunted_logger import setup_logging
     
     setup_logging()
     logger = logging.getLogger('hbnb_api')
