@@ -1,7 +1,5 @@
 # app/utils/ghost_validator.py
 """Ghost validation module for our haunted app! 👻"""
-from functools import wraps
-from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, Union, Type
 
 from .phantom_types import (
@@ -27,7 +25,7 @@ def validate_ghost(cls: Type) -> Type:
         entity_id: str
     ) -> ValidationResult:
         """Validate that a related entity exists"""
-        # Simulation de validation pour le test
+        # validation simulation for testing purposes
         valid_ids = {
             'User': ['valid_user_id'],
             'Place': ['valid_place_id'],
@@ -63,7 +61,7 @@ def validate_ghost(cls: Type) -> Type:
             if field in self.__validation_rules__:
                 rules = self.__validation_rules__[field]
                 
-                # Validation des relations d'abord
+                # validate relationship first
                 if rules.get('exists'):
                     entity_type = rules['exists']
                     is_valid, error = validate_relationship(entity_type, value)
@@ -143,3 +141,4 @@ def validate_ghost(cls: Type) -> Type:
     setattr(cls, 'validate_and_set', validate_and_set)
     setattr(cls, 'validate_relationship', staticmethod(validate_relationship))
     return cls
+
