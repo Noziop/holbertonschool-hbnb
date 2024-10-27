@@ -30,3 +30,4 @@ logs/
 *.pyc
 .coverage
 .pytest_cache/
+old*.py
