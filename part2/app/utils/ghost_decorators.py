@@ -1,3 +1,5 @@
+# app/utils/ghost_decorators.py
+"""Decorators for our haunted models! 👻"""
 from datetime import datetime, timezone
 from functools import wraps
 from typing import Optional, List, Type
@@ -31,13 +33,17 @@ def spell_book(
                 @wraps(method)
                 def wrapper(self, *args, **kwargs):
                     result = method(self, *args, **kwargs)
-                    self.updated_at = datetime.now(timezone.utc)
+                    # Ne pas mettre à jour le timestamp pour __init__
+                    if method.__name__ != '__init__':
+                        self.updated_at = datetime.now(timezone.utc)
                     return result
                 return wrapper
             
-            # Enchant all public methods
+            # Enchant all public methods except __init__
             for attr_name, attr_value in cls.__dict__.items():
-                if callable(attr_value) and not attr_name.startswith('_'):
+                if (callable(attr_value) and 
+                    not attr_name.startswith('_') and 
+                    attr_name != '__init__'):
                     setattr(cls, attr_name, update_timestamp(attr_value))
         
         # Cast dictionary transformation spell if requested
