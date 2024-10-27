@@ -1,13 +1,9 @@
 # app/utils/ghost_validator.py
-"""Ghost validation module for our haunted app! 👻"""
-from typing import TYPE_CHECKING, Any, Dict, Union, Type
+"""Ghost validation module for our haunted models! 👻"""
+from functools import wraps
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, Dict, Union, Type, Tuple, Optional
 
-from .phantom_types import (
-    ValidationRules,
-    NumericType,
-    DateTimeType,
-    ValidationResult
-)
 from .cursed_errors import ValidationError
 
 if TYPE_CHECKING:
@@ -17,6 +13,10 @@ if TYPE_CHECKING:
     from app.models.amenity import Amenity
     from app.models.basemodel import BaseModel
 
+# Types personnalisés
+ValidationResult = Tuple[bool, Optional[str]]
+ValidationRules = Dict[str, Dict[str, Any]]
+
 def validate_ghost(cls: Type) -> Type:
     """Decorator to add validation capabilities to a class! 🎭"""
     
@@ -25,43 +25,48 @@ def validate_ghost(cls: Type) -> Type:
         entity_id: str
     ) -> ValidationResult:
         """Validate that a related entity exists"""
-        # validation simulation for testing purposes
-        valid_ids = {
-            'User': ['valid_user_id'],
-            'Place': ['valid_place_id'],
-            'Review': ['valid_review_id'],
-            'Amenity': ['valid_amenity_id']
-        }
-        
-        if entity_type not in valid_ids:
-            return False, f"Unknown entity type: {entity_type}"
-            
-        if entity_id not in valid_ids[entity_type]:
-            return False, f"Invalid {entity_type} ID: {entity_id}"
-            
-        return True, None
-
-    def validate_and_set(self, **kwargs: Dict[str, Any]) -> None:
+        if entity_type == 'User':
+            from app.models.user import User
+            return True, None
+        elif entity_type == 'Place':
+            from app.models.place import Place
+            return True, None
+        elif entity_type == 'Review':
+            from app.models.review import Review
+            return True, None
+        elif entity_type == 'Amenity':
+            from app.models.amenity import Amenity
+            return True, None
+        return False, f"Unknown entity type: {entity_type}"
+    
+    def validate_and_set(self, partial: bool = False, **kwargs: Dict[str, Any]) -> None:
         """Validate and set attributes based on validation rules"""
-        errors = []
-        validated_data = {}
+        errors: List[str] = []
+        validated_data: Dict[str, Any] = {}
+        
+        # Pour l'initialisation, on garde les valeurs existantes
+        if hasattr(self, 'id'):
+            for field in self.__validation_rules__.keys():
+                if hasattr(self, field):
+                    validated_data[field] = getattr(self, field)
         
         # Set default values first
         for field, rules in self.__validation_rules__.items():
             if 'default' in rules and field not in kwargs:
                 validated_data[field] = rules['default']
         
-        # Check required fields
-        for field, rules in self.__validation_rules__.items():
-            if rules.get('required', False) and field not in kwargs:
-                errors.append(f"Field '{field}' is required")
+        # Check required fields only if not partial
+        if not partial:
+            for field, rules in self.__validation_rules__.items():
+                if rules.get('required', False) and field not in kwargs:
+                    errors.append(f"Field '{field}' is required")
         
         # Validate each field that has rules
         for field, value in kwargs.items():
             if field in self.__validation_rules__:
                 rules = self.__validation_rules__[field]
                 
-                # validate relationship first
+                # Validate relationship first
                 if rules.get('exists'):
                     entity_type = rules['exists']
                     is_valid, error = validate_relationship(entity_type, value)
@@ -133,7 +138,7 @@ def validate_ghost(cls: Type) -> Type:
         if errors:
             raise ValidationError("\n".join(errors))
         
-        # Set only validated attributes
+        # Set validated attributes
         for field, value in validated_data.items():
             setattr(self, field, value)
     
@@ -141,4 +146,3 @@ def validate_ghost(cls: Type) -> Type:
     setattr(cls, 'validate_and_set', validate_and_set)
     setattr(cls, 'validate_relationship', staticmethod(validate_relationship))
     return cls
-
