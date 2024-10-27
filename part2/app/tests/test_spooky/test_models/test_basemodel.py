@@ -162,3 +162,96 @@ def test_basemodel_to_dict_with_deletion_state():
     assert 'is_deleted' in model_dict
     assert model_dict['is_active'] is True
     assert model_dict['is_deleted'] is False
+
+def test_basemodel_get_by_single_attr(repository):
+    """Test BaseModel get_by_attr with single attribute! 🔍"""
+    from app.models.basemodel import BaseModel
+    
+    BaseModel.repository = repository
+    
+    # Create and save a model with specific attributes
+    model = BaseModel(name="test", tag="special")
+    model.save()
+    
+    # Test get by single attribute
+    found = BaseModel.get_by_attr(name="test")
+    assert found is not None
+    assert found.name == "test"
+    assert found.id == model.id
+
+def test_basemodel_get_by_multiple_attrs(repository):
+    """Test BaseModel get_by_attr with multiple attributes! 🔍"""
+    from app.models.basemodel import BaseModel
+    
+    BaseModel.repository = repository
+    
+    # Create and save models with different combinations of attributes
+    model1 = BaseModel(name="test1", tag="special", category="A")
+    model1.save()
+    model2 = BaseModel(name="test2", tag="special", category="B")
+    model2.save()
+    
+    # Test get by multiple attributes
+    found = BaseModel.get_by_attr(tag="special", category="A")
+    assert found is not None
+    assert found.name == "test1"
+    assert found.category == "A"
+
+def test_basemodel_get_by_multiple_results(repository):
+    """Test BaseModel get_by_attr with multiple results! 🔍"""
+    from app.models.basemodel import BaseModel
+    
+    BaseModel.repository = repository
+    
+    # Create and save multiple models with same attribute
+    model1 = BaseModel(tag="special")
+    model1.save()
+    model2 = BaseModel(tag="special")
+    model2.save()
+    
+    # Test get multiple results
+    found = BaseModel.get_by_attr(multiple=True, tag="special")
+    assert isinstance(found, list)
+    assert len(found) == 2
+    assert all(model.tag == "special" for model in found)
+
+def test_basemodel_get_by_nonexistent_attr(repository):
+    """Test BaseModel get_by_attr with nonexistent attributes! 🔍"""
+    from app.models.basemodel import BaseModel
+    
+    BaseModel.repository = repository
+    
+    # Create and save a model
+    model = BaseModel(name="test")
+    model.save()
+    
+    # Test get by nonexistent attribute
+    found = BaseModel.get_by_attr(nonexistent="value")
+    assert found is None
+    
+    # Test get multiple with nonexistent attribute
+    found_multiple = BaseModel.get_by_attr(multiple=True, nonexistent="value")
+    assert isinstance(found_multiple, list)
+    assert len(found_multiple) == 0
+
+def test_basemodel_get_by_combined_conditions(repository):
+    """Test BaseModel get_by_attr with combined conditions! 🔍"""
+    from app.models.basemodel import BaseModel
+    
+    BaseModel.repository = repository
+    
+    # Create models with various attributes
+    model1 = BaseModel(name="test", status="active", priority=1)
+    model1.save()
+    model2 = BaseModel(name="test", status="inactive", priority=2)
+    model2.save()
+    
+    # Test complex queries
+    found = BaseModel.get_by_attr(name="test", status="active")
+    assert found is not None
+    assert found.priority == 1
+    
+    # Test with multiple results
+    found_multiple = BaseModel.get_by_attr(multiple=True, name="test")
+    assert len(found_multiple) == 2
+    assert {model.status for model in found_multiple} == {"active", "inactive"}
