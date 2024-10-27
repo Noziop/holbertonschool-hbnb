@@ -135,3 +135,110 @@ def test_user_to_dict():
     assert 'updated_at' in user_dict
     assert 'is_active' in user_dict
     assert 'is_admin' in user_dict
+
+def test_user_account_states():
+    """Test User account states (pause, reactivate)! 🌙"""
+    from app.models.user import User
+    
+    user = User(
+        username="friendly_ghost",
+        email="ghost@haunted.com",
+        password="Boo123!@#",
+        first_name="Casper",
+        last_name="Friendly"
+    )
+    user.save()
+    
+    # Test pause account
+    assert user.pause_account() is True
+    assert user.is_active is False
+    assert user.is_deleted is False
+    
+    # Test reactivate account
+    assert user.reactivate_account() is True
+    assert user.is_active is True
+    assert user.is_deleted is False
+
+def test_user_delete():
+    """Test User deletion with related entities! ⚰️"""
+    from app.models.user import User
+    
+    user = User(
+        username="friendly_ghost",
+        email="ghost@haunted.com",
+        password="Boo123!@#",
+        first_name="Casper",
+        last_name="Friendly"
+    )
+    user.save()
+    
+    # Test soft delete
+    assert user.delete() is True
+    assert user.is_active is False
+    assert user.is_deleted is True
+    
+    # Test cannot reactivate deleted account
+    with pytest.raises(ValueError):
+        user.reactivate_account()
+
+@pytest.mark.skip(reason="Place not implemented yet")
+def test_user_places_visibility():
+    """Test User places visibility when account is paused! 🏠"""
+    from app.models.user import User
+    from app.models.place import Place
+    
+    user = User(
+        username="friendly_ghost",
+        email="ghost@haunted.com",
+        password="Boo123!@#",
+        first_name="Casper",
+        last_name="Friendly"
+    )
+    user.save()
+    
+    # Create a place for the user
+    place = Place(
+        name="Haunted Mansion",
+        owner_id=user.id,
+        description="A spooky place",
+        price_per_night=100
+    )
+    place.save()
+    
+    # Test place visibility when account is paused
+    user.pause_account()
+    assert place.is_active is False
+    
+    # Test place visibility when account is reactivated
+    user.reactivate_account()
+    assert place.is_active is True
+
+@pytest.mark.skip(reason="Review not implemented yet")
+def test_user_delete_with_reviews():
+    """Test User deletion with reviews! 📝"""
+    from app.models.user import User
+    from app.models.review import Review
+    
+    user = User(
+        username="friendly_ghost",
+        email="ghost@haunted.com",
+        password="Boo123!@#",
+        first_name="Casper",
+        last_name="Friendly"
+    )
+    user.save()
+    
+    # Create a review
+    review = Review(
+        user_id=user.id,
+        place_id="some-place-id",
+        text="Spooky place!"
+    )
+    review.save()
+    
+    # Test soft delete
+    user.delete()
+    
+    # Check if review is anonymized
+    updated_review = Review.get_by_id(review.id)
+    assert updated_review.user_id is None

@@ -1,10 +1,16 @@
 # app/models/user.py
 """User model module: The ghostly users of our haunted kingdom! 👻"""
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, TYPE_CHECKING, List
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
 import logging
 from app.models.basemodel import BaseModel
+
+# Conditionally import Place and Review for type hints and avoid circular imports
+if TYPE_CHECKING:
+    from app.models.place import Place
+    from app.models.review import Review
+
 
 class User(BaseModel):
     """User: A spectral entity in our haunted realm! 👻"""
@@ -83,6 +89,114 @@ class User(BaseModel):
     def check_password(self, password: str) -> bool:
         """Check if password matches! 🔍"""
         return check_password_hash(self.password_hash, password)
+
+    def hard_delete(self) -> bool:
+        """Hard delete user and all related entities! ⚰️"""
+        try:
+            # 1. Hard delete des places (et leurs reviews associées)
+            places = Place.get_by_attr(multiple=True, owner_id=self.id)
+            for place in places:
+                place.hard_delete()
+                self.logger.info(f"Hard deleted place: {place.id}")
+            
+            # 2. Hard delete des reviews de l'utilisateur
+            reviews = Review.get_by_attr(multiple=True, user_id=self.id)
+            for review in reviews:
+                review.hard_delete()
+                self.logger.info(f"Hard deleted review: {review.id}")
+            
+            # 3. Hard delete de l'utilisateur
+            super().hard_delete()
+            self.logger.info(f"Hard deleted user: {self.username}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to hard delete user: {str(e)}")
+            raise
+
+    def pause_account(self) -> bool:
+        """Pause user account temporarily! 🌙"""
+        try:
+            # 1. Désactiver le compte
+            self.is_active = False
+            
+            # 2. Cacher les places si le modèle existe
+            try:
+                from app.models.place import Place
+                places = Place.get_by_attr(multiple=True, owner_id=self.id)
+                for place in places:
+                    place.is_active = False
+                    place.save()
+            except ImportError:
+                self.logger.warning("Place model not implemented yet")
+            
+            self.save()
+            self.logger.info(f"Account paused for user: {self.username}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to pause account: {str(e)}")
+            raise
+
+    def reactivate_account(self) -> bool:
+        """Reactivate paused account! ☀️"""
+        try:
+            if self.is_deleted:
+                raise ValueError("Cannot reactivate deleted account! 👻")
+            
+            # 1. Réactiver le compte
+            self.is_active = True
+            
+            # 2. Réactiver les places si le modèle existe
+            try:
+                from app.models.place import Place
+                places = Place.get_by_attr(multiple=True, owner_id=self.id)
+                for place in places:
+                    place.is_active = True
+                    place.save()
+            except ImportError:
+                self.logger.warning("Place model not implemented yet")
+            
+            self.save()
+            self.logger.info(f"Account reactivated for user: {self.username}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to reactivate account: {str(e)}")
+            raise
+
+    def delete(self) -> bool:
+        """Soft delete user and handle related entities! ⚰️"""
+        try:
+            # 1. Hard delete des places si le modèle existe
+            try:
+                from app.models.place import Place
+                places = Place.get_by_attr(multiple=True, owner_id=self.id)
+                for place in places:
+                    place.hard_delete()
+            except ImportError:
+                self.logger.warning("Place model not implemented yet")
+            
+            # 2. Anonymiser les reviews si le modèle existe
+            try:
+                from app.models.review import Review
+                reviews = Review.get_by_attr(multiple=True, user_id=self.id)
+                for review in reviews:
+                    review.anonymize()
+            except ImportError:
+                self.logger.warning("Review model not implemented yet")
+            
+            # 3. Marquer l'utilisateur comme supprimé
+            self.is_active = False
+            self.is_deleted = True
+            self.save()
+            
+            self.logger.info(f"Soft deleted user: {self.username}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to delete user: {str(e)}")
+            raise
 
     def to_dict(self) -> Dict[str, Any]:
         """Transform user into dictionary! 📚"""
