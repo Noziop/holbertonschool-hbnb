@@ -255,3 +255,213 @@ def test_basemodel_get_by_combined_conditions(repository):
     found_multiple = BaseModel.get_by_attr(multiple=True, name="test")
     assert len(found_multiple) == 2
     assert {model.status for model in found_multiple} == {"active", "inactive"}
+
+def test_basemodel_error_handling():
+    """Test BaseModel error handling! 🎭"""
+    from app.models.basemodel import BaseModel
+    
+    # Test save with repository error
+    model = BaseModel()
+    model.repository = None
+    with pytest.raises(ValueError):
+        model.save()
+    
+    # Test update with invalid data type
+    model = BaseModel()
+    with pytest.raises(ValueError):
+        model.update("not a dict")
+    
+    # Test get_by_id with invalid ID format
+    with pytest.raises(ValueError):
+        BaseModel.get_by_id("invalid-uuid")
+    
+    # Test get_by_attr with invalid attribute type
+    result = BaseModel.get_by_attr(multiple=True, invalid_attr=123)
+    assert len(result) == 0
+
+def test_basemodel_repository_operations_failure():
+    """Test BaseModel repository operation failures! 📚"""
+    from app.models.basemodel import BaseModel
+    from app.persistence.repository import InMemoryRepository
+    
+    # Setup repository that raises errors
+    class ErrorRepository(InMemoryRepository):
+        def add(self, obj):
+            raise Exception("Storage error")
+        
+        def delete(self, id):
+            raise Exception("Delete error")
+    
+    # Test save failure
+    model = BaseModel()
+    model.repository = ErrorRepository()
+    with pytest.raises(ValueError):
+        model.save()
+    
+    # Test hard_delete failure
+    with pytest.raises(Exception):
+        model.hard_delete()
+
+def test_basemodel_attribute_validation():
+    """Test BaseModel attribute validation! ✨"""
+    from app.models.basemodel import BaseModel
+    
+    model = BaseModel()
+    
+    # Test update with protected attributes
+    with pytest.raises(ValueError):
+        model.update({'id': 'new-id'})
+    
+    with pytest.raises(ValueError):
+        model.update({'created_at': 'now'})
+    
+    # Test update with invalid datetime format
+    with pytest.raises(ValueError):
+        model.update({'updated_at': 'invalid-date'})
+    
+    # Test update with invalid data type
+    with pytest.raises(ValueError):
+        model.update("not a dict")
+
+def test_basemodel_get_by_attr_edge_cases():
+    """Test BaseModel get_by_attr edge cases! 🔍"""
+    from app.models.basemodel import BaseModel
+    
+    # Test with non-existent attributes
+    result = BaseModel.get_by_attr(nonexistent='value')
+    assert result is None
+    
+    # Test with multiple=True and no matches
+    results = BaseModel.get_by_attr(multiple=True, nonexistent='value')
+    assert isinstance(results, list)
+    assert len(results) == 0
+    
+    # Test with invalid attribute types
+    results = BaseModel.get_by_attr(multiple=True, invalid=object())
+    assert isinstance(results, list)
+    assert len(results) == 0
+
+# app/tests/test_spooky/test_models/test_basemodel.py
+
+def test_basemodel_repository_failure():
+    """Test BaseModel repository failures! 📚"""
+    from app.models.basemodel import BaseModel
+    from app.persistence.repository import InMemoryRepository
+    
+    # Test save with None repository
+    model = BaseModel()
+    model.repository = None
+    with pytest.raises(ValueError):
+        model.save()
+    
+    # Test save with failing repository
+    class FailingRepository(InMemoryRepository):
+        def add(self, obj):
+            raise Exception("Storage error")
+        
+        def delete(self, id):
+            raise Exception("Delete error")
+        
+        def get(self, id):
+            return None
+    
+    model = BaseModel()
+    model.repository = FailingRepository()
+    
+    # Test save failure
+    with pytest.raises(ValueError):
+        model.save()
+    
+    # Test hard_delete failure
+    with pytest.raises(ValueError):
+        model.hard_delete()
+
+def test_basemodel_get_methods_edge_cases():
+    """Test BaseModel get methods edge cases! 🔍"""
+    from app.models.basemodel import BaseModel
+    
+    # Test get_by_id with invalid ID
+    with pytest.raises(ValueError):
+        BaseModel.get_by_id("invalid-id")
+    
+    # Test get_by_attr with invalid attribute
+    result = BaseModel.get_by_attr(nonexistent="value")
+    assert result is None
+    
+    # Test get_by_attr with multiple=True and no matches
+    results = BaseModel.get_by_attr(multiple=True, nonexistent="value")
+    assert isinstance(results, list)
+    assert len(results) == 0
+
+def test_basemodel_update_edge_cases():
+    """Test BaseModel update edge cases! ✨"""
+    from app.models.basemodel import BaseModel
+    
+    model = BaseModel()
+    
+    # Test update with non-dict data
+    with pytest.raises(ValueError):
+        model.update("not a dict")
+    
+    # Test update with None
+    with pytest.raises(ValueError):
+        model.update(None)
+    
+    # Test update with empty dict
+    model.update({})
+    assert model.updated_at is not None
+
+def test_basemodel_str_repr():
+    """Test BaseModel string representations! 📝"""
+    from app.models.basemodel import BaseModel
+    
+    model = BaseModel()
+    str_repr = str(model)
+    repr_str = repr(model)
+    
+    # Test str format
+    assert str_repr.startswith('<BaseModel')
+    assert 'id=' in str_repr
+    assert 'created_at=' in str_repr
+    assert 'updated_at=' in str_repr
+    assert 'is_active=' in str_repr
+    assert 'is_deleted=' in str_repr
+    
+    # Test repr matches str
+    assert str_repr == repr_str
+
+def test_basemodel_initialization_edge_cases():
+    """Test BaseModel initialization edge cases! 🎭"""
+    from app.models.basemodel import BaseModel
+    
+    # Test with invalid datetime format
+    with pytest.raises(ValueError):
+        BaseModel(created_at="invalid-date")
+    
+    with pytest.raises(ValueError):
+        BaseModel(updated_at="invalid-date")
+    
+    # Test with valid ISO format
+    valid_date = "2024-01-01T00:00:00+00:00"
+    model = BaseModel(created_at=valid_date, updated_at=valid_date)
+    assert model.created_at.isoformat() == valid_date
+    assert model.updated_at.isoformat() == valid_date
+
+def test_basemodel_critical_paths():
+    """Test critical paths in BaseModel! 🎭"""
+    from app.models.basemodel import BaseModel
+    
+    # 1. Repository failures
+    model = BaseModel()
+    model.repository = None
+    with pytest.raises(ValueError):
+        model.save()
+    
+    # 2. Date validation
+    with pytest.raises(ValueError):
+        BaseModel(created_at="invalid-date")
+    
+    # 3. Multiple get_by_attr
+    results = BaseModel.get_by_attr(multiple=True, nonexistent="value")
+    assert isinstance(results, list)
+    assert len(results) == 0

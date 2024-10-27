@@ -8,14 +8,18 @@ import uuid
 def setup_repository():
     """Setup clean repository for each test! 🏰"""
     from app.models.review import Review
+    from app.models.user import User
+    from app.models.place import Place
     from app.persistence.repository import InMemoryRepository
     
     # Create new repository and clear any existing data
     repo = InMemoryRepository()
     repo._storage.clear()
     
-    # Set repository for Review class
+    # Set repository for all classes
     Review.repository = repo
+    User.repository = repo
+    Place.repository = repo
     
     yield repo
     
@@ -23,52 +27,90 @@ def setup_repository():
     repo._storage.clear()
 
 @pytest.fixture
-def test_review():
+def test_owner():
+    """Create a test owner! 👻"""
+    from app.models.user import User
+    
+    owner = User(
+        username="ghost_owner",
+        email="owner@haunted.com",
+        password="Ghost123!@#",
+        first_name="Ghost",
+        last_name="Owner"
+    )
+    owner.save()
+    return owner
+
+@pytest.fixture
+def test_reviewer():
+    """Create a test reviewer! 👻"""
+    from app.models.user import User
+    
+    reviewer = User(
+        username="ghost_reviewer",
+        email="reviewer@haunted.com",
+        password="Review123!@#",
+        first_name="Ghost",
+        last_name="Reviewer"
+    )
+    reviewer.save()
+    return reviewer
+
+@pytest.fixture
+def test_place(test_owner):
+    """Create a test place! 🏰"""
+    from app.models.place import Place
+    
+    place = Place(
+        name="Haunted Manor",
+        description="A spooky place with lots of ghosts!",
+        owner_id=test_owner.id,
+        price_by_night=100.0
+    )
+    place.save()
+    return place
+
+@pytest.fixture
+def test_review(test_place, test_reviewer):
     """Create a test review! 📝"""
     from app.models.review import Review
     
     review = Review(
-        place_id=str(uuid.uuid4()),
-        user_id=str(uuid.uuid4()),
+        place_id=test_place.id,
+        user_id=test_reviewer.id,
         text="This haunted mansion was absolutely terrifying! Would definitely haunt again!",
         rating=5
     )
     review.save()
     return review
 
-def test_review_creation():
+def test_review_creation(test_place, test_reviewer):
     """Test basic Review creation! 🎭"""
     from app.models.review import Review
     
     review = Review(
-        place_id=str(uuid.uuid4()),
-        user_id=str(uuid.uuid4()),
+        place_id=test_place.id,
+        user_id=test_reviewer.id,
         text="A spooky experience that I'll never forget!",
         rating=4
     )
     
-    # Required attributes
-    assert isinstance(review.place_id, str)
-    assert isinstance(review.user_id, str)
+    assert review.place_id == test_place.id
+    assert review.user_id == test_reviewer.id
     assert review.text == "A spooky experience that I'll never forget!"
     assert review.rating == 4
-    
-    # BaseModel attributes
-    assert hasattr(review, 'id')
-    assert hasattr(review, 'created_at')
-    assert hasattr(review, 'updated_at')
     assert review.is_active is True
     assert review.is_deleted is False
 
-def test_review_validation():
+def test_review_validation(test_place, test_reviewer, test_owner):
     """Test Review validation rules! 🎭"""
     from app.models.review import Review
     
     # Test invalid text (too short)
     with pytest.raises(ValueError):
         Review(
-            place_id=str(uuid.uuid4()),
-            user_id=str(uuid.uuid4()),
+            place_id=test_place.id,
+            user_id=test_reviewer.id,
             text="Too short",
             rating=4
         )
@@ -76,8 +118,8 @@ def test_review_validation():
     # Test invalid rating (out of range)
     with pytest.raises(ValueError):
         Review(
-            place_id=str(uuid.uuid4()),
-            user_id=str(uuid.uuid4()),
+            place_id=test_place.id,
+            user_id=test_reviewer.id,
             text="This is a valid review text that is long enough",
             rating=6
         )
@@ -86,7 +128,7 @@ def test_review_validation():
     with pytest.raises(ValueError):
         Review(
             place_id="",
-            user_id=str(uuid.uuid4()),
+            user_id=test_reviewer.id,
             text="This is a valid review text that is long enough",
             rating=4
         )
@@ -94,10 +136,19 @@ def test_review_validation():
     # Test invalid user_id
     with pytest.raises(ValueError):
         Review(
-            place_id=str(uuid.uuid4()),
+            place_id=test_place.id,
             user_id="",
             text="This is a valid review text that is long enough",
             rating=4
+        )
+    
+    # Test owner reviewing their own place
+    with pytest.raises(ValueError):
+        Review(
+            place_id=test_place.id,
+            user_id=test_owner.id,  # Owner trying to review their place
+            text="This is my own place!",
+            rating=5
         )
 
 def test_review_update(test_review):
@@ -145,78 +196,74 @@ def test_review_anonymize(test_review):
     assert test_review.user_id is None
     assert test_review.user_id != original_user_id
 
-def test_review_get_by_place():
+def test_review_get_by_place(test_place, test_reviewer):
     """Test Review retrieval by place! 🏰"""
     from app.models.review import Review
     
-    place_id = str(uuid.uuid4())
-    
     # Create multiple reviews for same place
     review1 = Review(
-        place_id=place_id,
-        user_id=str(uuid.uuid4()),
+        place_id=test_place.id,
+        user_id=test_reviewer.id,
         text="First spooky review of this haunted place!",
         rating=5
     )
     review1.save()
     
     review2 = Review(
-        place_id=place_id,
-        user_id=str(uuid.uuid4()),
+        place_id=test_place.id,
+        user_id=test_reviewer.id,
         text="Second ghostly experience at this location!",
         rating=4
     )
     review2.save()
     
     # Test retrieval
-    place_reviews = Review.get_by_attr(multiple=True, place_id=place_id)
+    place_reviews = Review.get_by_attr(multiple=True, place_id=test_place.id)
     assert len(place_reviews) == 2
-    assert all(review.place_id == place_id for review in place_reviews)
+    assert all(review.place_id == test_place.id for review in place_reviews)
 
-def test_review_get_by_user():
+def test_review_get_by_user(test_place, test_reviewer):
     """Test Review retrieval by user! 👤"""
     from app.models.review import Review
     
-    user_id = str(uuid.uuid4())
-    
     # Create multiple reviews by same user
     review1 = Review(
-        place_id=str(uuid.uuid4()),
-        user_id=user_id,
+        place_id=test_place.id,
+        user_id=test_reviewer.id,
         text="This ghost hunter has visited many haunted places!",
         rating=5
     )
     review1.save()
     
     review2 = Review(
-        place_id=str(uuid.uuid4()),
-        user_id=user_id,
+        place_id=test_place.id,
+        user_id=test_reviewer.id,
         text="Another spooky location reviewed by me!",
         rating=3
     )
     review2.save()
     
     # Test retrieval
-    user_reviews = Review.get_by_attr(multiple=True, user_id=user_id)
+    user_reviews = Review.get_by_attr(multiple=True, user_id=test_reviewer.id)
     assert len(user_reviews) == 2
-    assert all(review.user_id == user_id for review in user_reviews)
+    assert all(review.user_id == test_reviewer.id for review in user_reviews)
 
-def test_review_get_by_rating():
+def test_review_get_by_rating(test_place, test_reviewer):
     """Test Review retrieval by rating! ⭐"""
     from app.models.review import Review
     
     # Create reviews with different ratings
     review1 = Review(
-        place_id=str(uuid.uuid4()),
-        user_id=str(uuid.uuid4()),
+        place_id=test_place.id,
+        user_id=test_reviewer.id,
         text="Perfect haunted experience! Maximum spookiness!",
         rating=5
     )
     review1.save()
     
     review2 = Review(
-        place_id=str(uuid.uuid4()),
-        user_id=str(uuid.uuid4()),
+        place_id=test_place.id,
+        user_id=test_reviewer.id,
         text="Could have been spookier, but still good!",
         rating=3
     )

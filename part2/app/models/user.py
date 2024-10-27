@@ -118,13 +118,18 @@ class User(BaseModel):
         try:
             self.logger.debug(f"Attempting to soft delete user: {self.username}")
             
+            # Vérifier le repository d'abord
+            if self.repository is None:
+                error_msg = "Repository not available"
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
+            
             # 1. Hard delete des places si le modèle existe
             try:
                 from app.models.place import Place
                 places = Place.get_by_attr(multiple=True, owner_id=self.id)
                 for place in places:
                     place.hard_delete()
-                    self.logger.info(f"Hard deleted place: {place.id}")
             except ImportError:
                 self.logger.warning("Place model not implemented yet")
             
@@ -134,7 +139,6 @@ class User(BaseModel):
                 reviews = Review.get_by_attr(multiple=True, user_id=self.id)
                 for review in reviews:
                     review.anonymize()
-                    self.logger.info(f"Anonymized review: {review.id}")
             except ImportError:
                 self.logger.warning("Review model not implemented yet")
             
@@ -143,7 +147,7 @@ class User(BaseModel):
             self.is_deleted = True
             self.save()
             
-            self.logger.info(f"Successfully soft deleted user: {self.username}")
+            self.logger.info(f"Soft deleted user: {self.username}")
             return True
             
         except Exception as e:

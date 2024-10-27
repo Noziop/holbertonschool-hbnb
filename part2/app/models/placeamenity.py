@@ -11,15 +11,17 @@ if TYPE_CHECKING:
 class PlaceAmenity(BaseModel):
     """PlaceAmenity: A supernatural link between places and amenities! 🔗"""
     
-    def __init__(
-        self,
-        place_id: str,
-        amenity_id: str,
-        **kwargs
-    ):
+    def __init__(self, place_id: str, amenity_id: str, **kwargs):
         """Initialize a new haunted connection! ✨"""
         self.logger.debug(f"Creating new PlaceAmenity link between place {place_id} and amenity {amenity_id}")
         super().__init__(**kwargs)
+        
+        # Check for existing link
+        existing = self.get_by_attr(place_id=place_id, amenity_id=amenity_id)
+        if existing:
+            error_msg = f"Link already exists between place {place_id} and amenity {amenity_id}"
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
         
         # Required attributes
         self.place_id = self._validate_place_id(place_id)

@@ -611,3 +611,131 @@ def test_review_cascade_on_place_delete():
     # Check that reviews are gone
     reviews = Review.get_by_attr(multiple=True, place_id=place.id)
     assert len(reviews) == 0
+
+# app/tests/test_spooky/test_models/test_user.py
+
+def test_user_password_validation():
+    """Test User password validation edge cases! 🔒"""
+    from app.models.user import User
+    
+    # Test password too short
+    with pytest.raises(ValueError):
+        User(
+            username="test_ghost",
+            email="test@ghost.com",
+            password="Short1",  # Too short
+            first_name="Test",
+            last_name="Ghost"
+        )
+    
+    # Test password without uppercase
+    with pytest.raises(ValueError):
+        User(
+            username="test_ghost",
+            email="test@ghost.com",
+            password="nouppercase123",
+            first_name="Test",
+            last_name="Ghost"
+        )
+    
+    # Test password without lowercase
+    with pytest.raises(ValueError):
+        User(
+            username="test_ghost",
+            email="test@ghost.com",
+            password="NOLOWERCASE123",
+            first_name="Test",
+            last_name="Ghost"
+        )
+    
+    # Test password without number
+    with pytest.raises(ValueError):
+        User(
+            username="test_ghost",
+            email="test@ghost.com",
+            password="NoNumbersHere!",
+            first_name="Test",
+            last_name="Ghost"
+        )
+
+def test_user_deletion_edge_cases():
+    """Test User deletion edge cases! ⚰️"""
+    from app.models.user import User
+    
+    # Test delete with invalid repository
+    user = User(
+        username="test_ghost",
+        email="test@ghost.com",
+        password="Test123!@#",
+        first_name="Test",
+        last_name="Ghost"
+    )
+    user.save()
+    
+    # Test delete with None repository
+    user.repository = None
+    with pytest.raises(ValueError, match="Repository not available"):
+        user.delete()
+    
+    # Test hard_delete with None repository
+    with pytest.raises(ValueError, match="Repository not available"):
+        user.hard_delete()
+
+def test_user_validation_edge_cases():
+    """Test User validation edge cases! 🎭"""
+    from app.models.user import User
+    
+    # Test invalid email formats
+    invalid_emails = [
+        "not.an.email",
+        "@nodomain.com",
+        "no@domain",
+        "spaces in@email.com",
+        ""
+    ]
+    
+    for email in invalid_emails:
+        with pytest.raises(ValueError):
+            User(
+                username="test_ghost",
+                email=email,
+                password="Test123!@#",
+                first_name="Test",
+                last_name="Ghost"
+            )
+    
+    # Test invalid usernames
+    invalid_usernames = [
+        "ab",  # Too short
+        "invalid@username",  # Invalid character
+        "spaces not allowed",
+        ""
+    ]
+    
+    for username in invalid_usernames:
+        with pytest.raises(ValueError):
+            User(
+                username=username,
+                email="test@ghost.com",
+                password="Test123!@#",
+                first_name="Test",
+                last_name="Ghost"
+            )
+    
+    # Test invalid names
+    invalid_names = [
+        "a",  # Too short
+        "Invalid123",  # Numbers not allowed
+        "Invalid@Name",  # Special chars not allowed
+        ""
+    ]
+    
+    for name in invalid_names:
+        with pytest.raises(ValueError):
+            User(
+                username="test_ghost",
+                email="test@ghost.com",
+                password="Test123!@#",
+                first_name=name,
+                last_name="Ghost"
+            )

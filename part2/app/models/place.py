@@ -164,6 +164,136 @@ class Place(BaseModel):
             self.logger.error(f"Property type validation failed: {error_msg}")
             raise ValueError(error_msg)
         return property_type
+    
+    @classmethod
+    def filter_by_price(cls, min_price: float, max_price: float) -> List['Place']:
+        """Filter places by price range! 💰"""
+        cls.logger.debug(f"Filtering places by price range: {min_price}-{max_price}")
+        
+        # Utiliser get_all_by_type pour avoir uniquement les Places
+        places = cls.get_all_by_type()
+        
+        # Filtrer par prix
+        filtered = [
+            place for place in places 
+            if min_price <= place.price_by_night <= max_price
+        ]
+        
+        cls.logger.info(f"Found {len(filtered)} places in price range")
+        return filtered
+    
+    @classmethod
+    def filter_by_capacity(cls, min_guests: int) -> List['Place']:
+        """Filter places by guest capacity! 👻"""
+        cls.logger.debug(f"Filtering places by minimum capacity: {min_guests}")
+        
+        # Récupérer toutes les places
+        places = cls.get_all_by_type()
+        
+        # Filtrer par capacité
+        filtered = [
+            place for place in places 
+            if place.max_guest >= min_guests
+        ]
+        
+        cls.logger.info(f"Found {len(filtered)} places with capacity >= {min_guests}")
+        return filtered
+    
+
+    @classmethod
+    def get_by_location(cls, lat: float, lon: float, radius: float) -> List['Place']:
+        """Find places within a radius! 🗺️"""
+        cls.logger.debug(f"Searching places near ({lat}, {lon}) within {radius}km")
+        
+        def calculate_distance(place_lat: float, place_lon: float) -> float:
+            """Calculate distance in kilometers using Haversine formula! 📏"""
+            from math import radians, sin, cos, sqrt, atan2
+            
+            R = 6371  # Earth's radius in kilometers
+            
+            # Convert to radians
+            lat1, lon1 = radians(lat), radians(lon)
+            lat2, lon2 = radians(place_lat), radians(place_lon)
+            
+            # Differences
+            dlat = lat2 - lat1
+            dlon = lon2 - lon1
+            
+            # Haversine formula
+            a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+            c = 2 * atan2(sqrt(a), sqrt(1-a))
+            
+            return R * c
+        
+        # Get all places with coordinates
+        places = [
+            place for place in cls.get_all_by_type()
+            if place.latitude is not None and place.longitude is not None
+        ]
+        
+        # Filter by distance
+        nearby = [
+            place for place in places
+            if calculate_distance(place.latitude, place.longitude) <= radius
+        ]
+        
+        cls.logger.info(f"Found {len(nearby)} places within {radius}km")
+        return nearby
+
+    def add_amenity(self, amenity: 'Amenity') -> None:
+        """Add an amenity to this haunted place! ✨"""
+        self.logger.debug(f"Adding amenity {amenity.id} to place {self.id}")
+        try:
+            from app.models.placeamenity import PlaceAmenity
+            link = PlaceAmenity(
+                place_id=self.id,
+                amenity_id=amenity.id
+            )
+            link.save()
+            self.logger.info(f"Added amenity {amenity.id} to place {self.id}")
+        except Exception as e:
+            self.logger.error(f"Failed to add amenity: {str(e)}")
+            raise
+
+
+    def remove_amenity(self, amenity: 'Amenity') -> None:
+        """Remove an amenity from this haunted place! 🗑️"""
+        self.logger.debug(f"Removing amenity {amenity.id} from place {self.id}")
+        try:
+            from app.models.placeamenity import PlaceAmenity
+            links = PlaceAmenity.get_by_attr(
+                multiple=True,
+                place_id=self.id,
+                amenity_id=amenity.id
+            )
+            if not links:
+                error_msg = f"No link found between place {self.id} and amenity {amenity.id}"
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
+                
+            for link in links:
+                link.hard_delete()
+            self.logger.info(f"Removed amenity {amenity.id} from place {self.id}")
+        except Exception as e:
+            self.logger.error(f"Failed to remove amenity: {str(e)}")
+            raise
+
+    def get_amenities(self) -> List['Amenity']:
+        """Get all amenities of this haunted place! 🎭"""
+        self.logger.debug(f"Getting amenities for place {self.id}")
+        try:
+            from app.models.placeamenity import PlaceAmenity
+            from app.models.amenity import Amenity
+            links = PlaceAmenity.get_by_attr(multiple=True, place_id=self.id)
+            amenities = [
+                Amenity.get_by_id(link.amenity_id) 
+                for link in links
+            ]
+            self.logger.info(f"Found {len(amenities)} amenities for place {self.id}")
+            return amenities
+        except Exception as e:
+            self.logger.error(f"Failed to get amenities: {str(e)}")
+            raise
 
     def update(self, data: dict) -> 'Place':
         """Update place attributes! 🏰"""
@@ -187,21 +317,30 @@ class Place(BaseModel):
             raise
 
     def hard_delete(self) -> bool:
-        """Hard delete place and all related reviews! ⚰️"""
+        """Permanently delete place and all related entities! ⚰️"""
         try:
             self.logger.debug(f"Attempting to hard delete Place: {self.id}")
             
-            # Delete related reviews first
+            # Delete related reviews
             try:
                 from app.models.review import Review
                 reviews = Review.get_by_attr(multiple=True, place_id=self.id)
                 for review in reviews:
                     review.hard_delete()
-                    self.logger.info(f"Deleted related review: {review.id}")
             except ImportError:
                 self.logger.warning("Review model not implemented yet")
             
-            # Then delete the place
+            # Delete related place-amenity links
+            try:
+                from app.models.placeamenity import PlaceAmenity
+                links = PlaceAmenity.get_by_attr(multiple=True, place_id=self.id)
+                for link in links:
+                    link.hard_delete()
+                    self.logger.info(f"Deleted PlaceAmenity link: {link.id}")
+            except ImportError:
+                self.logger.warning("PlaceAmenity model not implemented yet")
+            
+            # Delete the place itself
             return super().hard_delete()
         except Exception as e:
             self.logger.error(f"Failed to delete Place: {str(e)}")
