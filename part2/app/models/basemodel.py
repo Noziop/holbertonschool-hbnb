@@ -19,7 +19,8 @@ class BaseModel:
         self.id = str(uuid.uuid4())
         self.created_at = dt.datetime.now(dt.timezone.utc)
         self.updated_at = dt.datetime.now(dt.timezone.utc)
-        self.is_active = True
+        self.is_active = True      # Visibility / pause
+        self.is_deleted = False    # soft delete
 
         for key, value in kwargs.items():
             if key in ['created_at', 'updated_at']:
@@ -43,7 +44,8 @@ class BaseModel:
         """Update a spirit's attributes! ✨"""
         try:
             # Vérifier les attributs protégés
-            if 'id' in data or 'created_at' in data:
+            protected = {'id', 'created_at', 'is_deleted'}
+            if any(attr in data for attr in protected):
                 raise ValueError("Cannot alter sacred attributes! 🔮")
             
             # Mettre à jour ou ajouter les attributs
@@ -59,17 +61,16 @@ class BaseModel:
             self.logger.error(f"Failed to update {self.__class__.__name__}: {str(e)}")
             raise ValueError(f"The update spell failed: {str(e)} 🔮")
 
-    def delete(self) -> bool:
-        """Banish this entity back to the void! ⚰️"""
+    def hard_delete(self) -> bool:
+        """Actually delete from repository! ⚰️"""
         try:
             if not self.repository.get(self.id):
                 raise ValueError("Cannot banish what's already gone! 👻")
-            self.is_active = False
-            self.save()
-            self.logger.info(f"Soft deleted {self.__class__.__name__} with ID: {self.id}")
+            self.repository.delete(self.id)
+            self.logger.info(f"Hard deleted {self.__class__.__name__} with ID: {self.id}")
             return True
         except Exception as e:
-            self.logger.error(f"Failed to delete {self.__class__.__name__}: {str(e)}")
+            self.logger.error(f"Failed to hard delete {self.__class__.__name__}: {str(e)}")
             raise
 
     @classmethod
@@ -92,7 +93,8 @@ class BaseModel:
             'id': self.id,
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat(),
-            'is_active': self.is_active
+            'is_active': self.is_active,
+            'is_deleted': self.is_deleted
         }
 
     def __str__(self) -> str:
@@ -102,7 +104,8 @@ class BaseModel:
             f'id={self.id} '
             f'created_at={self.created_at.isoformat()} '
             f'updated_at={self.updated_at.isoformat()} '
-            f'is_active={self.is_active}>'
+            f'is_active={self.is_active} '
+            f'is_deleted={self.is_deleted}>'
         )
 
     def __repr__(self) -> str:

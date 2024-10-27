@@ -110,13 +110,55 @@ def test_basemodel_repository_operations(repository):
     assert hasattr(updated_model, 'name')
     assert updated_model.name == 'test'
 
-def test_basemodel_soft_delete():
-    """Test BaseModel soft delete! ⚰️"""
+def test_basemodel_deletion_states():
+    """Test BaseModel deletion states! ⚰️"""
     from app.models.basemodel import BaseModel
     
     model = BaseModel()
     model.save()
     
+    # Test initial states
     assert model.is_active is True
-    model.delete()
+    assert model.is_deleted is False
+    
+    # Test setting is_active
+    model.update({'is_active': False})
     assert model.is_active is False
+    assert model.is_deleted is False
+    
+    # Test hard delete
+    assert model.hard_delete() is True
+    
+    # Verify model is really gone
+    with pytest.raises(ValueError):
+        BaseModel.get_by_id(model.id)
+
+def test_basemodel_protected_attributes():
+    """Test BaseModel protected attributes! 🔒"""
+    from app.models.basemodel import BaseModel
+    
+    model = BaseModel()
+    model.save()
+    
+    # Test updating protected attributes
+    with pytest.raises(ValueError):
+        model.update({'id': str(uuid.uuid4())})
+    
+    with pytest.raises(ValueError):
+        model.update({'created_at': datetime.now(timezone.utc)})
+    
+    with pytest.raises(ValueError):
+        model.update({'is_deleted': True})
+
+def test_basemodel_to_dict_with_deletion_state():
+    """Test BaseModel to_dict with deletion state! 📚"""
+    from app.models.basemodel import BaseModel
+    
+    model = BaseModel()
+    model_dict = model.to_dict()
+    
+    assert isinstance(model_dict, dict)
+    assert 'is_active' in model_dict
+    assert 'is_deleted' in model_dict
+    assert model_dict['is_active'] is True
+    assert model_dict['is_deleted'] is False
