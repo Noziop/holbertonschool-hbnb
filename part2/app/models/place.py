@@ -81,9 +81,17 @@ class Place(BaseModel):
     def _validate_owner_id(self, owner_id: str) -> str:
         """Validate owner ID! 👤"""
         self.logger.debug(f"Validating owner ID: {owner_id}")
-        if not isinstance(owner_id, str):
-            error_msg = "Owner ID must be a string!"
-            self.logger.error(f"Owner ID validation failed: {error_msg}")
+        try:
+            from app.models.user import User
+            if not User.get_by_id(owner_id):
+                error_msg = "Invalid owner_id"
+                self.logger.error(f"Owner validation failed: {error_msg}")
+                raise ValueError(error_msg)
+        except ImportError:
+            self.logger.warning("User model not implemented yet")
+        except ValueError:
+            error_msg = "Invalid owner_id"
+            self.logger.error(f"Owner validation failed: {error_msg}")
             raise ValueError(error_msg)
         return owner_id
 
@@ -176,6 +184,27 @@ class Place(BaseModel):
             return super().update(data)
         except Exception as e:
             self.logger.error(f"Failed to update Place: {str(e)}")
+            raise
+
+    def hard_delete(self) -> bool:
+        """Hard delete place and all related reviews! ⚰️"""
+        try:
+            self.logger.debug(f"Attempting to hard delete Place: {self.id}")
+            
+            # Delete related reviews first
+            try:
+                from app.models.review import Review
+                reviews = Review.get_by_attr(multiple=True, place_id=self.id)
+                for review in reviews:
+                    review.hard_delete()
+                    self.logger.info(f"Deleted related review: {review.id}")
+            except ImportError:
+                self.logger.warning("Review model not implemented yet")
+            
+            # Then delete the place
+            return super().hard_delete()
+        except Exception as e:
+            self.logger.error(f"Failed to delete Place: {str(e)}")
             raise
 
     def to_dict(self) -> Dict[str, Any]:

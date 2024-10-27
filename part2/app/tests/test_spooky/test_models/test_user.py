@@ -212,12 +212,13 @@ def test_user_places_visibility():
     user.reactivate_account()
     assert place.is_active is True
 
-@pytest.mark.skip(reason="Review not implemented yet")
 def test_user_delete_with_reviews():
     """Test User deletion with reviews! 📝"""
     from app.models.user import User
+    from app.models.place import Place
     from app.models.review import Review
     
+    # Create user
     user = User(
         username="friendly_ghost",
         email="ghost@haunted.com",
@@ -227,11 +228,30 @@ def test_user_delete_with_reviews():
     )
     user.save()
     
-    # Create a review
+    # Create place first
+    owner = User(
+        username="place_owner",
+        email="owner@haunted.com",
+        password="Owner123!@#",
+        first_name="Owner",
+        last_name="Ghost"
+    )
+    owner.save()
+    
+    place = Place(
+        name="Haunted Manor",
+        description="A very spooky place!",
+        owner_id=owner.id,
+        price_by_night=100.0
+    )
+    place.save()
+    
+    # Now create review
     review = Review(
         user_id=user.id,
-        place_id="some-place-id",
-        text="Spooky place!"
+        place_id=place.id,
+        text="Spooky place!",
+        rating=5
     )
     review.save()
     
@@ -426,3 +446,168 @@ def test_user_get_by_combined_filters(repository):
     )
     assert len(found_multiple) == 2
 
+def test_user_soft_delete_with_reviews_and_places():
+    """Test complete user soft delete cascade! ⚰️"""
+    from app.models.user import User
+    from app.models.place import Place
+    from app.models.review import Review
+    
+    # Create user
+    user = User(
+        username="ghost_owner",
+        email="ghost@haunted.com",
+        password="Boo123!@#",
+        first_name="Casper",
+        last_name="Owner"
+    )
+    user.save()
+    
+    # Create place owned by user
+    place = Place(
+        name="Haunted Manor",
+        description="A very spooky place!",
+        owner_id=user.id,
+        price_by_night=100.0
+    )
+    place.save()
+    
+    # Create another user for the other place
+    other_owner = User(
+        username="other_owner",
+        email="other@haunted.com",
+        password="Other123!@#",
+        first_name="Other",
+        last_name="Ghost"
+    )
+    other_owner.save()
+    
+    # Create another place for user to review
+    other_place = Place(
+        name="Other Manor",
+        description="Another spooky place!",
+        owner_id=other_owner.id,  # Utiliser l'ID du other_owner créé
+        price_by_night=150.0
+    )
+    other_place.save()
+    
+    # Create review by user
+    review = Review(
+        place_id=other_place.id,
+        user_id=user.id,
+        text="This place was terrifyingly awesome!",
+        rating=5
+    )
+    review.save()
+    
+    # Soft delete user
+    user.delete()
+    
+    # Check cascade effects
+    # 1. User's places should be hard deleted
+    with pytest.raises(ValueError):
+        Place.get_by_id(place.id)
+    
+    # 2. User's reviews should be anonymized
+    updated_review = Review.get_by_id(review.id)
+    assert updated_review.user_id is None
+    assert updated_review.text == review.text  # Content preserved
+    
+    # 3. User should be marked as deleted
+    assert user.is_deleted is True
+    assert user.is_active is False
+
+def test_user_review_place_constraints():
+    """Test user can't review their own place! 🚫"""
+    from app.models.user import User
+    from app.models.place import Place
+    from app.models.review import Review
+    
+    # Create user
+    user = User(
+        username="ghost_owner",
+        email="ghost@haunted.com",
+        password="Boo123!@#",
+        first_name="Casper",
+        last_name="Owner"
+    )
+    user.save()
+    
+    # Create place owned by user
+    place = Place(
+        name="Haunted Manor",
+        description="A very spooky place!",
+        owner_id=user.id,
+        price_by_night=100.0
+    )
+    place.save()
+    
+    # Try to review own place
+    with pytest.raises(ValueError, match="Cannot review your own place"):
+        review = Review(
+            place_id=place.id,
+            user_id=user.id,
+            text="This is my awesome place!",
+            rating=5
+        )
+
+def test_place_owner_validation():
+    """Test place owner relationship validation! 🏰"""
+    from app.models.place import Place
+    
+    # Try to create place with non-existent owner
+    with pytest.raises(ValueError, match="Invalid owner_id"):
+        place = Place(
+            name="Ghost Manor",
+            description="A spooky place!",
+            owner_id="non-existent-id",
+            price_by_night=100.0
+        )
+
+def test_review_cascade_on_place_delete():
+    """Test reviews are deleted when place is deleted! 🏚️"""
+    from app.models.user import User
+    from app.models.place import Place
+    from app.models.review import Review
+    
+    # Create owner first
+    owner = User(
+        username="place_owner",
+        email="owner@haunted.com",
+        password="Owner123!@#",
+        first_name="Owner",
+        last_name="Ghost"
+    )
+    owner.save()
+    
+    # Create place
+    place = Place(
+        name="Doomed Manor",
+        description="Soon to be demolished!",
+        owner_id=owner.id,  # Utiliser un vrai user_id
+        price_by_night=100.0
+    )
+    place.save()
+    
+    # Create reviews for the place
+    review1 = Review(
+        place_id=place.id,
+        user_id=str(uuid.uuid4()),
+        text="Great place, shame it's being demolished!",
+        rating=5
+    )
+    review1.save()
+    
+    review2 = Review(
+        place_id=place.id,
+        user_id=str(uuid.uuid4()),
+        text="Will miss this haunted spot!",
+        rating=4
+    )
+    review2.save()
+    
+    # Hard delete place
+    place.hard_delete()
+    
+    # Check that reviews are gone
+    reviews = Review.get_by_attr(multiple=True, place_id=place.id)
+    assert len(reviews) == 0
