@@ -63,6 +63,11 @@ class User(BaseModel):
     def _validate_email(self, email: str) -> str:
         """Validate email! 📫"""
         self.logger.debug(f"Validating email: {email}")
+        existing = self.get_by_attr(email=email)
+        if existing:
+            error_msg = "Email already in use!"
+            self.logger.error(f"Email validation failed: {error_msg}")
+            raise ValueError(error_msg)
         if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
             error_msg = "Invalid email format!"
             self.logger.error(f"Email validation failed: {error_msg}")

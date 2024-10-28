@@ -111,7 +111,7 @@ def test_user_to_dict():
     
     user = User(
         username="friendly_ghost",
-        email="ghost@haunted.com",
+        email="ghost3@haunted.com",
         password="Boo123!@#",  # Mot de passe plus long
         first_name="Casper",
         last_name="Friendly",
@@ -142,7 +142,7 @@ def test_user_account_states():
     
     user = User(
         username="friendly_ghost",
-        email="ghost@haunted.com",
+        email="ghost1@haunted.com",
         password="Boo123!@#",
         first_name="Casper",
         last_name="Friendly"
@@ -165,7 +165,7 @@ def test_user_delete():
     
     user = User(
         username="friendly_ghost",
-        email="ghost@haunted.com",
+        email="ghost2@haunted.com",
         password="Boo123!@#",
         first_name="Casper",
         last_name="Friendly"
@@ -188,7 +188,7 @@ def test_user_places_visibility():
     
     user = User(
         username="friendly_ghost",
-        email="ghost@haunted.com",
+        email="ghost5@haunted.com",
         password="Boo123!@#",
         first_name="Casper",
         last_name="Friendly"
@@ -221,7 +221,7 @@ def test_user_delete_with_reviews():
     # Create user
     user = User(
         username="friendly_ghost",
-        email="ghost@haunted.com",
+        email="ghost6@haunted.com",
         password="Boo123!@#",
         first_name="Casper",
         last_name="Friendly"
@@ -525,7 +525,7 @@ def test_user_review_place_constraints():
     # Create user
     user = User(
         username="ghost_owner",
-        email="ghost@haunted.com",
+        email="ghost7@haunted.com",
         password="Boo123!@#",
         first_name="Casper",
         last_name="Owner"

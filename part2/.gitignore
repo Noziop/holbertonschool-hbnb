@@ -26,8 +26,8 @@ ENV/
 
 # Personal project to dig
 facade_coverage_report/
-logs/
 *.pyc
 .coverage
 .pytest_cache/
 old*.py
+.vscode

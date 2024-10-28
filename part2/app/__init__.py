@@ -4,6 +4,7 @@ from flask import Flask
 from flask_cors import CORS
 from flask_restx import Api
 from app.utils.haunted_logger import setup_logging
+from app.api import api_bp
 
 def create_app():
     """Summon our haunted API! 👻"""
@@ -33,9 +34,7 @@ def create_app():
     )
 
     # Namespaces will be added here when ready
-    # api.add_namespace(places_ns, path='/api/v1/places')
-    # api.add_namespace(users_ns, path='/api/v1/users')
-    # api.add_namespace(amenities_ns, path='/api/v1/amenities')
-    # api.add_namespace(reviews_ns, path='/api/v1/reviews')
+    app.register_blueprint(api_bp)
+
 
     return app

@@ -316,6 +316,16 @@ class Place(BaseModel):
             self.logger.error(f"Failed to update Place: {str(e)}")
             raise
 
+    def delete(self) -> bool:
+        """Soft delete this haunted place! 🌙"""
+        try:
+            self.logger.debug(f"Soft deleting Place: {self.id}")
+            # Mettre à jour le status à 'blocked'
+            return self.update({'status': 'blocked'})
+        except Exception as e:
+            self.logger.error(f"Failed to soft delete Place: {str(e)}")
+            raise
+
     def hard_delete(self) -> bool:
         """Permanently delete place and all related entities! ⚰️"""
         try:

@@ -48,12 +48,26 @@ class Repository(ABC):
 
 
 class InMemoryRepository(Repository):
+
+    _instances = {}  # Stockage par ID
+    _instances_by_type = {}  # Stockage par type
+
     def __init__(self):
         self._storage = {}
 
     @classmethod
     def clear_all(cls):
-        cls.data = {}
+        """Clean our haunted storage! 🧹"""
+        print("🧹 Starting deep cleanup...")  # Debug
+        # Vider complètement les dictionnaires
+        cls._instances.clear()
+        cls._instances_by_type.clear()
+        
+        # Vérification
+        print(f"📊 After cleanup:")
+        print(f"_instances: {cls._instances}")
+        print(f"_instances_by_type: {cls._instances_by_type}")
+        print("✨ Deep cleanup complete!")
 
     def add(self, obj):
         self._storage[obj.id] = obj

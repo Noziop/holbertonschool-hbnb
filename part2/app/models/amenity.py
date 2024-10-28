@@ -10,21 +10,24 @@ if TYPE_CHECKING:
     from app.models.placeamenity import PlaceAmenity
 
 class Amenity(BaseModel):
-    """Amenity: A supernatural feature in our haunted realm! 🧟‍♀️"""
-    
+    """Amenity: A supernatural feature for our haunted places! 🎭"""
+
+    VALID_CATEGORIES = ['safety', 'comfort', 'entertainment', 'supernatural']
+
     def __init__(
         self,
         name: str,
-        description: str = "",
+        description: str,
+        category: str = 'supernatural',  # Valeur par défaut
         **kwargs
     ):
-        """Initialize a new haunted amenity! ✨"""
-        self.logger.debug(f"Creating new Amenity with name: {name}")
+        """Initialize a new supernatural feature! ✨"""
+        self.logger.debug(f"Creating new Amenity: {name}")
         super().__init__(**kwargs)
-        
-        # Required attributes
+
         self.name = self._validate_name(name)
         self.description = self._validate_description(description)
+        self.category = self._validate_category(category)
         
         self.logger.info(f"Created new Amenity with ID: {self.id}")
 
@@ -49,6 +52,15 @@ class Amenity(BaseModel):
             self.logger.error(f"Description validation failed: {error_msg}")
             raise ValueError(error_msg)
         return description.strip() if description else ""
+    
+    def _validate_category(self, category: str) -> str:
+        """Validate amenity category! 🏷️"""
+        self.logger.debug(f"Validating category: {category}")
+        if category not in self.VALID_CATEGORIES:
+            error_msg = f"Category must be one of: {', '.join(self.VALID_CATEGORIES)}"
+            self.logger.error(f"Category validation failed: {error_msg}")
+            raise ValueError(error_msg)
+        return category
 
     def update(self, data: dict) -> 'Amenity':
         """Update amenity attributes! 🔄"""
@@ -71,6 +83,39 @@ class Amenity(BaseModel):
         except Exception as e:
             self.logger.error(f"Failed to update Amenity: {str(e)}")
             raise
+
+    def delete(self) -> bool:
+        """Soft delete this supernatural feature! 🌙"""
+        try:
+            self.logger.debug(f"Soft deleting Amenity: {self.id}")
+            # Mettre à jour le statut à 'blocked'
+            return self.update({'category': 'blocked'})
+        except Exception as e:
+            self.logger.error(f"Failed to soft delete Amenity: {str(e)}")
+            raise
+
+    def hard_delete(self) -> bool:
+        """Permanently delete amenity and all related links! ⚰️"""
+        try:
+            self.logger.debug(f"Hard deleting Amenity: {self.id}")
+            
+            # Supprimer les liens place-amenity
+            try:
+                from app.models.placeamenity import PlaceAmenity
+                links = PlaceAmenity.get_by_attr(multiple=True, amenity_id=self.id)
+                for link in links:
+                    link.hard_delete()
+                    self.logger.info(f"Deleted PlaceAmenity link: {link.id}")
+            except ImportError:
+                self.logger.warning("PlaceAmenity model not implemented yet")
+            
+            # Supprimer l'amenity elle-même
+            return super().hard_delete()
+        except Exception as e:
+            self.logger.error(f"Failed to hard delete Amenity: {str(e)}")
+            raise
+
+
 
     def get_places(self) -> List['Place']:
         """Get all places with this amenity! 🏰"""

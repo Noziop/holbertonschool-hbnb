@@ -65,18 +65,24 @@ class Review(BaseModel):
             raise ValueError(error_msg)
         return text.strip()
 
-    def _validate_rating(self, rating: int) -> int:
-        """Validate rating! ⭐"""
+    def _validate_rating(self, rating: int | None) -> int | None:
+        """Validate review rating! ⭐"""
         self.logger.debug(f"Validating rating: {rating}")
+        
+        # Si rating est None (user soft deleted), c'est ok
+        if rating is None:
+            return None
+            
         try:
             rating = int(rating)
-            if not 1 <= rating <= 5:
-                raise ValueError
-        except (TypeError, ValueError):
-            error_msg = "Rating must be between 1 and 5!"
-            self.logger.error(f"Rating validation failed: {error_msg}")
-            raise ValueError(error_msg)
-        return rating
+            if not (1 <= rating <= 5):
+                error_msg = "Rating must be between 1 and 5!"
+                self.logger.error(f"Rating validation failed: {error_msg}")
+                raise ValueError(error_msg)
+            return rating
+        except (TypeError, ValueError) as e:
+            self.logger.error(f"Rating validation failed: {str(e)}")
+            raise ValueError("Rating must be a number between 1 and 5!")
 
     def update(self, data: dict) -> 'Review':
         """Update review attributes! 📝"""
@@ -97,6 +103,16 @@ class Review(BaseModel):
             self.logger.error(f"Failed to update Review: {str(e)}")
             raise
 
+    # app/models/review.py
+    def delete(self) -> bool:
+        """Soft delete this review! 🌙"""
+        try:
+            self.logger.debug(f"Soft deleting Review: {self.id}")
+            return self.update({'rating': None, 'text': '[This user has deleted his account]'})
+        except Exception as e:
+            self.logger.error(f"Failed to soft delete Review: {str(e)}")
+            raise
+        
     def anonymize(self) -> None:
         """Anonymize review! 🎭"""
         self.logger.debug(f"Anonymizing Review: {self.id}")
