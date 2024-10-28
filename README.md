@@ -75,22 +75,24 @@ cd part4  # Frontend
 
 ## 🧪 Testing
 Each part includes its own test suite:
-Part 1: Design validation
-Part 2: API & business logic tests
-Part 3: Database & auth tests
-Part 4: Frontend component tests
+
+- Part 1: Design validation
+- Part 2: API & business logic tests
+- Part 3: Database & auth tests
+- Part 4: Frontend component tests
 
 ## 📚 Documentation
-Part 1: UML diagrams and design docs
-Part 2: Swagger API documentation
-Part 3: Database schema and auth flows
-Part 4: Component documentation
+
+- Part 1: UML diagrams and design docs
+- Part 2: Swagger API documentation
+- Part 3: Database schema and auth flows
+- Part 4: Component documentation
 
 ## 🎯 Project Status
-✅ Part 1: Complete
-🏗️ Part 2: In progress
-📅 Part 3: Planned
-📅 Part 4: Planned
+- ✅ Part 1: Complete
+- 🏗️ Part 2: In progress
+- 📅 Part 3: Planned
+- 📅 Part 4: Planned
 
 ## 👻 Contributors
 Fassih Belmokhtar (Ghost Whisperer Extraordinaire)
