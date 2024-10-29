@@ -110,17 +110,10 @@ class AmenityDetail(Resource):
             204: 'Amenity deleted',
             404: 'Amenity not found'
         })
-    @ns.param('hard', 'Perform hard delete (permanent)', type=bool, default=False)
     def delete(self, amenity_id):
         """Banish a feature from our realm! ⚡"""
         try:
-            # Vérifier si l'amenity existe et n'est pas déjà bloquée
-            amenity = facade.get(Amenity, amenity_id)
-            if amenity.category == 'blocked':
-                ns.abort(404, "This feature has already vanished!")
-
-            hard = request.args.get('hard', 'false').lower() == 'true'
-            facade.delete(Amenity, amenity_id, hard=hard)
+            facade.delete(Amenity, amenity_id, hard=True)  # always hard delete
             return '', 204
         except ValueError as e:
             ns.abort(404, str(e))

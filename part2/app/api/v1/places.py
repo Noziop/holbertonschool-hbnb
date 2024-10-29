@@ -181,6 +181,26 @@ class PlaceAmenities(Resource):
         except ValueError as e:
             ns.abort(400, str(e))
 
+@ns.route('/<string:place_id>/amenities/<string:amenity_id>')
+@ns.param('place_id', 'The haunted place identifier')
+@ns.param('amenity_id', 'The supernatural feature identifier')
+class PlaceAmenityLink(Resource):
+    @log_me
+    @ns.doc('link_amenity',
+        responses={
+            201: 'Amenity linked',
+            400: 'Invalid parameters',
+            404: 'Place or Amenity not found'
+        })
+    def post(self, place_id, amenity_id):
+        """Add a supernatural feature to a place! ✨"""
+        try:
+            # La façade s'occupe déjà des vérifications et du lien
+            facade.link_place_amenity(place_id, amenity_id)
+            return '', 201
+        except ValueError as e:
+            ns.abort(404, str(e))
+
 @ns.route('/<string:place_id>/reviews')
 @ns.param('place_id', 'The haunted property identifier')
 class PlaceReviews(Resource):
