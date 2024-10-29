@@ -281,7 +281,8 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        async function listUsers() {
+        // Déclaration des fonctions helper dans le scope global
+        window.listUsers = async function() {
             try {
                 const response = await fetch('http://localhost:5000/api/v1/users');
                 if (!response.ok) {
@@ -295,7 +296,7 @@
                         <div class="user-item">
                             <strong>ID:</strong> ${user.id}<br>
                             <strong>Name:</strong> ${user.first_name} ${user.last_name}<br>
-                            <button onclick="selectUser('${user.id}')">Select</button>
+                            <button onclick="window.selectUser('${user.id}')">Select</button>
                         </div>
                     `;
                 });
@@ -304,134 +305,110 @@
             }
         }
 
-        function selectUser(userId) {
+        window.selectUser = function(userId) {
             document.getElementById('owner-id').value = userId;
         }
+
         function handleFormSubmit(formId, apiEndpoint, method = 'POST') {
-        const form = document.getElementById(formId);
-        if (!form) {
-            console.error(`Form with id "${formId}" not found`);
-            return;
-        }
+            const form = document.getElementById(formId);
+            if (!form) {
+                console.error(`Form with id "${formId}" not found`);
+                return;
+            }
 
-        // const messageElement = document.getElementById(`${formId.replace('-form', '')}-message`);
-        // if (!messageElement) {
-        //     console.error(`Message element for form "${formId}" not found`);
-        //     return;
-        // }
+            form.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                try {
+                    let url = apiEndpoint;
+                    let options = {
+                        method: method,
+                        headers: { 'Content-Type': 'application/json' }
+                    };
 
-        form.addEventListener('submit', async function(event) {
-            event.preventDefault();
-            try {
-                let url = apiEndpoint;
-                let idToDelete;
-                let options = {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' }
-                };
-
-                if (method === 'GET') {
-                    // Construire l'URL avec les paramètres de recherche
-                    const formData = new FormData(form);
-                    const params = new URLSearchParams();
-                    
-                    // N'ajouter que les paramètres qui ont une valeur
-                    for (const [key, value] of formData.entries()) {
-                        if (value) {
-                            params.append(key, value);
-                        }
-                    }
-                    
-                    // Ajouter les paramètres à l'URL
-                    const queryString = params.toString();
-                    url = queryString ? `${apiEndpoint}?${queryString}` : apiEndpoint;
-                    
-                    // Pas besoin de body pour une requête GET
-                    delete options.body;
-                } else if (method !== 'DELETE') {
                     const formData = new FormData(form);
                     const data = Object.fromEntries(formData.entries());
 
-                    // Conversion des booléens pour les formulaires utilisateur
-                    if (formId === 'create-user-form' || formId === 'update-user-form') {
-                        if (data.hasOwnProperty('is_active')) {
-                            data.is_active = data.is_active === 'true';
-                        }
-                        if (data.hasOwnProperty('is_admin')) {
-                            data.is_admin = data.is_admin === 'true';
-                        }
-                    }
-
-                    // Vérifier d'abord que l'owner existe
-                    if (data.owner_id) {
-                        try {
-                            const ownerResponse = await fetch(`${apiEndpoint.replace('places', 'users')}/${data.owner_id}`);
-                            if (!ownerResponse.ok) {
-                                throw new Error('Invalid owner_id: User not found');
+                    if (method === 'GET') {
+                        const params = new URLSearchParams();
+                        for (const [key, value] of formData.entries()) {
+                            if (value) {
+                                params.append(key, value);
                             }
-                        } catch (error) {
-                            throw new Error('Invalid owner_id: User not found');
                         }
-                    }
+                        const queryString = params.toString();
+                        url = queryString ? `${apiEndpoint}?${queryString}` : apiEndpoint;
+                        delete options.body;
+                    } else if (method === 'DELETE') {
+                        if (!data.id) {
+                            throw new Error('ID is required for delete operation');
+                        }
+                        url = `${apiEndpoint}${data.id}`;
+                    } else {
+                        // Conversion des booléens pour les formulaires utilisateur
+                        if (formId === 'create-user-form' || formId === 'update-user-form') {
+                            if (data.hasOwnProperty('is_active')) {
+                                data.is_active = data.is_active === 'true';
+                            }
+                            if (data.hasOwnProperty('is_admin')) {
+                                data.is_admin = data.is_admin === 'true';
+                            }
+                        }
 
-                    if (formId === 'create-place-form' || formId === 'update-place-form') {
-                        ['latitude', 'longitude', 'price_by_night'].forEach(field => {
-                            if (data[field]) {
-                                data[field] = parseFloat(data[field]);
-                                if (isNaN(data[field])) {
-                                    throw new Error(`Invalid parameter: ${field} must be of type float`);
+                        // Gestion des places
+                        if (formId === 'create-place-form' || formId === 'update-place-form') {
+                            // Vérifier l'existence de l'owner
+                            if (data.owner_id) {
+                                const ownerResponse = await fetch(`http://localhost:5000/api/v1/users/${data.owner_id}`);
+                                if (!ownerResponse.ok) {
+                                    throw new Error('Invalid owner_id: User not found');
                                 }
                             }
-                        });
 
-                        ['number_rooms', 'number_bathrooms', 'max_guest'].forEach(field => {
-                            if (data[field]) {
-                                data[field] = parseInt(data[field], 10);
-                                if (isNaN(data[field])) {
-                                    throw new Error(`Invalid parameter: ${field} must be of type integer`);
+                            // Conversion des nombres
+                            ['latitude', 'longitude', 'price_by_night'].forEach(field => {
+                                if (data[field]) {
+                                    data[field] = parseFloat(data[field]);
                                 }
+                            });
+
+                            ['number_rooms', 'number_bathrooms', 'max_guest'].forEach(field => {
+                                if (data[field]) {
+                                    data[field] = parseInt(data[field], 10);
+                                }
+                            });
+
+                            // Ajouter status par défaut si non spécifié
+                            if (!data.status) {
+                                data.status = 'active';
                             }
-                        });
-                    }
-
-                    if (method !== 'POST') {
-                        const id = data.id;
-                        if (!id) {
-                            throw new Error('ID is required for update and delete operations');
                         }
-                        url = `${apiEndpoint}/${id}`.replace(/([^:]\/)\/+/g, "$1");
-                        delete data.id;
+
+                        if (method === 'PUT') {
+                            url = `${apiEndpoint}${data.id}`;
+                            delete data.id;
+                        }
+
+                        options.body = JSON.stringify(data);
                     }
-                    options.body = JSON.stringify(data);
-                } else {
-                    const idInput = form.querySelector('input[name="id"]');
-                    if (!idInput || !idInput.value) {
-                        throw new Error('ID is required for delete operation');
+
+                    const response = await fetch(url, options);
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status} ${errorText}`);
                     }
-                    idToDelete = idInput.value;
-                    url = `${apiEndpoint}/${idToDelete}`.replace(/([^:]\/)\/+/g, "$1");
+
+                    if (method === 'DELETE') {
+                        displayResult(formId, { message: 'Successfully deleted' });
+                    } else {
+                        const result = await response.json();
+                        displayResult(formId, result);
+                    }
+                } catch (error) {
+                    displayResult(formId, { error: error.message });
                 }
-
-                displayResult(formId, { message: 'Processing...' });
-
-                const response = await fetch(url, options);
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP error! status: ${response.status} ${errorText}`);
-                }
-
-                if (method === 'DELETE' && response.status === 204) {
-                    displayResult(formId, { message: 'Successfully deleted' });
-                } else {
-                    const result = await response.json().catch(() => ({ message: 'Operation successful' }));
-                    displayResult(formId, result);
-                }
-            } catch (error) {
-                displayResult(formId, { error: error.message });
-            }
-        });
-    }
+            });
+        }
 
         function handleGetAllButton(buttonId, apiEndpoint) {
             const button = document.getElementById(buttonId);
