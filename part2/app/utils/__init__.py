@@ -7,4 +7,4 @@ from .haunted_logger import setup_logging
 setup_logging()
 
 # Export only what we need
-__all__ = ['setup_logging']
+__all__ = ["setup_logging"]

@@ -51,16 +51,16 @@ I wanted something:
     def filter_by_capacity(cls, min_guests: int) -> List['Place']:
         """Filter places by guest capacity! 👻"""
         cls.logger.debug(f"Filtering places by minimum capacity: {min_guests}")
-        
+
         # Récupérer toutes les places
         places = cls.get_all_by_type()
-        
+
         # Filtrer par capacité
         filtered = [
-            place for place in places 
+            place for place in places
             if place.max_guest >= min_guests
         ]
-        
+
         cls.logger.info(f"Found {len(filtered)} places with capacity >= {min_guests}")
         return filtered
 ```
@@ -103,7 +103,7 @@ One class to rule them all! Our facade handles all CRUD operations for any entit
 - update(model_class, id, data)
 - delete(model_class, id, hard=False)
 
-### Type Safety First! 
+### Type Safety First!
 Type hints everywhere for better:
 - Code completion
 - Error catching
@@ -114,7 +114,7 @@ Type hints everywhere for better:
 ```python
 # API user endpoint to list users, parameters query friendly
 @log_me
-    @ns.doc('list_users', 
+    @ns.doc('list_users',
             responses={
                 200: 'Success',
                 400: 'Invalid parameters',
@@ -173,8 +173,8 @@ def create(self, model_class: Type[T], data: dict) -> T:
 def get_by_attribute(self, multiple: bool = False, **kwargs: Any):
     """Find entities by their attributes"""
     results = [
-        obj for obj in self._storage.values() 
-        if all(getattr(obj, attr) == value 
+        obj for obj in self._storage.values()
+        if all(getattr(obj, attr) == value
             for attr, value in kwargs.items())
     ]
     return results if multiple else results[0] if results else None

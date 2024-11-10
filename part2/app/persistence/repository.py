@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Any, Union, List, TypeVar
+from typing import Any, List, TypeVar, Union
 
+T = TypeVar("T", bound="BaseModel")
 
-T = TypeVar('T', bound='BaseModel')
 
 class Repository(ABC):
     @abstractmethod
@@ -27,18 +27,16 @@ class Repository(ABC):
 
     @abstractmethod
     def get_by_attribute(
-        self, 
-        multiple: bool = False,
-        **kwargs: Any
+        self, multiple: bool = False, **kwargs: Any
     ) -> Union[Any, List[Any]]:
         """
         Get objects by attributes. Like a haunted treasure hunt! 👻
-        
+
         Args:
             multiple: Summon one spirit or the whole graveyard? 🪦
             **kwargs: Your spooky search criteria (each one darker than the last!)
 
-        WHY: 
+        WHY:
             Because searching through objects is like looking for ghosts:
             You better have the right tools! 🔮
 
@@ -48,7 +46,6 @@ class Repository(ABC):
 
 
 class InMemoryRepository(Repository):
-
     _instances = {}  # Stockage par ID
     _instances_by_type = {}  # Stockage par type
 
@@ -62,7 +59,7 @@ class InMemoryRepository(Repository):
         # Vider complètement les dictionnaires
         cls._instances.clear()
         cls._instances_by_type.clear()
-        
+
         # Vérification
         print(f"📊 After cleanup:")
         print(f"_instances: {cls._instances}")
@@ -88,30 +85,28 @@ class InMemoryRepository(Repository):
             del self._storage[obj_id]
 
     def get_by_attribute(
-        self,
-        multiple: bool = False,
-        **kwargs: Any
+        self, multiple: bool = False, **kwargs: Any
     ) -> Union[Any, List[Any]]:
         """
         Get objects by attributes. Summoning entities from the storage beyond! 👻
-        
+
         Args:
             multiple: Want one ghost or a whole haunted house? 🏚️
             **kwargs: The dark specifications (each more cursed than the last!)
 
-        WHY: 
+        WHY:
             Because searching through storage is like necromancy:
             You gotta be specific with your summons! 🧙‍♀️
 
         THE SPIRITS ARE WATCHING! 🦇
         """
         results = [
-            obj for obj in self._storage.values() 
-            if all(getattr(obj, attr, None) == value 
-                for attr, value in kwargs.items())
+            obj
+            for obj in self._storage.values()
+            if all(getattr(obj, attr, None) == value for attr, value in kwargs.items())
         ]
-        
+
         if not results:
             return [] if multiple else None
-            
+
         return results if multiple else results[0]

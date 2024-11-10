@@ -1,23 +1,25 @@
 # app/models/place.py
 """Place model module: Where haunted houses come to life! 👻"""
-from typing import Optional, Dict, Any, List, TYPE_CHECKING
-import re
 import math
+import re
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 from app.models.basemodel import BaseModel
 
 # Conditional imports for type hints
 if TYPE_CHECKING:
-    from app.models.user import User
-    from app.models.review import Review
     from app.models.amenity import Amenity
+    from app.models.review import Review
+    from app.models.user import User
+
 
 class Place(BaseModel):
     """Place: A haunted location in our supernatural realm! 🏰"""
-    
+
     # Validation constants
-    VALID_STATUS = ['active', 'maintenance', 'blocked']
-    VALID_TYPES = ['house', 'apartment', 'villa']
-    
+    VALID_STATUS = ["active", "maintenance", "blocked"]
+    VALID_TYPES = ["house", "apartment", "villa"]
+
     def __init__(
         self,
         name: str,
@@ -31,24 +33,28 @@ class Place(BaseModel):
         longitude: Optional[float] = None,
         city: Optional[str] = "",
         country: Optional[str] = "",
-        status: str = 'active',
-        property_type: str = 'apartment',
+        status: str = "active",
+        property_type: str = "apartment",
         minimum_stay: int = 1,
-        **kwargs
+        **kwargs,
     ):
         """Initialize a new haunted place! ✨"""
         self.logger.debug(f"Creating new Place with name: {name}")
         super().__init__(**kwargs)
-        
+
         # Required attributes
         self.name = self._validate_name(name)
         self.description = self._validate_description(description)
         self.owner_id = self._validate_owner_id(owner_id)
         self.price_by_night = self._validate_price(price_by_night)
-        
+
         # Optional attributes with defaults
-        self.number_rooms = self._validate_positive_integer(number_rooms, "number_rooms")
-        self.number_bathrooms = self._validate_positive_integer(number_bathrooms, "number_bathrooms")
+        self.number_rooms = self._validate_positive_integer(
+            number_rooms, "number_rooms"
+        )
+        self.number_bathrooms = self._validate_positive_integer(
+            number_bathrooms, "number_bathrooms"
+        )
         self.max_guest = self._validate_positive_integer(max_guest, "max_guest")
         self.latitude = self._validate_latitude(latitude) if latitude else None
         self.longitude = self._validate_longitude(longitude) if longitude else None
@@ -56,8 +62,10 @@ class Place(BaseModel):
         self.country = country
         self.status = self._validate_status(status)
         self.property_type = self._validate_property_type(property_type)
-        self.minimum_stay = self._validate_positive_integer(minimum_stay, "minimum_stay")
-        
+        self.minimum_stay = self._validate_positive_integer(
+            minimum_stay, "minimum_stay"
+        )
+
         self.logger.info(f"Created new Place with ID: {self.id}")
 
     def _validate_name(self, name: str) -> str:
@@ -83,6 +91,7 @@ class Place(BaseModel):
         self.logger.debug(f"Validating owner ID: {owner_id}")
         try:
             from app.models.user import User
+
             if not User.get_by_id(owner_id):
                 error_msg = "Invalid owner_id"
                 self.logger.error(f"Owner validation failed: {error_msg}")
@@ -164,113 +173,108 @@ class Place(BaseModel):
             self.logger.error(f"Property type validation failed: {error_msg}")
             raise ValueError(error_msg)
         return property_type
-    
-    @classmethod
-    def filter_by_price(cls, min_price: float, max_price: float) -> List['Place']:
-        """Filter places by price range! 💰"""
-        cls.logger.debug(f"Filtering places by price range: {min_price}-{max_price}")
-        
-        # Utiliser get_all_by_type pour avoir uniquement les Places
-        places = cls.get_all_by_type()
-        
-        # Filtrer par prix
-        filtered = [
-            place for place in places 
-            if min_price <= place.price_by_night <= max_price
-        ]
-        
-        cls.logger.info(f"Found {len(filtered)} places in price range")
-        return filtered
-    
-    @classmethod
-    def filter_by_capacity(cls, min_guests: int) -> List['Place']:
-        """Filter places by guest capacity! 👻"""
-        cls.logger.debug(f"Filtering places by minimum capacity: {min_guests}")
-        
-        # Récupérer toutes les places
-        places = cls.get_all_by_type()
-        
-        # Filtrer par capacité
-        filtered = [
-            place for place in places 
-            if place.max_guest >= min_guests
-        ]
-        
-        cls.logger.info(f"Found {len(filtered)} places with capacity >= {min_guests}")
-        return filtered
-    
 
     @classmethod
-    def get_by_location(cls, lat: float, lon: float, radius: float) -> List['Place']:
+    def filter_by_price(cls, min_price: float, max_price: float) -> List["Place"]:
+        """Filter places by price range! 💰"""
+        cls.logger.debug(f"Filtering places by price range: {min_price}-{max_price}")
+
+        # Utiliser get_all_by_type pour avoir uniquement les Places
+        places = cls.get_all_by_type()
+
+        # Filtrer par prix
+        filtered = [
+            place for place in places if min_price <= place.price_by_night <= max_price
+        ]
+
+        cls.logger.info(f"Found {len(filtered)} places in price range")
+        return filtered
+
+    @classmethod
+    def filter_by_capacity(cls, min_guests: int) -> List["Place"]:
+        """Filter places by guest capacity! 👻"""
+        cls.logger.debug(f"Filtering places by minimum capacity: {min_guests}")
+
+        # Récupérer toutes les places
+        places = cls.get_all_by_type()
+
+        # Filtrer par capacité
+        filtered = [place for place in places if place.max_guest >= min_guests]
+
+        cls.logger.info(f"Found {len(filtered)} places with capacity >= {min_guests}")
+        return filtered
+
+    @classmethod
+    def get_by_location(cls, lat: float, lon: float, radius: float) -> List["Place"]:
         """Find places within a radius! 🗺️"""
         cls.logger.debug(f"Searching places near ({lat}, {lon}) within {radius}km")
-        
+
         def calculate_distance(place_lat: float, place_lon: float) -> float:
             """Calculate distance in kilometers using Haversine formula! 📏"""
-            from math import radians, sin, cos, sqrt, atan2
-            
+            from math import atan2, cos, radians, sin, sqrt
+
             R = 6371  # Earth's radius in kilometers
-            
+
             # Convert to radians
             lat1, lon1 = radians(lat), radians(lon)
             lat2, lon2 = radians(place_lat), radians(place_lon)
-            
+
             # Differences
             dlat = lat2 - lat1
             dlon = lon2 - lon1
-            
+
             # Haversine formula
-            a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-            c = 2 * atan2(sqrt(a), sqrt(1-a))
-            
+            a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+            c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
             return R * c
-        
+
         # Get all places with coordinates
         places = [
-            place for place in cls.get_all_by_type()
+            place
+            for place in cls.get_all_by_type()
             if place.latitude is not None and place.longitude is not None
         ]
-        
+
         # Filter by distance
         nearby = [
-            place for place in places
+            place
+            for place in places
             if calculate_distance(place.latitude, place.longitude) <= radius
         ]
-        
+
         cls.logger.info(f"Found {len(nearby)} places within {radius}km")
         return nearby
 
-    def add_amenity(self, amenity: 'Amenity') -> None:
+    def add_amenity(self, amenity: "Amenity") -> None:
         """Add an amenity to this haunted place! ✨"""
         self.logger.debug(f"Adding amenity {amenity.id} to place {self.id}")
         try:
             from app.models.placeamenity import PlaceAmenity
-            link = PlaceAmenity(
-                place_id=self.id,
-                amenity_id=amenity.id
-            )
+
+            link = PlaceAmenity(place_id=self.id, amenity_id=amenity.id)
             link.save()
             self.logger.info(f"Added amenity {amenity.id} to place {self.id}")
         except Exception as e:
             self.logger.error(f"Failed to add amenity: {str(e)}")
             raise
 
-
-    def remove_amenity(self, amenity: 'Amenity') -> None:
+    def remove_amenity(self, amenity: "Amenity") -> None:
         """Remove an amenity from this haunted place! 🗑️"""
         self.logger.debug(f"Removing amenity {amenity.id} from place {self.id}")
         try:
             from app.models.placeamenity import PlaceAmenity
+
             links = PlaceAmenity.get_by_attr(
-                multiple=True,
-                place_id=self.id,
-                amenity_id=amenity.id
+                multiple=True, place_id=self.id, amenity_id=amenity.id
             )
             if not links:
-                error_msg = f"No link found between place {self.id} and amenity {amenity.id}"
+                error_msg = (
+                    f"No link found between place {self.id} and amenity {amenity.id}"
+                )
                 self.logger.error(error_msg)
                 raise ValueError(error_msg)
-                
+
             for link in links:
                 link.hard_delete()
             self.logger.info(f"Removed amenity {amenity.id} from place {self.id}")
@@ -278,39 +282,39 @@ class Place(BaseModel):
             self.logger.error(f"Failed to remove amenity: {str(e)}")
             raise
 
-    def get_amenities(self) -> List['Amenity']:
+    def get_amenities(self) -> List["Amenity"]:
         """Get all amenities of this haunted place! 🎭"""
         self.logger.debug(f"Getting amenities for place {self.id}")
         try:
-            from app.models.placeamenity import PlaceAmenity
             from app.models.amenity import Amenity
+            from app.models.placeamenity import PlaceAmenity
+
             links = PlaceAmenity.get_by_attr(multiple=True, place_id=self.id)
-            amenities = [
-                Amenity.get_by_id(link.amenity_id) 
-                for link in links
-            ]
+            amenities = [Amenity.get_by_id(link.amenity_id) for link in links]
             self.logger.info(f"Found {len(amenities)} amenities for place {self.id}")
             return amenities
         except Exception as e:
             self.logger.error(f"Failed to get amenities: {str(e)}")
             raise
 
-    def update(self, data: dict) -> 'Place':
+    def update(self, data: dict) -> "Place":
         """Update place attributes! 🏰"""
         self.logger.debug(f"Attempting to update Place: {self.id}")
         try:
             # Validate new values before update
-            if 'name' in data:
-                data['name'] = self._validate_name(data['name'])
-            if 'description' in data:
-                data['description'] = self._validate_description(data['description'])
-            if 'price_by_night' in data:
-                data['price_by_night'] = self._validate_price(data['price_by_night'])
-            if 'status' in data:
-                data['status'] = self._validate_status(data['status'])
-            if 'property_type' in data:
-                data['property_type'] = self._validate_property_type(data['property_type'])
-            
+            if "name" in data:
+                data["name"] = self._validate_name(data["name"])
+            if "description" in data:
+                data["description"] = self._validate_description(data["description"])
+            if "price_by_night" in data:
+                data["price_by_night"] = self._validate_price(data["price_by_night"])
+            if "status" in data:
+                data["status"] = self._validate_status(data["status"])
+            if "property_type" in data:
+                data["property_type"] = self._validate_property_type(
+                    data["property_type"]
+                )
+
             return super().update(data)
         except Exception as e:
             self.logger.error(f"Failed to update Place: {str(e)}")
@@ -321,7 +325,7 @@ class Place(BaseModel):
         try:
             self.logger.debug(f"Soft deleting Place: {self.id}")
             # Mettre à jour le status à 'blocked'
-            return self.update({'status': 'blocked'})
+            return self.update({"status": "blocked"})
         except Exception as e:
             self.logger.error(f"Failed to soft delete Place: {str(e)}")
             raise
@@ -330,26 +334,28 @@ class Place(BaseModel):
         """Permanently delete place and all related entities! ⚰️"""
         try:
             self.logger.debug(f"Attempting to hard delete Place: {self.id}")
-            
+
             # Delete related reviews
             try:
                 from app.models.review import Review
+
                 reviews = Review.get_by_attr(multiple=True, place_id=self.id)
                 for review in reviews:
                     review.hard_delete()
             except ImportError:
                 self.logger.warning("Review model not implemented yet")
-            
+
             # Delete related place-amenity links
             try:
                 from app.models.placeamenity import PlaceAmenity
+
                 links = PlaceAmenity.get_by_attr(multiple=True, place_id=self.id)
                 for link in links:
                     link.hard_delete()
                     self.logger.info(f"Deleted PlaceAmenity link: {link.id}")
             except ImportError:
                 self.logger.warning("PlaceAmenity model not implemented yet")
-            
+
             # Delete the place itself
             return super().hard_delete()
         except Exception as e:
@@ -361,19 +367,19 @@ class Place(BaseModel):
         self.logger.debug(f"Converting place {self.id} to dictionary")
         base_dict = super().to_dict()
         place_dict = {
-            'name': self.name,
-            'description': self.description,
-            'owner_id': self.owner_id,
-            'price_by_night': self.price_by_night,
-            'number_rooms': self.number_rooms,
-            'number_bathrooms': self.number_bathrooms,
-            'max_guest': self.max_guest,
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'city': self.city,
-            'country': self.country,
-            'status': self.status,
-            'property_type': self.property_type,
-            'minimum_stay': self.minimum_stay
+            "name": self.name,
+            "description": self.description,
+            "owner_id": self.owner_id,
+            "price_by_night": self.price_by_night,
+            "number_rooms": self.number_rooms,
+            "number_bathrooms": self.number_bathrooms,
+            "max_guest": self.max_guest,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "city": self.city,
+            "country": self.country,
+            "status": self.status,
+            "property_type": self.property_type,
+            "minimum_stay": self.minimum_stay,
         }
         return {**base_dict, **place_dict}

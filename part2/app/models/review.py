@@ -1,24 +1,27 @@
 # app/models/review.py
 """Review model module: Where ghosts share their haunting experiences! 👻"""
-from typing import Optional, Dict, Any, TYPE_CHECKING
 import re
+from typing import TYPE_CHECKING, Any, Dict, Optional
+
 from app.models.basemodel import BaseModel
 
 # Conditional imports for type hints
 if TYPE_CHECKING:
-    from app.models.user import User
     from app.models.place import Place
+    from app.models.user import User
+
 
 class Review(BaseModel):
     """Review: A spectral critique in our haunted realm! 📝"""
-    
+
     def __init__(self, place_id: str, user_id: str, text: str, rating: int, **kwargs):
         """Initialize a new haunted review! ✨"""
         self.logger.debug(f"Creating new Review for place: {place_id}")
-        
+
         # Check if user is trying to review their own place
         try:
             from app.models.place import Place
+
             place = Place.get_by_id(place_id)
             if place.owner_id == user_id:
                 error_msg = "Cannot review your own place"
@@ -29,13 +32,13 @@ class Review(BaseModel):
 
         self.logger.debug(f"Creating new Review for place: {place_id}")
         super().__init__(**kwargs)
-        
+
         # Required attributes
         self.place_id = self._validate_place_id(place_id)
         self.user_id = self._validate_user_id(user_id)
         self.text = self._validate_text(text)
         self.rating = self._validate_rating(rating)
-        
+
         self.logger.info(f"Created new Review with ID: {self.id}")
 
     def _validate_place_id(self, place_id: str) -> str:
@@ -68,11 +71,11 @@ class Review(BaseModel):
     def _validate_rating(self, rating: int | None) -> int | None:
         """Validate review rating! ⭐"""
         self.logger.debug(f"Validating rating: {rating}")
-        
+
         # Si rating est None (user soft deleted), c'est ok
         if rating is None:
             return None
-            
+
         try:
             rating = int(rating)
             if not (1 <= rating <= 5):
@@ -84,20 +87,20 @@ class Review(BaseModel):
             self.logger.error(f"Rating validation failed: {str(e)}")
             raise ValueError("Rating must be a number between 1 and 5!")
 
-    def update(self, data: dict) -> 'Review':
+    def update(self, data: dict) -> "Review":
         """Update review attributes! 📝"""
         self.logger.debug(f"Attempting to update Review: {self.id}")
         try:
             # Validate new values before update
-            if 'text' in data:
-                data['text'] = self._validate_text(data['text'])
-            if 'rating' in data:
-                data['rating'] = self._validate_rating(data['rating'])
-            if 'place_id' in data:
-                data['place_id'] = self._validate_place_id(data['place_id'])
-            if 'user_id' in data:
-                data['user_id'] = self._validate_user_id(data['user_id'])
-            
+            if "text" in data:
+                data["text"] = self._validate_text(data["text"])
+            if "rating" in data:
+                data["rating"] = self._validate_rating(data["rating"])
+            if "place_id" in data:
+                data["place_id"] = self._validate_place_id(data["place_id"])
+            if "user_id" in data:
+                data["user_id"] = self._validate_user_id(data["user_id"])
+
             return super().update(data)
         except Exception as e:
             self.logger.error(f"Failed to update Review: {str(e)}")
@@ -108,11 +111,13 @@ class Review(BaseModel):
         """Soft delete this review! 🌙"""
         try:
             self.logger.debug(f"Soft deleting Review: {self.id}")
-            return self.update({'rating': None, 'text': '[This user has deleted his account]'})
+            return self.update(
+                {"rating": None, "text": "[This user has deleted his account]"}
+            )
         except Exception as e:
             self.logger.error(f"Failed to soft delete Review: {str(e)}")
             raise
-        
+
     def anonymize(self) -> None:
         """Anonymize review! 🎭"""
         self.logger.debug(f"Anonymizing Review: {self.id}")
@@ -125,9 +130,9 @@ class Review(BaseModel):
         self.logger.debug(f"Converting review {self.id} to dictionary")
         base_dict = super().to_dict()
         review_dict = {
-            'place_id': self.place_id,
-            'user_id': self.user_id,
-            'text': self.text,
-            'rating': self.rating
+            "place_id": self.place_id,
+            "user_id": self.user_id,
+            "text": self.text,
+            "rating": self.rating,
         }
         return {**base_dict, **review_dict}

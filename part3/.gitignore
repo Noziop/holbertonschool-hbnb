@@ -1,5 +1,5 @@
 # .gitignore
-echo "# Python
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -10,8 +10,14 @@ __pycache__/
 .env
 
 # Logs
+logs/
+../logs/
 *.log
-app/logs/*
+*.bak
+
+# Base de données
+instance/
+*.db
 
 # IDE
 .idea/
@@ -31,3 +37,14 @@ facade_coverage_report/
 .pytest_cache/
 old*.py
 .vscode
+
+# GEN-BADGE
+# Reports et coverage
+reports/*
+!reports/coverage/coverage.xml
+!reports/flake8/flake8stats.txt
+
+# Badges
+!badges/
+badges/*
+!badges/*.svg

@@ -1,8 +1,12 @@
 [run]
-omit = 
+source = app
+omit =
     /usr/lib/python3/dist-packages/*
     */site-packages/*
     */dist-packages/*
+    */tests/*
+    */migrations/*
+    */venv/*
 
 [report]
 exclude_lines =
@@ -12,3 +16,6 @@ exclude_lines =
     raise NotImplementedError
     pass
     if __name__ == .__main__.:
+
+[html]
+directory = htmlcov
