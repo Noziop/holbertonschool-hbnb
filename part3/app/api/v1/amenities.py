@@ -1,9 +1,9 @@
 """Amenities API routes - The supernatural features catalog! 🎭."""
 
-from flask_restx import Namespace, Resource, fields
 from flask import request
+from flask_restx import Namespace, Resource, fields
 
-from app.api import log_me, admin_only
+from app.api import admin_only, log_me
 from app.models.amenity import Amenity
 from app.services.facade import HBnBFacade
 
@@ -49,7 +49,7 @@ amenity_model = ns.model(
 @ns.route("/")
 class AmenityList(Resource):
     """Endpoint for managing the collection of supernatural features! 👻.
-    
+
     This endpoint handles listing all amenities and creating new ones.
     Only administrators can create new features, but anyone can view them.
     Supports filtering by category."""
@@ -67,12 +67,13 @@ class AmenityList(Resource):
     @ns.param("category", "Feature category", type=str, required=False)
     def get(self):
         """Browse our supernatural features catalog! 🎭.
-        
-        Supports filtering by category (safety, comfort, entertainment, supernatural).
-        
+
+        Supports filtering by category.
+        (safety, comfort, entertainment, supernatural).
+
         Returns:
             list[Amenity]: List of supernatural features matching the criteria.
-            
+
         Raises:
             404: If no features are found.
             400: If the filter parameters are invalid."""
@@ -91,10 +92,10 @@ class AmenityList(Resource):
     @ns.doc(
         "create_amenity",
         responses={
-            201: "Amenity created", 
+            201: "Amenity created",
             400: "Invalid parameters",
             401: "Unauthorized",
-            403: "Forbidden - Admin only"
+            403: "Forbidden - Admin only",
         },
     )
     @ns.expect(amenity_model)
@@ -102,12 +103,12 @@ class AmenityList(Resource):
     @admin_only
     def post(self):
         """Add a new supernatural feature! ✨.
-        
+
         Only administrators can create new features.
-        
+
         Returns:
             Amenity: The newly created supernatural feature.
-            
+
         Raises:
             401: If the user is not authenticated.
             403: If the user is not an administrator.
@@ -125,25 +126,27 @@ class AmenityList(Resource):
 @ns.param("amenity_id", "The supernatural feature identifier")
 class AmenityDetail(Resource):
     """Endpoint for managing individual supernatural features! 👻.
-    
-    This endpoint handles retrieving, updating, and deleting specific features.
-    Only administrators can modify or delete features, but anyone can view them."""
+
+    This endpoint handles :
+    retrieving, updating, and deleting specific features.
+    Only administrators can modify or delete features.
+    Yet anyone can view them.
+    """
 
     @log_me(component="api")
     @ns.doc(
-        "get_amenity", 
-        responses={200: "Success", 404: "Amenity not found"}
+        "get_amenity", responses={200: "Success", 404: "Amenity not found"}
     )
     @ns.marshal_with(amenity_model)
     def get(self, amenity_id):
         """Find a specific supernatural feature! 🔍.
-        
+
         Args:
             amenity_id (str): The unique identifier of the feature.
-            
+
         Returns:
             Amenity: The requested supernatural feature.
-            
+
         Raises:
             404: If the feature doesn't exist."""
         amenity = facade.get(Amenity, amenity_id)
@@ -167,15 +170,15 @@ class AmenityDetail(Resource):
     @admin_only
     def put(self, amenity_id):
         """Update a supernatural feature! 📝.
-        
+
         Only administrators can update features.
-        
+
         Args:
             amenity_id (str): The unique identifier of the feature.
-            
+
         Returns:
             Amenity: The updated supernatural feature.
-            
+
         Raises:
             401: If the user is not authenticated.
             403: If the user is not an administrator.
@@ -185,7 +188,7 @@ class AmenityDetail(Resource):
             amenity = facade.get(Amenity, amenity_id)
             if not isinstance(amenity, Amenity):
                 ns.abort(404, "This feature has vanished!")
-            
+
             updated = facade.update(Amenity, amenity_id, ns.payload)
             if not isinstance(updated, Amenity):
                 ns.abort(400, "Failed to update the feature!")
@@ -197,25 +200,25 @@ class AmenityDetail(Resource):
     @ns.doc(
         "delete_amenity",
         responses={
-            204: "Amenity deleted", 
+            204: "Amenity deleted",
             401: "Unauthorized",
             403: "Forbidden - Admin only",
-            404: "Amenity not found"
+            404: "Amenity not found",
         },
     )
     @admin_only
     def delete(self, amenity_id):
         """Banish a feature from our realm! ⚡.
-        
+
         Only administrators can delete features.
         All deletions are permanent (hard delete).
-        
+
         Args:
             amenity_id (str): The unique identifier of the feature.
-            
+
         Returns:
             tuple: Empty response with 204 status code.
-            
+
         Raises:
             401: If the user is not authenticated.
             403: If the user is not an administrator.
@@ -224,7 +227,7 @@ class AmenityDetail(Resource):
         amenity = facade.get(Amenity, amenity_id)
         if not isinstance(amenity, Amenity):
             ns.abort(404, "This feature has vanished!")
-            
+
         try:
             facade.delete(Amenity, amenity_id, hard=True)
             return "", 204
@@ -233,10 +236,12 @@ class AmenityDetail(Resource):
 
 
 ns.route("/<string:amenity_id>/places")
+
+
 @ns.param("amenity_id", "The supernatural feature identifier")
 class AmenityPlaces(Resource):
     """Endpoint for listing places with specific features! 🏰.
-    
+
     This endpoint allows retrieving all haunted places that have
     a specific supernatural feature installed."""
 
@@ -247,18 +252,17 @@ class AmenityPlaces(Resource):
     )
     def get(self, amenity_id):
         """List all haunted places with this feature! 🏰.
-        
+
         Args:
             amenity_id (str): The unique identifier of the feature.
-            
+
         Returns:
             list[dict]: List of haunted places with this feature.
-            
+
         Raises:
             404: If the feature doesn't exist."""
         amenity = facade.get(Amenity, amenity_id)
         if not isinstance(amenity, Amenity):
             ns.abort(404, "This feature has vanished!")
-            
+
         return [place.to_dict() for place in amenity.get_places()]
-    

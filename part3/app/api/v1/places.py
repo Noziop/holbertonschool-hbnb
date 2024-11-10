@@ -3,7 +3,7 @@
 from flask import request
 from flask_restx import Namespace, Resource, fields
 
-from app.api import log_me, admin_only, owner_only, auth_required
+from app.api import admin_only, auth_required, log_me, owner_only
 from app.models.amenity import Amenity
 from app.models.place import Place
 from app.models.placeamenity import PlaceAmenity
@@ -97,19 +97,21 @@ place_amenity_model = ns.model(
     "PlaceAmenity",
     {
         "id": fields.String(
-            readonly=True, 
+            readonly=True,
             description="Unique identifier for the supernatural feature.",
             example="123e4567-e89b-12d3-a456-426614174000",
         ),
         "name": fields.String(
-            required=True, 
+            required=True,
             description="Name of the supernatural feature.",
             example="Ghost Detector",
         ),
         "description": fields.String(
-            required=True, 
-            description="Detailed description of the feature's supernatural properties.",
-            example="Advanced EMF detector with spirit communication capabilities",
+            required=True,
+            description="Detailed description of "
+            "the feature's supernatural properties.",
+            example="Advanced EMF detector with "
+            "spirit communication capabilities",
         ),
     },
 )
@@ -119,25 +121,25 @@ place_review_model = ns.model(
     "PlaceReview",
     {
         "id": fields.String(
-            readonly=True, 
+            readonly=True,
             description="Unique identifier for the spectral review.",
             example="123e4567-e89b-12d3-a456-426614174000",
         ),
         "user_id": fields.String(
-            required=True, 
+            required=True,
             description="Identifier of the ghost who wrote the review.",
             example="123e4567-e89b-12d3-a456-426614174000",
         ),
         "text": fields.String(
-            required=True, 
-            min_length=10, 
+            required=True,
+            min_length=10,
             description="The ghostly feedback about the property.",
             example="Perfect haunting spot! Great ambiance for spooking.",
         ),
         "rating": fields.Integer(
-            required=True, 
-            min=1, 
-            max=5, 
+            required=True,
+            min=1,
+            max=5,
             description="Supernatural rating from 1 to 5 spirits.",
             example=5,
         ),
@@ -148,7 +150,7 @@ place_review_model = ns.model(
 @ns.route("/")
 class PlaceList(Resource):
     """Endpoint for managing the collection of haunted properties! 👻.
-    
+
     This endpoint handles listing all properties and creating new ones.
     Supports advanced filtering by price and location. Only authenticated
     users can create new properties."""
@@ -172,15 +174,15 @@ class PlaceList(Resource):
     )
     def get(self):
         """Browse our haunted catalog! 👻.
-        
+
         Supports three search modes:
         1. Price range filtering
         2. Location-based search with customizable radius
         3. Complete catalog listing
-        
+
         Returns:
             list[Place]: List of haunted properties matching the criteria.
-            
+
         Raises:
             400: If the search parameters are invalid.
             404: If no properties are found."""
@@ -191,7 +193,9 @@ class PlaceList(Resource):
                 max_price = float(request.args["price_max"])
                 places = Place.filter_by_price(min_price, max_price)
                 if not places:
-                    ns.abort(404, "No haunted properties found in this price range!")
+                    ns.abort(
+                        404, "No haunted properties found in this price range!"
+                    )
                 return places
 
             # Recherche par localisation
@@ -217,7 +221,9 @@ class PlaceList(Resource):
             # Liste complète
             places = facade.find(Place)
             if not places:
-                ns.abort(404, "Our catalog seems to be haunted... by emptiness!")
+                ns.abort(
+                    404, "Our catalog seems to be haunted... by emptiness!"
+                )
             return places
 
         except ValueError as e:
@@ -238,13 +244,13 @@ class PlaceList(Resource):
     @auth_required()  # Seuls les utilisateurs authentifiés peuvent créer
     def post(self):
         """Summon a new haunted property! 🏗️.
-        
+
         Only authenticated users can create new properties.
         The owner_id is automatically set to the authenticated user's ID.
-        
+
         Returns:
             Place: The newly created haunted property.
-            
+
         Raises:
             401: If the user is not authenticated.
             403: If the user is not verified.
@@ -262,22 +268,25 @@ class PlaceList(Resource):
 @ns.param("place_id", "The haunted property identifier")
 class PlaceResource(Resource):
     """Endpoint for managing individual haunted properties! 👻.
-    
-    This endpoint handles retrieving, updating, and deleting specific properties.
-    Only owners can update their properties, while admins can delete any property."""
+
+    This endpoint handles :
+    retrieving, updating, and deleting specific properties.
+    Only owners can update their properties.
+    admins can delete any property.
+    """
 
     @log_me(component="api")
     @ns.doc("get_place", responses={200: "Success", 404: "Place not found"})
     @ns.marshal_with(place_model)
     def get(self, place_id):
         """Find a specific haunted house! 🔍.
-        
+
         Args:
             place_id (str): The unique identifier of the haunted property.
-            
+
         Returns:
             Place: The requested haunted property.
-            
+
         Raises:
             404: If the property doesn't exist."""
         place = facade.get(Place, place_id)
@@ -301,16 +310,16 @@ class PlaceResource(Resource):
     @owner_only  # Seul le propriétaire peut modifier
     def put(self, place_id):
         """Renovate a haunted property! 🏚️.
-        
+
         Only the property owner can update their haunted house.
         The owner_id cannot be changed during update.
-        
+
         Args:
             place_id (str): The unique identifier of the haunted property.
-            
+
         Returns:
             Place: The updated haunted property.
-            
+
         Raises:
             401: If the user is not authenticated.
             403: If the user is not the owner.
@@ -320,10 +329,12 @@ class PlaceResource(Resource):
             place = facade.get(Place, place_id)
             if not isinstance(place, Place):
                 ns.abort(404, "This ghost house has vanished!")
-            
+
             data = ns.payload.copy()
-            data["owner_id"] = place.owner_id  # Empêcher le changement de propriétaire
-            
+            data[
+                "owner_id"
+            ] = place.owner_id  # Empêcher le changement de propriétaire
+
             updated = facade.update(Place, place_id, data)
             if not isinstance(updated, Place):
                 ns.abort(400, "Failed to renovate the haunted property!")
@@ -335,7 +346,7 @@ class PlaceResource(Resource):
     @ns.doc(
         "delete_place",
         responses={
-            204: "Place deleted", 
+            204: "Place deleted",
             401: "Unauthorized",
             403: "Forbidden - Admin only",
             404: "Place not found",
@@ -348,16 +359,16 @@ class PlaceResource(Resource):
     @admin_only  # Seul l'admin peut supprimer
     def delete(self, place_id):
         """Exorcise a property! ⚡.
-        
+
         Only administrators can delete properties.
         Supports both soft and hard deletion.
-        
+
         Args:
             place_id (str): The unique identifier of the haunted property.
-            
+
         Returns:
             tuple: Empty response with 204 status code.
-            
+
         Raises:
             401: If the user is not authenticated.
             403: If the user is not an administrator.
@@ -366,7 +377,7 @@ class PlaceResource(Resource):
         place = facade.get(Place, place_id)
         if not isinstance(place, Place):
             ns.abort(404, "This ghost house has already vanished!")
-            
+
         try:
             hard = request.args.get("hard", "false").lower() == "true"
             facade.delete(Place, place_id, hard=hard)
@@ -379,8 +390,9 @@ class PlaceResource(Resource):
 @ns.param("place_id", "The haunted property identifier")
 class PlaceAmenities(Resource):
     """Endpoint for managing supernatural features of a haunted property! 👻.
-    
-    This endpoint handles listing and adding supernatural features to a property.
+
+    This endpoint handles :
+    listing and adding supernatural features to a property.
     Only property owners can add new features to their properties."""
 
     @log_me(component="api")
@@ -391,27 +403,28 @@ class PlaceAmenities(Resource):
     @ns.marshal_list_with(place_amenity_model)
     def get(self, place_id):
         """Get all supernatural features of a property! 👻.
-        
+
         Args:
             place_id (str): The unique identifier of the haunted property.
-            
+
         Returns:
-            list[Amenity]: List of supernatural features installed in the property.
-            
+            list[Amenity]: List of supernatural features
+                            installed in the property.
+
         Raises:
             404: If the property doesn't exist."""
         try:
             place = facade.get(Place, place_id)
             if not isinstance(place, Place):
                 ns.abort(404, "This haunted property has vanished!")
-                
+
             links = facade.find(PlaceAmenity, place_id=place_id)
             amenities = []
             for link in links:
                 amenity = facade.get(Amenity, link.amenity_id)
                 if isinstance(amenity, Amenity):
                     amenities.append(amenity)
-            
+
             return amenities
         except ValueError as e:
             ns.abort(404, str(e))
@@ -443,15 +456,15 @@ class PlaceAmenities(Resource):
     @owner_only  # Seul le propriétaire peut ajouter des équipements
     def post(self, place_id):
         """Add a supernatural feature to a property! ✨.
-        
+
         Only the property owner can add features.
-        
+
         Args:
             place_id (str): The unique identifier of the haunted property.
-            
+
         Returns:
             Amenity: The added supernatural feature.
-            
+
         Raises:
             401: If the user is not authenticated.
             403: If the user is not the property owner.
@@ -461,12 +474,12 @@ class PlaceAmenities(Resource):
             place = facade.get(Place, place_id)
             if not isinstance(place, Place):
                 ns.abort(404, "This haunted property has vanished!")
-                
+
             amenity_id = ns.payload["amenity_id"]
             amenity = facade.get(Amenity, amenity_id)
             if not isinstance(amenity, Amenity):
                 ns.abort(404, "This supernatural feature doesn't exist!")
-                
+
             if facade.link_place_amenity(place_id, amenity_id):
                 return amenity, 201
             ns.abort(400, "Failed to install the supernatural feature!")
@@ -479,7 +492,7 @@ class PlaceAmenities(Resource):
 @ns.param("amenity_id", "The supernatural feature identifier")
 class PlaceAmenityLink(Resource):
     """Endpoint for managing individual feature links to properties! 👻.
-    
+
     This endpoint handles linking specific supernatural features to properties.
     Only property owners can add features to their properties."""
 
@@ -497,16 +510,17 @@ class PlaceAmenityLink(Resource):
     @owner_only  # Seul le propriétaire peut ajouter des équipements
     def post(self, place_id, amenity_id):
         """Add a supernatural feature to a place! ✨.
-        
+
         Only the property owner can add features.
-        
+
         Args:
             place_id (str): The unique identifier of the haunted property.
-            amenity_id (str): The unique identifier of the supernatural feature.
-            
+            amenity_id (str): The unique identifier
+                                of the supernatural feature.
+
         Returns:
             tuple: Empty response with 201 status code.
-            
+
         Raises:
             401: If the user is not authenticated.
             403: If the user is not the property owner.
@@ -516,11 +530,11 @@ class PlaceAmenityLink(Resource):
             place = facade.get(Place, place_id)
             if not isinstance(place, Place):
                 ns.abort(404, "This haunted property has vanished!")
-                
+
             amenity = facade.get(Amenity, amenity_id)
             if not isinstance(amenity, Amenity):
                 ns.abort(404, "This supernatural feature doesn't exist!")
-                
+
             if facade.link_place_amenity(place_id, amenity_id):
                 return "", 201
             ns.abort(400, "Failed to install the supernatural feature!")
@@ -532,32 +546,32 @@ class PlaceAmenityLink(Resource):
 @ns.param("place_id", "The haunted property identifier")
 class PlaceReviews(Resource):
     """Endpoint for managing reviews of a haunted property! 📖.
-    
+
     This endpoint handles listing and adding spectral reviews to a property.
-    Only authenticated users who have stayed at the property can add reviews."""
+    Only authenticated users who have stayed at the property can add reviews.
+    """
 
     @log_me(component="api")
     @ns.doc(
-        "get_place_reviews", 
-        responses={200: "Success", 404: "Place not found"}
+        "get_place_reviews", responses={200: "Success", 404: "Place not found"}
     )
     @ns.marshal_list_with(place_review_model)
     def get(self, place_id):
         """Read the ghostly guestbook! 📖.
-        
+
         Args:
             place_id (str): The unique identifier of the haunted property.
-            
+
         Returns:
             list[Review]: List of spectral reviews for the property.
-            
+
         Raises:
             404: If the property doesn't exist."""
         try:
             place = facade.get(Place, place_id)
             if not isinstance(place, Place):
                 ns.abort(404, "This haunted property has vanished!")
-                
+
             reviews = facade.find(Review, place_id=place_id)
             return [r for r in reviews if isinstance(r, Review)]
         except ValueError as e:
@@ -579,16 +593,16 @@ class PlaceReviews(Resource):
     @auth_required()  # Seuls les utilisateurs authentifiés peuvent poster
     def post(self, place_id):
         """Add a haunted experience! ✍️.
-        
+
         Only authenticated users can add reviews.
         The user must have stayed at the property to review it.
-        
+
         Args:
             place_id (str): The unique identifier of the haunted property.
-            
+
         Returns:
             Review: The newly created spectral review.
-            
+
         Raises:
             401: If the user is not authenticated.
             403: If the user hasn't stayed at the property.
@@ -598,14 +612,14 @@ class PlaceReviews(Resource):
             place = facade.get(Place, place_id)
             if not isinstance(place, Place):
                 ns.abort(404, "This haunted property has vanished!")
-                
+
             user = facade.get(User, ns.payload["user_id"])
             if not isinstance(user, User):
                 ns.abort(404, "This ghost reviewer doesn't exist!")
-                
+
             review_data = {**ns.payload, "place_id": place_id}
             review = facade.create(Review, review_data)
-            
+
             if not isinstance(review, Review):
                 ns.abort(400, "Failed to materialize the review!")
             return review, 201

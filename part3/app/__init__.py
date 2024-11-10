@@ -1,4 +1,3 @@
-# app/__init__.py
 """Initialize our haunted application! 👻"""
 from flask import Flask
 from flask_bcrypt import Bcrypt

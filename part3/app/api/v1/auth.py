@@ -4,9 +4,9 @@ from flask import request
 from flask_jwt_extended import create_access_token
 from flask_restx import Namespace, Resource, fields
 
+from app.utils import log_me
 from app.models.user import User
 from app.services.facade import HBnBFacade
-from app.api import log_me
 
 ns = Namespace(
     "auth",
@@ -20,12 +20,12 @@ login_model = ns.model(
     "Login",
     {
         "email": fields.String(
-            required=True, 
+            required=True,
             description="Ghost's email address for identification.",
             example="casper@haunted.com",
         ),
         "password": fields.String(
-            required=True, 
+            required=True,
             description="Ghost's secret spell for authentication.",
             example="Boo_123!",
         ),
@@ -36,9 +36,11 @@ login_model = ns.model(
 @ns.route("/login")
 class Login(Resource):
     """Authentication endpoint for spectral entities! 👻.
-    
+
     This endpoint handles user authentication and JWT token generation.
-    Successfull authentication returns a token for accessing protected endpoints."""
+    Successfull authentication returns :
+    a token for accessing protected endpoints.
+    """
 
     @log_me(component="api")
     @ns.expect(login_model)
@@ -53,16 +55,16 @@ class Login(Resource):
     )
     def post(self):
         """Authenticate and receive a haunted token! 🎭.
-        
+
         This endpoint verifies the ghost's credentials and generates
         a JWT token for accessing protected areas of the haunted realm.
-        
+
         Returns:
             dict: Authentication response containing:
                 - message: Welcome message.
                 - token: JWT token for future requests.
                 - user: Basic user information.
-            
+
         Raises:
             400: If email or password is missing.
             401: If credentials are invalid or account is inactive.
@@ -84,9 +86,7 @@ class Login(Resource):
 
         # Vérifier que le compte est actif
         if not user.is_active:
-            return {
-                "message": "This spirit has been exorcised! 👻"
-            }, 401
+            return {"message": "This spirit has been exorcised! 👻"}, 401
 
         # Vérifier le mot de passe
         if user.check_password(data.get("password")):
@@ -98,7 +98,7 @@ class Login(Resource):
                     "is_active": user.is_active,
                 },
             )
-            
+
             return {
                 "message": "Welcome back to the spirit realm! 👻",
                 "token": token,
@@ -109,6 +109,4 @@ class Login(Resource):
                 },
             }, 200
 
-        return {
-            "message": "Wrong incantation! Try again, mortal! 💀"
-        }, 401
+        return {"message": "Wrong incantation! Try again, mortal! 💀"}, 401

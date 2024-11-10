@@ -1,30 +1,24 @@
-# app/api/__init__.py
 """API initialization and configuration! 👻."""
 
 from flask import Blueprint
 from flask_restx import Api
 
-from app.utils import (
-    auth_required,
-    admin_only,
-    owner_only,
-    log_me
-)
+# Import des namespaces
+from .v1.auth import ns as auth_ns
+from .v1.places import ns as places_ns
+from .v1.reviews import ns as reviews_ns
+from .v1.users import ns as users_ns
+from .v1.amenities import ns as amenities_ns
+
+from app.utils import admin_only, auth_required, log_me, owner_only
 
 api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
 api = Api(
-    api_bp, 
-    version="1.0", 
-    title="HBnB API", 
-    description="A haunted vacation rental API 👻"
+    api_bp,
+    version="1.0",
+    title="HBnB API",
+    description="A haunted vacation rental API 👻",
 )
-
-# Import des namespaces
-from .v1.auth import ns as auth_ns
-from .v1.users import ns as users_ns
-from .v1.places import ns as places_ns
-from .v1.reviews import ns as reviews_ns
-from .v1.amenities import ns as amenities_ns
 
 # Ajout des namespaces à l'API
 api.add_namespace(auth_ns, path="/auth")
@@ -39,5 +33,5 @@ __all__ = [
     "auth_required",
     "admin_only",
     "owner_only",
-    "log_me"
+    "log_me",
 ]

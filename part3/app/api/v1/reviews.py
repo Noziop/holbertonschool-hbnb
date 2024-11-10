@@ -4,7 +4,7 @@ from flask import request
 from flask_jwt_extended import get_jwt_identity
 from flask_restx import Namespace, Resource, fields
 
-from app.api import log_me, admin_only, owner_only, auth_required
+from app.api import admin_only, auth_required, log_me, owner_only
 from app.models.place import Place
 from app.models.review import Review
 from app.models.user import User
