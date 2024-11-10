@@ -1,7 +1,7 @@
 """Repository pattern for our haunted database! 👻."""
 
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, TypeVar, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Optional, TypeVar, Union
 
 from sqlalchemy.exc import SQLAlchemyError
 

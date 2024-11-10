@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import Any, List, Optional, TypeVar, Union
 
 from app import db
-from app.utils import log_me
 from app.models.mixins import SQLAlchemyMixin
 from app.persistence.repository import SQLAlchemyRepository
+from app.utils import log_me
 
 # Create a generic type for our supernatural entities
 T = TypeVar("T", bound="BaseModel")
