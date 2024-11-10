@@ -89,7 +89,9 @@ class AmenityList(Resource):
 @ns.param("amenity_id", "The supernatural feature identifier")
 class AmenityDetail(Resource):
     @log_me
-    @ns.doc("get_amenity", responses={200: "Success", 404: "Amenity not found"})
+    @ns.doc(
+        "get_amenity", responses={200: "Success", 404: "Amenity not found"}
+    )
     @ns.marshal_with(amenity_model)
     def get(self, amenity_id):
         """Find a specific supernatural feature! 🔍"""

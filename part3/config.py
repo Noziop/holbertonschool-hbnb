@@ -9,7 +9,9 @@ class Config:
 
     SECRET_KEY = os.getenv("SECRET_KEY", "super_secret_haunted_key")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "jwt_super_secret_haunted_key")
+    JWT_SECRET_KEY = os.getenv(
+        "JWT_SECRET_KEY", "jwt_super_secret_haunted_key"
+    )
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     BCRYPT_LOG_ROUNDS = 12
 
@@ -18,7 +20,9 @@ class DevelopmentConfig(Config):
     """The anti-chamber of our haunted application! 🚪"""
 
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///hbnb_dev.db")
+    SQLALCHEMY_DATABASE_URI = os.getenv(
+        "DATABASE_URL", "sqlite:///hbnb_dev.db"
+    )
 
 
 class TestingConfig(Config):

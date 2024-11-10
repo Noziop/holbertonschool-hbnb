@@ -53,8 +53,12 @@ user_model = ns.model(
         "address": fields.String(
             description="Haunting address", example="123 Ghostly Lane"
         ),
-        "postal_code": fields.String(description="Spectral code", example="66666"),
-        "city": fields.String(description="City of haunting", example="Ghostly Town"),
+        "postal_code": fields.String(
+            description="Spectral code", example="66666"
+        ),
+        "city": fields.String(
+            description="City of haunting", example="Ghostly Town"
+        ),
         "country": fields.String(
             description="Realm of existence", example="Ghostly Realm"
         ),
@@ -95,12 +99,18 @@ output_user_model = ns.model(
         "address": fields.String(
             description="Haunting address", example="123 Ghostly Lane"
         ),
-        "postal_code": fields.String(description="Spectral code", example="66666"),
-        "city": fields.String(description="City of haunting", example="Ghostly Town"),
+        "postal_code": fields.String(
+            description="Spectral code", example="66666"
+        ),
+        "city": fields.String(
+            description="City of haunting", example="Ghostly Town"
+        ),
         "country": fields.String(
             description="Realm of existence", example="Ghostly Realm"
         ),
-        "is_active": fields.Boolean(required=True, description="Is the ghost active?"),
+        "is_active": fields.Boolean(
+            required=True, description="Is the ghost active?"
+        ),
         "is_admin": fields.Boolean(
             required=True,
             readonly=True,
@@ -191,7 +201,9 @@ class UserDetail(Resource):
 
     @log_me
     @ns.doc("delete_user", responses={204: "Success", 404: "User not found"})
-    @ns.param("hard", "Perform hard delete (permanent)", type=bool, default=False)
+    @ns.param(
+        "hard", "Perform hard delete (permanent)", type=bool, default=False
+    )
     def delete(self, user_id):
         """Release a lost soul"""
         try:

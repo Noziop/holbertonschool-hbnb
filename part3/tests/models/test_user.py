@@ -56,7 +56,9 @@ def test_invalid_username_too_short(app, valid_user_data):
     """Test username too short! 👻"""
     with app.app_context():
         valid_user_data["username"] = "Bo"
-        with pytest.raises(ValueError, match="Username must be at least 3 characters!"):
+        with pytest.raises(
+            ValueError, match="Username must be at least 3 characters!"
+        ):
             User(**valid_user_data)
 
 
@@ -145,7 +147,9 @@ def test_cannot_reactivate_deleted_account(app, valid_user_data):
         user.save()
         user.delete()
 
-        with pytest.raises(ValueError, match="Cannot reactivate deleted account!"):
+        with pytest.raises(
+            ValueError, match="Cannot reactivate deleted account!"
+        ):
             user.reactivate_account()
 
 
@@ -247,7 +251,9 @@ def test_password_edge_cases(app, valid_user_data):
     with app.app_context():
         # Test password vide
         valid_user_data["password"] = ""
-        with pytest.raises(ValueError, match="Password must be at least 8 characters!"):
+        with pytest.raises(
+            ValueError, match="Password must be at least 8 characters!"
+        ):
             User(**valid_user_data)
 
         # Test password avec espaces
@@ -275,7 +281,9 @@ def test_multiple_account_operations(app, valid_user_data):
 
         # Test réactivation après suppression
         user.delete()
-        with pytest.raises(ValueError, match="Cannot reactivate deleted account!"):
+        with pytest.raises(
+            ValueError, match="Cannot reactivate deleted account!"
+        ):
             user.reactivate_account()
 
 

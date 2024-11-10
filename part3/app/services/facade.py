@@ -26,13 +26,19 @@ class HBnBFacade:
     def create(self, model_class: Type[T], data: dict) -> T:
         """Create a new haunted entity! ✨"""
         try:
-            self.logger.debug(f"Creating {model_class.__name__} with data: {data}")
+            self.logger.debug(
+                f"Creating {model_class.__name__} with data: {data}"
+            )
             instance = model_class(**data)
             instance.save()
-            self.logger.info(f"Created {model_class.__name__} with ID: {instance.id}")
+            self.logger.info(
+                f"Created {model_class.__name__} with ID: {instance.id}"
+            )
             return instance
         except Exception as e:
-            self.logger.error(f"Failed to create {model_class.__name__}: {str(e)}")
+            self.logger.error(
+                f"Failed to create {model_class.__name__}: {str(e)}"
+            )
             raise
 
     def get(self, model_class: Type[T], id: str) -> T:
@@ -43,22 +49,30 @@ class HBnBFacade:
             self.logger.info(f"Found {model_class.__name__} with ID: {id}")
             return instance
         except Exception as e:
-            self.logger.error(f"Failed to get {model_class.__name__}: {str(e)}")
+            self.logger.error(
+                f"Failed to get {model_class.__name__}: {str(e)}"
+            )
             raise
 
     def update(self, model_class: Type[T], id: str, data: dict) -> T:
         """Update a haunted entity! 🌟"""
         try:
-            self.logger.debug(f"Updating {model_class.__name__} {id} with data: {data}")
+            self.logger.debug(
+                f"Updating {model_class.__name__} {id} with data: {data}"
+            )
             instance = self.get(model_class, id)
             updated = instance.update(data)
             self.logger.info(f"Updated {model_class.__name__} with ID: {id}")
             return updated
         except Exception as e:
-            self.logger.error(f"Failed to update {model_class.__name__}: {str(e)}")
+            self.logger.error(
+                f"Failed to update {model_class.__name__}: {str(e)}"
+            )
             raise
 
-    def delete(self, model_class: Type[T], id: str, hard: bool = False) -> bool:
+    def delete(
+        self, model_class: Type[T], id: str, hard: bool = False
+    ) -> bool:
         """Banish an entity from our realm! ⚡"""
         try:
             self.logger.debug(
@@ -68,14 +82,20 @@ class HBnBFacade:
 
             if hard:
                 result = instance.hard_delete()
-                self.logger.info(f"Hard deleted {model_class.__name__} with ID: {id}")
+                self.logger.info(
+                    f"Hard deleted {model_class.__name__} with ID: {id}"
+                )
             else:
                 result = instance.delete()
-                self.logger.info(f"Soft deleted {model_class.__name__} with ID: {id}")
+                self.logger.info(
+                    f"Soft deleted {model_class.__name__} with ID: {id}"
+                )
 
             return result
         except Exception as e:
-            self.logger.error(f"Failed to delete {model_class.__name__}: {str(e)}")
+            self.logger.error(
+                f"Failed to delete {model_class.__name__}: {str(e)}"
+            )
             raise
 
     def find(self, model_class: Type[T], **criteria) -> List[T]:
@@ -85,17 +105,25 @@ class HBnBFacade:
                 f"Finding {model_class.__name__} with criteria: {criteria}"
             )
             instances = model_class.get_by_attr(multiple=True, **criteria)
-            self.logger.info(f"Found {len(instances)} {model_class.__name__}(s)")
+            self.logger.info(
+                f"Found {len(instances)} {model_class.__name__}(s)"
+            )
             return instances
         except Exception as e:
-            self.logger.error(f"Failed to find {model_class.__name__}: {str(e)}")
+            self.logger.error(
+                f"Failed to find {model_class.__name__}: {str(e)}"
+            )
             raise
 
     # Méthode spéciale pour PlaceAmenity
-    def link_place_amenity(self, place_id: str, amenity_id: str) -> PlaceAmenity:
+    def link_place_amenity(
+        self, place_id: str, amenity_id: str
+    ) -> PlaceAmenity:
         """Create a haunted link between place and amenity! 🔗"""
         try:
-            self.logger.debug(f"Linking place {place_id} with amenity {amenity_id}")
+            self.logger.debug(
+                f"Linking place {place_id} with amenity {amenity_id}"
+            )
             link = PlaceAmenity(place_id=place_id, amenity_id=amenity_id)
             link.save()
             self.logger.info(

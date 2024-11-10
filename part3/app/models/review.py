@@ -14,7 +14,9 @@ if TYPE_CHECKING:
 class Review(BaseModel):
     """Review: A spectral critique in our haunted realm! 📝"""
 
-    def __init__(self, place_id: str, user_id: str, text: str, rating: int, **kwargs):
+    def __init__(
+        self, place_id: str, user_id: str, text: str, rating: int, **kwargs
+    ):
         """Initialize a new haunted review! ✨"""
         self.logger.debug(f"Creating new Review for place: {place_id}")
 

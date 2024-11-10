@@ -96,9 +96,13 @@ place_model = ns.model(
 place_amenity_model = ns.model(
     "PlaceAmenity",
     {
-        "id": fields.String(readonly=True, description="Unique feature identifier"),
+        "id": fields.String(
+            readonly=True, description="Unique feature identifier"
+        ),
         "name": fields.String(required=True, description="Feature name"),
-        "description": fields.String(required=True, description="Feature description"),
+        "description": fields.String(
+            required=True, description="Feature description"
+        ),
     },
 )
 
@@ -106,7 +110,9 @@ place_review_model = ns.model(
     "PlaceReview",
     {
         "id": fields.String(readonly=True, description="Review identifier"),
-        "user_id": fields.String(required=True, description="Ghost reviewer ID"),
+        "user_id": fields.String(
+            required=True, description="Ghost reviewer ID"
+        ),
         "text": fields.String(
             required=True, min_length=10, description="Haunted feedback"
         ),
@@ -133,7 +139,9 @@ class PlaceList(Resource):
     @ns.param("price_max", "Maximum price per night", type=float)
     @ns.param("latitude", "Latitude for location search", type=float)
     @ns.param("longitude", "Longitude for location search", type=float)
-    @ns.param("radius", "Search radius in kilometers", type=float, default=10.0)
+    @ns.param(
+        "radius", "Search radius in kilometers", type=float, default=10.0
+    )
     def get(self):
         """Browse our haunted catalog! 👻"""
         try:
@@ -222,7 +230,9 @@ class PlaceResource(Resource):
         "delete_place",
         responses={204: "Place deleted", 404: "Place not found"},
     )
-    @ns.param("hard", "Perform hard delete (permanent)", type=bool, default=False)
+    @ns.param(
+        "hard", "Perform hard delete (permanent)", type=bool, default=False
+    )
     @ns.response(204, "Ghost house vanished")
     def delete(self, place_id):
         """Exorcise a property! ⚡"""
@@ -249,7 +259,9 @@ class PlaceAmenities(Resource):
         try:
             facade.get(Place, place_id)
             links = facade.find(PlaceAmenity, place_id=place_id)
-            amenities = [facade.get(Amenity, link.amenity_id) for link in links]
+            amenities = [
+                facade.get(Amenity, link.amenity_id) for link in links
+            ]
             return amenities
         except ValueError as e:
             ns.abort(404, str(e))
@@ -315,7 +327,9 @@ class PlaceAmenityLink(Resource):
 @ns.param("place_id", "The haunted property identifier")
 class PlaceReviews(Resource):
     @log_me
-    @ns.doc("get_place_reviews", responses={200: "Success", 404: "Place not found"})
+    @ns.doc(
+        "get_place_reviews", responses={200: "Success", 404: "Place not found"}
+    )
     @ns.marshal_list_with(place_review_model)
     def get(self, place_id):
         """Read the ghostly guestbook! 📖"""

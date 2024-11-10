@@ -23,9 +23,7 @@ class PlaceAmenity(BaseModel):
         # Check for existing link
         existing = self.get_by_attr(place_id=place_id, amenity_id=amenity_id)
         if existing:
-            error_msg = (
-                f"Link already exists between place {place_id} and amenity {amenity_id}"
-            )
+            error_msg = f"Link already exists between place {place_id} and amenity {amenity_id}"
             self.logger.error(error_msg)
             raise ValueError(error_msg)
 

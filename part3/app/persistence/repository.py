@@ -103,7 +103,10 @@ class InMemoryRepository(Repository):
         results = [
             obj
             for obj in self._storage.values()
-            if all(getattr(obj, attr, None) == value for attr, value in kwargs.items())
+            if all(
+                getattr(obj, attr, None) == value
+                for attr, value in kwargs.items()
+            )
         ]
 
         if not results:

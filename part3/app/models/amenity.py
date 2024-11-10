@@ -41,7 +41,9 @@ class Amenity(BaseModel):
             self.logger.error(f"Name validation failed: {error_msg}")
             raise ValueError(error_msg)
         if not re.match(r"^[\w\s-]+$", name):
-            error_msg = "Name can only contain letters, numbers, spaces, and hyphens!"
+            error_msg = (
+                "Name can only contain letters, numbers, spaces, and hyphens!"
+            )
             self.logger.error(f"Name validation failed: {error_msg}")
             raise ValueError(error_msg)
         return name.strip()
@@ -59,7 +61,9 @@ class Amenity(BaseModel):
         """Validate amenity category! 🏷️"""
         self.logger.debug(f"Validating category: {category}")
         if category not in self.VALID_CATEGORIES:
-            error_msg = f"Category must be one of: {', '.join(self.VALID_CATEGORIES)}"
+            error_msg = (
+                f"Category must be one of: {', '.join(self.VALID_CATEGORIES)}"
+            )
             self.logger.error(f"Category validation failed: {error_msg}")
             raise ValueError(error_msg)
         return category
@@ -79,7 +83,9 @@ class Amenity(BaseModel):
 
             # Validate description if present
             if "description" in data:
-                data["description"] = self._validate_description(data["description"])
+                data["description"] = self._validate_description(
+                    data["description"]
+                )
 
             return super().update(data)
         except Exception as e:
@@ -105,7 +111,9 @@ class Amenity(BaseModel):
             try:
                 from app.models.placeamenity import PlaceAmenity
 
-                links = PlaceAmenity.get_by_attr(multiple=True, amenity_id=self.id)
+                links = PlaceAmenity.get_by_attr(
+                    multiple=True, amenity_id=self.id
+                )
                 for link in links:
                     link.hard_delete()
                     self.logger.info(f"Deleted PlaceAmenity link: {link.id}")
@@ -130,7 +138,9 @@ class Amenity(BaseModel):
             )
             return [Place.get_by_id(pa.place_id) for pa in place_amenities]
         except ImportError:
-            self.logger.warning("Place/PlaceAmenity models not implemented yet")
+            self.logger.warning(
+                "Place/PlaceAmenity models not implemented yet"
+            )
             return []
 
     def to_dict(self) -> Dict[str, Any]:

@@ -44,7 +44,9 @@ class User(BaseModel):
         self.is_admin = is_admin
 
         # Hash password after validation
-        self.password_hash = self._hash_password(self._validate_password(password))
+        self.password_hash = self._hash_password(
+            self._validate_password(password)
+        )
 
         # Optional attributes
         self.address = address
@@ -58,7 +60,9 @@ class User(BaseModel):
         if not isinstance(username, str) or len(username) < 3:
             raise ValueError("Username must be at least 3 characters!")
         if not re.match(r"^[a-zA-Z0-9_-]+$", username):
-            raise ValueError("Username can only contain letters, numbers, _ and -!")
+            raise ValueError(
+                "Username can only contain letters, numbers, _ and -!"
+            )
         return username
 
     @log_me(component="business")
@@ -67,7 +71,9 @@ class User(BaseModel):
         existing = self.get_by_attr(email=email)
         if existing:
             raise ValueError("Email already in use!")
-        if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email):
+        if not re.match(
+            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email
+        ):
             raise ValueError("Invalid email format!")
         return email
 
@@ -77,9 +83,13 @@ class User(BaseModel):
         if len(password) < 8:
             raise ValueError("Password must be at least 8 characters!")
         if not re.search(r"[A-Z]", password):
-            raise ValueError("Password must contain at least one uppercase letter!")
+            raise ValueError(
+                "Password must contain at least one uppercase letter!"
+            )
         if not re.search(r"[a-z]", password):
-            raise ValueError("Password must contain at least one lowercase letter!")
+            raise ValueError(
+                "Password must contain at least one lowercase letter!"
+            )
         if not re.search(r"\d", password):
             raise ValueError("Password must contain at least one number!")
         return password
@@ -90,7 +100,9 @@ class User(BaseModel):
         if not isinstance(name, str) or len(name) < 2:
             raise ValueError(f"{field} must be at least 2 characters!")
         if not re.match(r"^[a-zA-Z\s-]+$", name):
-            raise ValueError(f"{field} can only contain letters, spaces and -!")
+            raise ValueError(
+                f"{field} can only contain letters, spaces and -!"
+            )
         return name.strip()
 
     @log_me(component="business")

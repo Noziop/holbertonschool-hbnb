@@ -186,7 +186,10 @@ class ReviewDetail(Resource):
             review = facade.get(Review, review_id)
 
             # Is the ghost authorized to update this review, or is it their own review?
-            if not claims.get("is_admin") and review.user_id != current_user_id:
+            if (
+                not claims.get("is_admin")
+                and review.user_id != current_user_id
+            ):
                 ns.abort(403, "You can only update your own reviews!")
 
             data = ns.payload.copy()
@@ -207,7 +210,9 @@ class ReviewDetail(Resource):
             404: "Review not found",
         },
     )
-    @ns.param("hard", "Perform hard delete (permanent)", type=bool, default=False)
+    @ns.param(
+        "hard", "Perform hard delete (permanent)", type=bool, default=False
+    )
     @ouija_only()
     def delete(self, review_id):
         """Banish a review from our realm! ⚡"""

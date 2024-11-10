@@ -55,9 +55,13 @@ class Place(BaseModel):
         self.number_bathrooms = self._validate_positive_integer(
             number_bathrooms, "number_bathrooms"
         )
-        self.max_guest = self._validate_positive_integer(max_guest, "max_guest")
+        self.max_guest = self._validate_positive_integer(
+            max_guest, "max_guest"
+        )
         self.latitude = self._validate_latitude(latitude) if latitude else None
-        self.longitude = self._validate_longitude(longitude) if longitude else None
+        self.longitude = (
+            self._validate_longitude(longitude) if longitude else None
+        )
         self.city = city
         self.country = country
         self.status = self._validate_status(status)
@@ -160,7 +164,9 @@ class Place(BaseModel):
         """Validate place status! 📊"""
         self.logger.debug(f"Validating status: {status}")
         if status not in self.VALID_STATUS:
-            error_msg = f"Status must be one of: {', '.join(self.VALID_STATUS)}"
+            error_msg = (
+                f"Status must be one of: {', '.join(self.VALID_STATUS)}"
+            )
             self.logger.error(f"Status validation failed: {error_msg}")
             raise ValueError(error_msg)
         return status
@@ -169,22 +175,30 @@ class Place(BaseModel):
         """Validate property type! 🏠"""
         self.logger.debug(f"Validating property type: {property_type}")
         if property_type not in self.VALID_TYPES:
-            error_msg = f"Property type must be one of: {', '.join(self.VALID_TYPES)}"
+            error_msg = (
+                f"Property type must be one of: {', '.join(self.VALID_TYPES)}"
+            )
             self.logger.error(f"Property type validation failed: {error_msg}")
             raise ValueError(error_msg)
         return property_type
 
     @classmethod
-    def filter_by_price(cls, min_price: float, max_price: float) -> List["Place"]:
+    def filter_by_price(
+        cls, min_price: float, max_price: float
+    ) -> List["Place"]:
         """Filter places by price range! 💰"""
-        cls.logger.debug(f"Filtering places by price range: {min_price}-{max_price}")
+        cls.logger.debug(
+            f"Filtering places by price range: {min_price}-{max_price}"
+        )
 
         # Utiliser get_all_by_type pour avoir uniquement les Places
         places = cls.get_all_by_type()
 
         # Filtrer par prix
         filtered = [
-            place for place in places if min_price <= place.price_by_night <= max_price
+            place
+            for place in places
+            if min_price <= place.price_by_night <= max_price
         ]
 
         cls.logger.info(f"Found {len(filtered)} places in price range")
@@ -201,13 +215,19 @@ class Place(BaseModel):
         # Filtrer par capacité
         filtered = [place for place in places if place.max_guest >= min_guests]
 
-        cls.logger.info(f"Found {len(filtered)} places with capacity >= {min_guests}")
+        cls.logger.info(
+            f"Found {len(filtered)} places with capacity >= {min_guests}"
+        )
         return filtered
 
     @classmethod
-    def get_by_location(cls, lat: float, lon: float, radius: float) -> List["Place"]:
+    def get_by_location(
+        cls, lat: float, lon: float, radius: float
+    ) -> List["Place"]:
         """Find places within a radius! 🗺️"""
-        cls.logger.debug(f"Searching places near ({lat}, {lon}) within {radius}km")
+        cls.logger.debug(
+            f"Searching places near ({lat}, {lon}) within {radius}km"
+        )
 
         def calculate_distance(place_lat: float, place_lon: float) -> float:
             """Calculate distance in kilometers using Haversine formula! 📏"""
@@ -261,7 +281,9 @@ class Place(BaseModel):
 
     def remove_amenity(self, amenity: "Amenity") -> None:
         """Remove an amenity from this haunted place! 🗑️"""
-        self.logger.debug(f"Removing amenity {amenity.id} from place {self.id}")
+        self.logger.debug(
+            f"Removing amenity {amenity.id} from place {self.id}"
+        )
         try:
             from app.models.placeamenity import PlaceAmenity
 
@@ -269,15 +291,15 @@ class Place(BaseModel):
                 multiple=True, place_id=self.id, amenity_id=amenity.id
             )
             if not links:
-                error_msg = (
-                    f"No link found between place {self.id} and amenity {amenity.id}"
-                )
+                error_msg = f"No link found between place {self.id} and amenity {amenity.id}"
                 self.logger.error(error_msg)
                 raise ValueError(error_msg)
 
             for link in links:
                 link.hard_delete()
-            self.logger.info(f"Removed amenity {amenity.id} from place {self.id}")
+            self.logger.info(
+                f"Removed amenity {amenity.id} from place {self.id}"
+            )
         except Exception as e:
             self.logger.error(f"Failed to remove amenity: {str(e)}")
             raise
@@ -291,7 +313,9 @@ class Place(BaseModel):
 
             links = PlaceAmenity.get_by_attr(multiple=True, place_id=self.id)
             amenities = [Amenity.get_by_id(link.amenity_id) for link in links]
-            self.logger.info(f"Found {len(amenities)} amenities for place {self.id}")
+            self.logger.info(
+                f"Found {len(amenities)} amenities for place {self.id}"
+            )
             return amenities
         except Exception as e:
             self.logger.error(f"Failed to get amenities: {str(e)}")
@@ -305,9 +329,13 @@ class Place(BaseModel):
             if "name" in data:
                 data["name"] = self._validate_name(data["name"])
             if "description" in data:
-                data["description"] = self._validate_description(data["description"])
+                data["description"] = self._validate_description(
+                    data["description"]
+                )
             if "price_by_night" in data:
-                data["price_by_night"] = self._validate_price(data["price_by_night"])
+                data["price_by_night"] = self._validate_price(
+                    data["price_by_night"]
+                )
             if "status" in data:
                 data["status"] = self._validate_status(data["status"])
             if "property_type" in data:
@@ -349,7 +377,9 @@ class Place(BaseModel):
             try:
                 from app.models.placeamenity import PlaceAmenity
 
-                links = PlaceAmenity.get_by_attr(multiple=True, place_id=self.id)
+                links = PlaceAmenity.get_by_attr(
+                    multiple=True, place_id=self.id
+                )
                 for link in links:
                     link.hard_delete()
                     self.logger.info(f"Deleted PlaceAmenity link: {link.id}")

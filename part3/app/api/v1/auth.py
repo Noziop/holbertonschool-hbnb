@@ -56,9 +56,7 @@ class Login(Resource):
             }, 404
 
         if not user.is_active:
-            return {
-                "message": "This spirit has been exorcised! 👻"
-            }, 401
+            return {"message": "This spirit has been exorcised! 👻"}, 401
 
         if user.check_password(data.get("password")):
             token = create_access_token(
@@ -69,15 +67,13 @@ class Login(Resource):
                 },
             )
             return {
-                    "message": "Welcome back to the spirit realm! 👻",
-                    "token": token,
-                    "user": {
-                        "id": user.id,
-                        "username": user.username,
-                        "is_admin": user.is_admin,
-                    },
-                }, 200
+                "message": "Welcome back to the spirit realm! 👻",
+                "token": token,
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "is_admin": user.is_admin,
+                },
+            }, 200
 
-        return {
-                "message": "Wrong incantation! Try again, mortal! 💀"
-            }, 401
+        return {"message": "Wrong incantation! Try again, mortal! 💀"}, 401

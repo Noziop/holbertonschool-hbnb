@@ -50,9 +50,7 @@ class BaseModel:
             # Check protected attributes
             protected = {"id", "created_at", "is_deleted"}
             if any(attr in data for attr in protected):
-                error_msg = (
-                    f"Cannot modify protected attributes: {protected & data.keys()}"
-                )
+                error_msg = f"Cannot modify protected attributes: {protected & data.keys()}"
                 raise ValueError(error_msg)
 
             # Validate datetime format if present

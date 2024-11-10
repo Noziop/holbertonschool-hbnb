@@ -4,7 +4,9 @@ from flask_restx import Api
 from .utils import api_logger as log_me
 
 api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
-api = Api(api_bp, version="1.0", title="HBnB API", description="API for HBnB project")
+api = Api(
+    api_bp, version="1.0", title="HBnB API", description="API for HBnB project"
+)
 
 
 from .v1.amenities import ns as amenities_ns

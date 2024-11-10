@@ -32,7 +32,9 @@ def api_logger(func):
 
         try:
             result = func(*args, **kwargs)
-            logger.info(f"✨ {resource}.{method} successfully channeled the spirits")
+            logger.info(
+                f"✨ {resource}.{method} successfully channeled the spirits"
+            )
             return result
         except Exception as e:
             logger.error(f"💀 {resource}.{method} failed: {str(e)}")
