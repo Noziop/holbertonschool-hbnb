@@ -1,16 +1,14 @@
-# app/api/v1/reviews.py
-"""Where our beloved Haunted Spirit speaks to us! 🏚️"""
+"""Where our beloved Haunted Spirit speaks to us! 🏚️."""
 
 from flask import request
-from flask_jwt_extended import get_jwt, get_jwt_identity
+from flask_jwt_extended import get_jwt_identity
 from flask_restx import Namespace, Resource, fields
 
-from app.api import log_me
+from app.api import log_me, admin_only, owner_only, auth_required
 from app.models.place import Place
 from app.models.review import Review
 from app.models.user import User
 from app.services.facade import HBnBFacade
-from app.utils.auth import ouija_only
 
 ns = Namespace(
     "reviews",
@@ -94,7 +92,12 @@ output_review_model = ns.model(
 
 @ns.route("/")
 class ReviewList(Resource):
-    @log_me
+    """Endpoint for managing the collection of haunted reviews! 👻.
+
+    This endpoint handles listing all reviews and creating new ones.
+    Supports filtering by user, place, and rating."""
+
+    @log_me(component="api")
     @ns.doc(
         "list_reviews",
         responses={
@@ -108,17 +111,27 @@ class ReviewList(Resource):
     @ns.param("place_id", "Haunted place ID", type=str, required=False)
     @ns.param("rating", "Spooky rating", type=int, required=False)
     def get(self):
-        """List all haunted reviews! 👻"""
+        """List all haunted reviews with optional filtering! 👻.
+
+        Returns:
+            list[Review]: List of haunted reviews matching the criteria.
+
+        Raises:
+            404: If no reviews are found.
+            400: If the filter parameters are invalid."""
         try:
             criteria = {}
             for field in ["user_id", "place_id", "rating"]:
                 if field in request.args and request.args[field]:
                     criteria[field] = request.args[field]
-            return facade.find(Review, **criteria)
+            reviews = facade.find(Review, **criteria)
+            if not reviews:
+                ns.abort(404, "No haunted reviews found!")
+            return reviews
         except Exception as e:
             ns.abort(400, f"Invalid parameters: {str(e)}")
 
-    @log_me
+    @log_me(component="api")
     @ns.doc(
         "create_review",
         responses={
@@ -130,20 +143,37 @@ class ReviewList(Resource):
     )
     @ns.expect(input_review_model)
     @ns.marshal_with(output_review_model, code=201)
-    @ouija_only()
+    @auth_required()
     def post(self):
-        """Create a new haunted review! ✍️"""
-        try:
-            # validate ghost is securely connected to the spirit realm
-            current_user = get_jwt_identity()
-            data = ns.payload.copy()
-            data["user_id"] = current_user
+        """Create a new haunted review! ✍️.
 
-            # Validate place existence
-            facade.get(Place, ns.payload["place_id"])
-            if not facade.get(User, current_user):
-                ns.abort(404, "User not found")
-            return facade.create(Review, ns.payload), 201
+        The user_id is automatically set to the authenticated user's ID.
+
+        Returns:
+            Review: The newly created review.
+
+        Raises:
+            401: If the user is not authenticated.
+            404: If the place or user doesn't exist.
+            400: If the review data is invalid."""
+        try:
+            current_user_id = get_jwt_identity()
+            data = ns.payload.copy()
+            data["user_id"] = current_user_id
+
+            # Validate place and user existence
+            place = facade.get(Place, data["place_id"])
+            user = facade.get(User, current_user_id)
+
+            if not isinstance(place, Place):
+                ns.abort(404, "This haunted place doesn't exist!")
+            if not isinstance(user, User):
+                ns.abort(404, "This ghost reviewer doesn't exist!")
+
+            review = facade.create(Review, data)
+            if not isinstance(review, Review):
+                ns.abort(400, "Failed to materialize the review!")
+            return review, 201
         except ValueError as e:
             ns.abort(400, str(e))
 
@@ -151,20 +181,32 @@ class ReviewList(Resource):
 @ns.route("/<string:review_id>")
 @ns.param("review_id", "The haunted review identifier")
 class ReviewDetail(Resource):
-    @log_me
+    """Endpoint for managing individual haunted reviews! 👻.
+
+    This endpoint handles retrieving, updating, and deleting
+    specific reviews by their unique identifier. Only owners
+    can update their reviews, while admins can delete any review."""
+
+    @log_me(component="api")
     @ns.doc("get_review", responses={200: "Success", 404: "Review not found"})
     @ns.marshal_with(output_review_model)
     def get(self, review_id):
-        """Find a specific haunted review! 🔍"""
-        try:
-            review = facade.get(Review, review_id)
-            if review.rating == None:
-                ns.abort(404, "This review has vanished!")
-            return review
-        except ValueError:
-            ns.abort(404, "This review has vanished!")
+        """Find a specific haunted review! 🔍.
 
-    @log_me
+        Args:
+            review_id (str): The unique identifier of the review.
+
+        Returns:
+            Review: The requested haunted review.
+
+        Raises:
+            404: If the review doesn't exist or has been deleted."""
+        review = facade.get(Review, review_id)
+        if not isinstance(review, Review) or review.rating is None:
+            ns.abort(404, "This review has vanished!")
+        return review
+
+    @log_me(component="api")
     @ns.doc(
         "update_review",
         responses={
@@ -177,29 +219,40 @@ class ReviewDetail(Resource):
     )
     @ns.expect(input_review_model)
     @ns.marshal_with(output_review_model)
-    @ouija_only()
+    @owner_only
     def put(self, review_id):
-        """Update a haunted review! 📝"""
-        try:
-            current_user_id = get_jwt_identity()
-            claims = get_jwt()
-            review = facade.get(Review, review_id)
+        """Update a haunted review! 📝.
 
-            # Is the ghost authorized to update this review, or is it their own review?
-            if (
-                not claims.get("is_admin")
-                and review.user_id != current_user_id
-            ):
-                ns.abort(403, "You can only update your own reviews!")
+        Only the review owner can update their own review.
+        The user_id cannot be changed during update.
+
+        Args:
+            review_id (str): The unique identifier of the review.
+
+        Returns:
+            Review: The updated haunted review.
+
+        Raises:
+            401: If the user is not authenticated.
+            403: If the user is not the review owner.
+            404: If the review doesn't exist.
+            400: If the update data is invalid."""
+        try:
+            review = facade.get(Review, review_id)
+            if not isinstance(review, Review):
+                ns.abort(404, "This review has vanished!")
 
             data = ns.payload.copy()
             data["user_id"] = review.user_id  # Empêcher le changement d'auteur
 
-            return facade.update(Review, review_id, ns.payload)
+            updated_review = facade.update(Review, review_id, data)
+            if not isinstance(updated_review, Review):
+                ns.abort(400, "Failed to update the review!")
+            return updated_review
         except ValueError as e:
             ns.abort(400, str(e))
 
-    @log_me
+    @log_me(component="api")
     @ns.doc(
         "delete_review",
         responses={
@@ -213,24 +266,31 @@ class ReviewDetail(Resource):
     @ns.param(
         "hard", "Perform hard delete (permanent)", type=bool, default=False
     )
-    @ouija_only()
+    @admin_only
     def delete(self, review_id):
-        """Banish a review from our realm! ⚡"""
-        try:
-            # D'abord vérifier si la review existe
-            review = facade.get(Review, review_id)
-            if not review:
-                ns.abort(404, "This review has already vanished!")
+        """Banish a review from our realm! ⚡.
 
-            hard = request.args.get("hard", "false").lower() == "true"
-            try:
-                facade.delete(Review, review_id, hard=hard)
-                return "", 204
-            except ValueError as e:
-                # Si c'est une erreur de validation
-                if "must be at least" in str(e):
-                    ns.abort(400, str(e))
-                raise  # Relancer l'erreur si c'est autre chose
+        Only administrators can delete reviews.
+        Supports both soft and hard deletion.
+
+        Args:
+            review_id (str): The unique identifier of the review.
+
+        Returns:
+            tuple: Empty response with 204 status code.
+
+        Raises:
+            401: If the user is not authenticated.
+            403: If the user is not an administrator.
+            404: If the review doesn't exist.
+            400: If the deletion fails."""
+        review = facade.get(Review, review_id)
+        if not isinstance(review, Review):
+            ns.abort(404, "This review has already vanished!")
+
+        hard = request.args.get("hard", "false").lower() == "true"
+        try:
+            facade.delete(Review, review_id, hard=hard)
+            return "", 204
         except ValueError as e:
-            # Si la review n'existe pas
-            ns.abort(404, "This review has vanished!")
+            ns.abort(400, str(e))

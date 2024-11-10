@@ -11,7 +11,7 @@ from flask import g, request
 
 
 class HauntedLogger:
-    """Our magical logging system! 🎭"""
+    """Notre système de logging hanté amélioré ! 👻"""
 
     LOG_LEVELS = {
         "DEBUG": logging.DEBUG,
@@ -23,89 +23,104 @@ class HauntedLogger:
         self.setup_logging()
 
     def setup_logging(self):
-        """Initialize our haunted logging system! 🎭"""
-        # Créer la structure des dossiers
-        log_root = Path("logs")
-        for component in ["api", "business", "persistence"]:
-            for level in self.LOG_LEVELS.keys():
-                log_path = log_root / component / f"{level.lower()}.log"
-                log_path.parent.mkdir(parents=True, exist_ok=True)
-                log_path.touch()
+        """Initialisation du système de logging."""
+        # Nettoyage des handlers existants
+        for logger in logging.root.manager.loggerDict.values():
+            if isinstance(logger, logging.Logger):
+                logger.handlers = []
 
         # Configuration de base
         logging.basicConfig(level=logging.DEBUG)
-
-        # Setup des loggers par composant
-        self.loggers = {
-            comp: self._setup_component_logger(comp)
-            for comp in ["api", "business", "persistence"]
-        }
+        
+        # Configuration des loggers par composant
+        self.loggers = {}
+        for component in ["api", "business", "persistence"]:
+            self.loggers[component] = self._setup_component_logger(component)
 
     def _setup_component_logger(self, component: str):
-        """Setup un logger spécifique pour chaque composant"""
+        """Setup un logger spécifique pour chaque composant."""
         logger = logging.getLogger(f"hbnb.{component}")
         logger.setLevel(logging.DEBUG)
+        logger.propagate = False  # Évite la duplication
 
-        # Format détaillé pour chaque log
+        # Format commun
         formatter = logging.Formatter(
             "%(asctime)s | %(levelname)s | %(name)s | "
             "%(function_name)s | %(module_name)s | "
-            "%(message)s"
+            "%(user_id)s | %(request_id)s | %(message)s"
         )
 
-        # Un handler par niveau de log
-        for level_name, level in self.LOG_LEVELS.items():
+        # Classe de filtre par niveau
+        class LevelFilter(logging.Filter):
+            def __init__(self, level):
+                self.level = level
+                
+            def filter(self, record):
+                return record.levelno == self.level
+
+        # Création des dossiers si nécessaire
+        log_dir = Path(f"logs/{component}")
+        log_dir.mkdir(parents=True, exist_ok=True)
+
+        # Configuration des handlers par niveau
+        handlers = {
+            'DEBUG': (logging.DEBUG, log_dir / "debug.log"),
+            'INFO': (logging.INFO, log_dir / "info.log"),
+            'ERROR': (logging.ERROR, log_dir / "error.log")
+        }
+
+        for level_name, (level, filepath) in handlers.items():
             handler = RotatingFileHandler(
-                f"logs/{component}/{level_name.lower()}.log",
-                maxBytes=1_048_576,  # 1MB
-                backupCount=5,
+                filepath,
+                maxBytes=1_048_576,
+                backupCount=5
             )
-            handler.setLevel(level)
             handler.setFormatter(formatter)
+            handler.addFilter(LevelFilter(level))  # Filtre strict par niveau
+            handler.setLevel(level)
             logger.addHandler(handler)
 
         return logger
 
     def log_me(self, component="api"):
-        """Décorateur magique pour logger les appels de fonction! ✨"""
-
+        """Décorateur de logging amélioré."""
         def decorator(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
                 logger = self.loggers[component]
-
-                # Context de la requête
+                
+                # Contexte enrichi
                 extra = {
                     "function_name": func.__name__,
                     "module_name": func.__module__,
-                    "args_info": str(args),
-                    "kwargs_info": str(kwargs),
+                    "user_id": getattr(g, 'user_id', 'anonymous'),
+                    "request_id": getattr(g, 'request_id', '-'),
+                    "call_args": str(args),
+                    "call_kwargs": str(kwargs)
                 }
 
                 try:
-                    # Log début d'appel
-                    logger.debug(f"🎭 Starting {func.__name__}", extra=extra)
-
+                    logger.debug(
+                        f"🎭 Starting {func.__name__} | Args: {extra['call_args']} | Kwargs: {extra['call_kwargs']}",
+                        extra=extra
+                    )
+                    
                     result = func(*args, **kwargs)
-
-                    # Log succès
+                    
                     logger.info(
-                        f"✨ {func.__name__} completed successfully",
-                        extra=extra,
+                        f"✨ {func.__name__} completed | Result type: {type(result)}",
+                        extra=extra
                     )
                     return result
-
+                    
                 except Exception as e:
-                    # Log erreur détaillé
                     logger.error(
-                        f"💀 Error in {func.__name__}: {str(e)}",
+                        f"💀 Error in {func.__name__}: {str(e)} | Args: {extra['call_args']}",
                         exc_info=True,
-                        extra=extra,
+                        extra=extra
                     )
                     raise
-
             return wrapper
-
         return decorator
 
 

@@ -199,51 +199,52 @@ def test_account_lifecycle(app, valid_user_data):
         assert user.is_deleted is True
 
 
-def test_edge_cases_validation():
+def test_edge_cases_validation(app):
     """Test all edge cases for User validation! 🎭"""
-    with pytest.raises(ValueError):
-        # Test invalid emails
-        for email in [
-            "not.an.email",
-            "@ghost.com",
-            "casper@",
-            "casper@.com",
-            "casper@ghost.",
-        ]:
-            User(
-                username="test_ghost",
-                email=email,
-                password="Boo_123!",
-                first_name="Test",
-                last_name="Ghost",
-            )
+    with app.app_context():
+        with pytest.raises(ValueError):
+            # Test invalid emails
+            for email in [
+                "not.an.email",
+                "@ghost.com",
+                "casper@",
+                "casper@.com",
+                "casper@ghost.",
+            ]:
+                User(
+                    username="test_ghost",
+                    email=email,
+                    password="Boo_123!",
+                    first_name="Test",
+                    last_name="Ghost",
+                )
 
-        # Test invalid names
-        for name in ["", "a", "123", "Name!", "Name@123"]:
-            User(
-                username="test_ghost",
-                email="test@ghost.com",
-                password="Boo_123!",
-                first_name=name,
-                last_name="Ghost",
-            )
-            User(
-                username="test_ghost",
-                email="test@ghost.com",
-                password="Boo_123!",
-                first_name="Test",
-                last_name=name,
-            )
+            # Test invalid names
+            for name in ["", "a", "123", "Name!", "Name@123"]:
+                User(
+                    username="test_ghost",
+                    email="test@ghost.com",
+                    password="Boo_123!",
+                    first_name=name,
+                    last_name="Ghost",
+                )
+                User(
+                    username="test_ghost",
+                    email="test@ghost.com",
+                    password="Boo_123!",
+                    first_name="Test",
+                    last_name=name,
+                )
 
-        # Test invalid usernames
-        for username in ["ab", "test@ghost", "test ghost", ""]:
-            User(
-                username=username,
-                email="test@ghost.com",
-                password="Boo_123!",
-                first_name="Test",
-                last_name="Ghost",
-            )
+            # Test invalid usernames
+            for username in ["ab", "test@ghost", "test ghost", ""]:
+                User(
+                    username=username,
+                    email="test@ghost.com",
+                    password="Boo_123!",
+                    first_name="Test",
+                    last_name="Ghost",
+                )
 
 
 def test_password_edge_cases(app, valid_user_data):
