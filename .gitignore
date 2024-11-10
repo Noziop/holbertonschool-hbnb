@@ -3,3 +3,4 @@ __pycache__/
 htmlcov/
 .vscode/
 *_old/
+logs/
