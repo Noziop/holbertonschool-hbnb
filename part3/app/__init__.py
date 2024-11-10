@@ -1,4 +1,4 @@
-"""Initialize our haunted application! 👻"""
+"""Initialize our haunted application! 👻."""
 from flask import Flask
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
@@ -15,7 +15,7 @@ jwt = JWTManager()
 
 
 def create_app(config_name="default"):
-    """Summon our haunted API! 👻"""
+    """Summon our haunted API! 👻."""
     # write everything in the Grimoire
     haunted_logger.setup_logging()
 

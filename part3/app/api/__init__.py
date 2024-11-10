@@ -3,14 +3,13 @@
 from flask import Blueprint
 from flask_restx import Api
 
-# Import des namespaces
+from app.utils import admin_only, auth_required, log_me, owner_only
+
+from .v1.amenities import ns as amenities_ns
 from .v1.auth import ns as auth_ns
 from .v1.places import ns as places_ns
 from .v1.reviews import ns as reviews_ns
 from .v1.users import ns as users_ns
-from .v1.amenities import ns as amenities_ns
-
-from app.utils import admin_only, auth_required, log_me, owner_only
 
 api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
 api = Api(

@@ -1,17 +1,17 @@
-"""Spooky spells module for our haunted logging system! 👻"""
+"""Spooky spells module for our haunted logging system! 👻."""
 
 import logging
-import os
-from datetime import datetime
+import os  # noqa: F401
+from datetime import datetime  # noqa: F401
 from functools import wraps
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from flask import g, request
+from flask import g, request  # noqa: F401
 
 
 class HauntedLogger:
-    """Notre système de logging hanté amélioré ! 👻"""
+    """Notre système de logging hanté amélioré ! 👻."""
 
     LOG_LEVELS = {
         "DEBUG": logging.DEBUG,
@@ -20,10 +20,11 @@ class HauntedLogger:
     }
 
     def __init__(self):
+        """Opening the book of spells! 📖."""
         self.setup_logging()
 
     def setup_logging(self):
-        """Initialisation du système de logging."""
+        """Logging configuration."""
         # Nettoyage des handlers existants
         for logger in logging.root.manager.loggerDict.values():
             if isinstance(logger, logging.Logger):
@@ -38,7 +39,7 @@ class HauntedLogger:
             self.loggers[component] = self._setup_component_logger(component)
 
     def _setup_component_logger(self, component: str):
-        """Setup un logger spécifique pour chaque composant."""
+        """Setup specific logger for each componant."""
         logger = logging.getLogger(f"hbnb.{component}")
         logger.setLevel(logging.DEBUG)
         logger.propagate = False  # Évite la duplication
@@ -100,21 +101,25 @@ class HauntedLogger:
 
                 try:
                     logger.debug(
-                        f"🎭 Starting {func.__name__} | Args: {extra['call_args']} | Kwargs: {extra['call_kwargs']}",
+                        f"🎭 Starting {func.__name__} | \
+                            Args: {extra['call_args']} | \
+                            Kwargs: {extra['call_kwargs']}",
                         extra=extra,
                     )
 
                     result = func(*args, **kwargs)
 
                     logger.info(
-                        f"✨ {func.__name__} completed | Result type: {type(result)}",
+                        f"✨ {func.__name__} completed | \
+                            Result type: {type(result)}",
                         extra=extra,
                     )
                     return result
 
                 except Exception as e:
                     logger.error(
-                        f"💀 Error in {func.__name__}: {str(e)} | Args: {extra['call_args']}",
+                        f"💀 Error in {func.__name__}: {str(e)} | \
+                            Args: {extra['call_args']}",
                         exc_info=True,
                         extra=extra,
                     )

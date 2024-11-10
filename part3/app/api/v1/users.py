@@ -27,7 +27,7 @@ user_model = ns.model(
         "username": fields.String(
             required=True,
             description="Unique ghostly username "
-                        "(3-30 characters, letters, numbers, _ or -).",
+            "(3-30 characters, letters, numbers, _ or -).",
             example="Casper_The_Friendly",
             min_length=3,
             max_length=30,
@@ -41,7 +41,7 @@ user_model = ns.model(
         "password": fields.String(
             required=True,
             description="Secret incantation "
-                        "(min 8 chars, 1 upper, 1 lower, 1 number).",
+            "(min 8 chars, 1 upper, 1 lower, 1 number).",
             example="Boo_123!",
             min_length=8,
         ),

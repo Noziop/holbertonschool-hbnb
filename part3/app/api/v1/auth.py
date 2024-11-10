@@ -4,9 +4,9 @@ from flask import request
 from flask_jwt_extended import create_access_token
 from flask_restx import Namespace, Resource, fields
 
-from app.utils import log_me
 from app.models.user import User
 from app.services.facade import HBnBFacade
+from app.utils import log_me
 
 ns = Namespace(
     "auth",

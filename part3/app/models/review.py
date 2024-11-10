@@ -1,38 +1,62 @@
-# app/models/review.py
-"""Review model module: Where ghosts share their haunting experiences! 👻"""
-import re
-from typing import TYPE_CHECKING, Any, Dict, Optional
+"""Review model module: Where ghosts share their haunting experiences! 👻."""
 
+from enum import Enum
+from typing import Any, Dict
+
+from sqlalchemy.orm import relationship
+
+from app import db
 from app.models.basemodel import BaseModel
+from app.utils import log_me
 
-# Conditional imports for type hints
-if TYPE_CHECKING:
-    from app.models.place import Place
-    from app.models.user import User
+
+class ReviewRating(str, Enum):
+    """The ratings a review can have! ⭐."""
+
+    ONE = "1"
+    TWO = "2"
+    THREE = "3"
+    FOUR = "4"
+    FIVE = "5"
 
 
 class Review(BaseModel):
-    """Review: A spectral critique in our haunted realm! 📝"""
+    """Review: A spectral critique in our haunted realm! 📝."""
+
+    # SQLAlchemy columns
+    place_id = db.Column(
+        db.String(36), db.ForeignKey("place.id"), nullable=False
+    )
+    user_id = db.Column(
+        db.String(36),
+        db.ForeignKey("user.id"),
+        nullable=True,  # Pour permettre l'anonymisation
+    )
+    text = db.Column(db.Text, nullable=False)
+    rating = db.Column(
+        db.Enum(ReviewRating), nullable=True  # Pour permettre le soft delete
+    )
+
+    # Relationships
+    place = relationship("Place", back_populates="reviews")
+    author = relationship("User", back_populates="reviews")
 
     def __init__(
         self, place_id: str, user_id: str, text: str, rating: int, **kwargs
     ):
-        """Initialize a new haunted review! ✨"""
-        self.logger.debug(f"Creating new Review for place: {place_id}")
-
+        """Initialize a new haunted review! ✨."""
         # Check if user is trying to review their own place
         try:
-            from app.models.place import Place
+            from app.models.place import Place  # noqa: F811
 
             place = Place.get_by_id(place_id)
             if place.owner_id == user_id:
                 error_msg = "Cannot review your own place"
-                self.logger.error(error_msg)
                 raise ValueError(error_msg)
         except ImportError:
-            self.logger.warning("Place model not implemented yet")
-
-        self.logger.debug(f"Creating new Review for place: {place_id}")
+            raise ValueError("Place model not implemented yet")
+        except Exception as e:
+            raise ValueError(str(e))
         super().__init__(**kwargs)
 
         # Required attributes
@@ -41,57 +65,58 @@ class Review(BaseModel):
         self.text = self._validate_text(text)
         self.rating = self._validate_rating(rating)
 
-        self.logger.info(f"Created new Review with ID: {self.id}")
-
+    @log_me(component="business")
     def _validate_place_id(self, place_id: str) -> str:
-        """Validate place ID! 🏰"""
-        self.logger.debug(f"Validating place ID: {place_id}")
+        """Validate place ID! 🏰."""
         if not isinstance(place_id, str) or not place_id.strip():
-            error_msg = "Place ID must be a non-empty string!"
-            self.logger.error(f"Place ID validation failed: {error_msg}")
-            raise ValueError(error_msg)
+            raise ValueError("Place ID must be a non-empty string!")
+
+        # Vérifier que le place existe
+        from app.models.place import Place  # noqa: F811
+
+        if not Place.query.get(place_id):
+            raise ValueError("Invalid place ID: place does not exist!")
+
         return place_id.strip()
 
+    @log_me(component="business")
     def _validate_user_id(self, user_id: str) -> str:
-        """Validate user ID! 👤"""
-        self.logger.debug(f"Validating user ID: {user_id}")
+        """Validate user ID! 👤."""
         if not isinstance(user_id, str) or not user_id.strip():
-            error_msg = "User ID must be a non-empty string!"
-            self.logger.error(f"User ID validation failed: {error_msg}")
-            raise ValueError(error_msg)
+            raise ValueError("User ID must be a non-empty string!")
+
+        # Vérifier que l'user existe
+        from app.models.user import User  # noqa: F811
+
+        if not User.query.get(user_id):
+            raise ValueError("Invalid user ID: user does not exist!")
+
         return user_id.strip()
 
+    @log_me(component="business")
     def _validate_text(self, text: str) -> str:
-        """Validate review text! 📝"""
-        self.logger.debug("Validating review text")
+        """Validate review text! 📝."""
         if not isinstance(text, str) or len(text.strip()) < 10:
-            error_msg = "Review text must be at least 10 characters!"
-            self.logger.error(f"Text validation failed: {error_msg}")
-            raise ValueError(error_msg)
+            raise ValueError("Review text must be at least 10 characters!")
         return text.strip()
 
-    def _validate_rating(self, rating: int | None) -> int | None:
-        """Validate review rating! ⭐"""
-        self.logger.debug(f"Validating rating: {rating}")
-
+    @log_me(component="business")
+    def _validate_rating(self, rating: str | None) -> ReviewRating | None:
+        """Validate review rating! ⭐."""
         # Si rating est None (user soft deleted), c'est ok
         if rating is None:
             return None
 
         try:
-            rating = int(rating)
-            if not (1 <= rating <= 5):
-                error_msg = "Rating must be between 1 and 5!"
-                self.logger.error(f"Rating validation failed: {error_msg}")
-                raise ValueError(error_msg)
-            return rating
-        except (TypeError, ValueError) as e:
-            self.logger.error(f"Rating validation failed: {str(e)}")
-            raise ValueError("Rating must be a number between 1 and 5!")
+            # Convertir en ReviewRating
+            return ReviewRating(str(rating))
+        except ValueError:
+            valid_ratings = ", ".join(r.value for r in ReviewRating)
+            raise ValueError(f"Rating must be one of: {valid_ratings}")
 
+    @log_me(component="business")
     def update(self, data: dict) -> "Review":
-        """Update review attributes! 📝"""
-        self.logger.debug(f"Attempting to update Review: {self.id}")
+        """Update review attributes! 📝."""
         try:
             # Validate new values before update
             if "text" in data:
@@ -104,37 +129,45 @@ class Review(BaseModel):
                 data["user_id"] = self._validate_user_id(data["user_id"])
 
             return super().update(data)
-        except Exception as e:
-            self.logger.error(f"Failed to update Review: {str(e)}")
-            raise
+        except Exception as error:
+            raise ValueError(f"Failed to update Review: {str(error)}")
 
-    # app/models/review.py
+    @log_me(component="business")
     def delete(self) -> bool:
-        """Soft delete this review! 🌙"""
+        """Soft delete this review! 🌙."""
         try:
-            self.logger.debug(f"Soft deleting Review: {self.id}")
             return self.update(
-                {"rating": None, "text": "[This user has deleted his account]"}
+                {
+                    "rating": None,
+                    "text": "[This review has been deleted]",
+                    "is_deleted": True,
+                }
             )
-        except Exception as e:
-            self.logger.error(f"Failed to soft delete Review: {str(e)}")
-            raise
+        except Exception as error:
+            raise ValueError(f"Failed to soft delete Review: {str(error)}")
 
-    def anonymize(self) -> None:
-        """Anonymize review! 🎭"""
-        self.logger.debug(f"Anonymizing Review: {self.id}")
-        self.user_id = None
-        self.save()
-        self.logger.info(f"Successfully anonymized Review: {self.id}")
+    @log_me(component="business")
+    def anonymize(self) -> bool:
+        """Anonymize review! 🎭."""
+        try:
+            self.user_id = None
+            db.session.commit()
+            return True
+        except Exception as error:
+            db.session.rollback()
+            raise ValueError(f"Failed to anonymize Review: {str(error)}")
 
+    @log_me(component="business")
     def to_dict(self) -> Dict[str, Any]:
-        """Transform review into dictionary! 📚"""
-        self.logger.debug(f"Converting review {self.id} to dictionary")
+        """Transform review into dictionary! 📚."""
         base_dict = super().to_dict()
         review_dict = {
             "place_id": self.place_id,
             "user_id": self.user_id,
             "text": self.text,
-            "rating": self.rating,
+            "rating": self.rating.value if self.rating else None,
+            # Ajout des relations
+            "place": self.place.to_dict() if self.place else None,
+            "author": self.author.to_dict() if self.author else None,
         }
         return {**base_dict, **review_dict}

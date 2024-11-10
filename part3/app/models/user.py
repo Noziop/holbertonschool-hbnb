@@ -1,22 +1,33 @@
-"""User model module: The ghostly users of our haunted kingdom! 👻"""
-
+"""User model module: The ghostly users of our haunted kingdom! 👻."""
 import re
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import Any, Dict, Optional
 
 from flask import current_app
+from sqlalchemy.orm import relationship
 
-from app import bcrypt  # Import bcrypt from app/__init__.py
+from app import bcrypt, db
 from app.models.basemodel import BaseModel
-from app.utils.haunted_logger import log_me
-
-# Conditional imports for type hints
-if TYPE_CHECKING:
-    from app.models.place import Place
-    from app.models.review import Review
+from app.utils import log_me
 
 
 class User(BaseModel):
-    """User: A spectral entity in our haunted realm! 👻"""
+    """User: A spectral entity in our haunted realm! 👻."""
+
+    # SQLAlchemy columns
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    first_name = db.Column(db.String(80), nullable=False)
+    last_name = db.Column(db.String(80), nullable=False)
+    address = db.Column(db.String(200))
+    postal_code = db.Column(db.String(20))
+    city = db.Column(db.String(100))
+    phone = db.Column(db.String(20))
+    is_admin = db.Column(db.Boolean, default=False)
+
+    # Relationships
+    places = relationship("Place", backref="owner", lazy=True)
+    reviews = relationship("Review", backref="author", lazy=True)
 
     def __init__(
         self,
@@ -32,31 +43,28 @@ class User(BaseModel):
         is_admin: bool = False,
         **kwargs,
     ):
-        """Initialize a new spectral user! ✨"""
-        # Call parent init first to set up base attributes
-        super().__init__(**kwargs)
+        """Initialize a new spectral user! ✨."""
+        super().__init__(**kwargs)  # Important pour SQLAlchemy
 
-        # Then validate and set user-specific attributes
+        # Validate and set attributes
         self.username = self._validate_username(username)
         self.email = self._validate_email(email)
         self.first_name = self._validate_name(first_name, "First name")
         self.last_name = self._validate_name(last_name, "Last name")
-        self.is_admin = is_admin
-
-        # Hash password after validation
         self.password_hash = self._hash_password(
             self._validate_password(password)
-        )
+        )  # Hash password before saving
+        self.is_admin = is_admin
 
         # Optional attributes
         self.address = address
         self.postal_code = postal_code
         self.city = city
-        self.phone = phone if phone else None
+        self.phone = phone
 
     @log_me(component="business")
     def _validate_username(self, username: str) -> str:
-        """Validate Ghost username is conform to our spectral requirements! 👻"""
+        """Validate Ghost username is conform to spectral requirements! 👻."""
         if not isinstance(username, str) or len(username) < 3:
             raise ValueError("Username must be at least 3 characters!")
         if not re.match(r"^[a-zA-Z0-9_-]+$", username):
@@ -67,7 +75,7 @@ class User(BaseModel):
 
     @log_me(component="business")
     def _validate_email(self, email: str) -> str:
-        """Validate ghost gave as a form valid email! 📫"""
+        """Validate ghost gave as a form valid email! 📫."""
         existing = self.get_by_attr(email=email)
         if existing:
             raise ValueError("Email already in use!")
@@ -79,7 +87,7 @@ class User(BaseModel):
 
     @log_me(component="business")
     def _validate_password(self, password: str) -> str:
-        """Validate password : Ghosts also have standards ! 🔒"""
+        """Validate password : Ghosts also have standards ! 🔒."""
         if len(password) < 8:
             raise ValueError("Password must be at least 8 characters!")
         if not re.search(r"[A-Z]", password):
@@ -96,7 +104,7 @@ class User(BaseModel):
 
     @log_me(component="business")
     def _validate_name(self, name: str, field: str) -> str:
-        """Validate name fields! 👤"""
+        """Validate name fields! 👤."""
         if not isinstance(name, str) or len(name) < 2:
             raise ValueError(f"{field} must be at least 2 characters!")
         if not re.match(r"^[a-zA-Z\s-]+$", name):
@@ -107,44 +115,38 @@ class User(BaseModel):
 
     @log_me(component="business")
     def _hash_password(self, password: str) -> str:
-        """Hash that supernatural secret! 🔐"""
+        """Hash that supernatural secret! 🔐."""
         return bcrypt.generate_password_hash(
             password, rounds=current_app.config.get("BCRYPT_LOG_ROUNDS", 12)
         ).decode("utf-8")
 
     @log_me(component="business")
     def check_password(self, password: str) -> bool:
-        """Check if the ghost knows the secret! 🔍"""
+        """Check if the ghost knows the secret! 🔍."""
         if not self.password_hash:
             return False
         return bcrypt.check_password_hash(self.password_hash, password)
 
     @log_me(component="business")
     def delete(self) -> bool:
-        """Soft delete user and handle related entities! ⚰️"""
+        """Soft delete user and handle related entities! ⚰️."""
         try:
             if self.repository is None:
                 raise ValueError("Repository not available")
 
-            # 1. Hard delete des places si le modèle existe
-            try:
-                from app.models.place import Place
+            # Import ici pour éviter les imports circulaires
+            from app.models.place import Place  # noqa: F811
+            from app.models.review import Review  # noqa: F811
 
-                places = Place.get_by_attr(multiple=True, owner_id=self.id)
-                for place in places:
-                    place.hard_delete()
-            except ImportError:
-                pass  # Place model not implemented yet
+            # 1. Hard delete des places
+            places = Place.get_by_attr(multiple=True, owner_id=self.id)
+            for place in places:
+                place.hard_delete()
 
-            # 2. Anonymiser les reviews si le modèle existe
-            try:
-                from app.models.review import Review
-
-                reviews = Review.get_by_attr(multiple=True, user_id=self.id)
-                for review in reviews:
-                    review.anonymize()
-            except ImportError:
-                pass  # Review model not implemented yet
+            # 2. Anonymiser les reviews
+            reviews = Review.get_by_attr(multiple=True, user_id=self.id)
+            for review in reviews:
+                review.anonymize()
 
             # 3. Marquer l'utilisateur comme supprimé
             self.is_active = False
@@ -153,36 +155,33 @@ class User(BaseModel):
 
             return True
 
-        except Exception as e:
-            raise
+        except Exception as error:
+            raise ValueError(f"Failed to delete user: {str(error)}")
 
     @log_me(component="business")
     def pause_account(self) -> bool:
-        """Pause user account temporarily! 🌙"""
+        """Pause user account temporarily! 🌙."""
         try:
+            from app.models.place import Place  # noqa: F811
+
             # 1. Désactiver le compte
             self.is_active = False
 
-            # 2. Cacher les places si le modèle existe
-            try:
-                from app.models.place import Place
-
-                places = Place.get_by_attr(multiple=True, owner_id=self.id)
-                for place in places:
-                    place.is_active = False
-                    place.save()
-            except ImportError:
-                pass  # Place model not implemented yet
+            # 2. Cacher les places
+            places = Place.get_by_attr(multiple=True, owner_id=self.id)
+            for place in places:
+                place.is_active = False
+                place.save()
 
             self.save()
             return True
 
-        except Exception as e:
-            raise
+        except Exception as error:
+            raise ValueError(f"Failed to pause account: {str(error)}")
 
     @log_me(component="business")
     def reactivate_account(self) -> bool:
-        """Reactivate paused account! ☀️"""
+        """Reactivate paused account! ☀️."""
         try:
             if self.is_deleted:
                 raise ValueError("Cannot reactivate deleted account!")
@@ -192,7 +191,7 @@ class User(BaseModel):
 
             # 2. Réactiver les places si le modèle existe
             try:
-                from app.models.place import Place
+                from app.models.place import Place  # noqa: F811
 
                 places = Place.get_by_attr(multiple=True, owner_id=self.id)
                 for place in places:
@@ -205,11 +204,11 @@ class User(BaseModel):
             return True
 
         except Exception as e:
-            raise
+            raise ValueError(f"Reactivate operation failed: {str(e)}")
 
     @log_me(component="business")
     def to_dict(self) -> Dict[str, Any]:
-        """Transform user into dictionary! 📚"""
+        """Transform user into dictionary! 📚."""
         base_dict = super().to_dict()
         user_dict = {
             "username": self.username,

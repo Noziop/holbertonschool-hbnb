@@ -1,84 +1,103 @@
-# app/models/amenity.py
-"""Amenity model module: Where features come back to haunt you! 👻"""
+"""Amenity model module: Where features come back to haunt you! 👻."""
+
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Dict, List
 
+from sqlalchemy.orm import relationship
+
+from app import db
 from app.models.basemodel import BaseModel
+from app.utils import log_me
 
-# Conditional imports for type hints
-if TYPE_CHECKING:
-    from app.models.place import Place
-    from app.models.placeamenity import PlaceAmenity
+if TYPE_CHECKING:  # noqa: F401
+    from app.models.place import Place  # noqa: F401
+
+
+class AmenityCategory(str, Enum):
+    """The different types of supernatural features! 🎭."""
+
+    SAFETY = "safety"
+    COMFORT = "comfort"
+    ENTERTAINMENT = "entertainment"
+    SUPERNATURAL = "supernatural"
+    BLOCKED = "blocked"  # Pour le soft delete
 
 
 class Amenity(BaseModel):
-    """Amenity: A supernatural feature for our haunted places! 🎭"""
+    """Amenity: A supernatural feature for our haunted places! 🎭."""
 
-    VALID_CATEGORIES = ["safety", "comfort", "entertainment", "supernatural"]
+    # SQLAlchemy columns
+    name = db.Column(db.String(120), unique=True, nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    category = db.Column(
+        db.Enum(AmenityCategory),
+        default=AmenityCategory.SUPERNATURAL,
+        nullable=False,
+    )
+
+    # Relationships
+    place_amenities = relationship("PlaceAmenity", back_populates="amenity")
+    places = relationship(
+        "Place", secondary="placeamenity", back_populates="amenities"
+    )
 
     def __init__(
         self,
         name: str,
         description: str,
-        category: str = "supernatural",  # Valeur par défaut
+        category: str = AmenityCategory.SUPERNATURAL.value,
         **kwargs,
     ):
-        """Initialize a new supernatural feature! ✨"""
-        self.logger.debug(f"Creating new Amenity: {name}")
+        """Initialize a new supernatural feature! ✨."""
         super().__init__(**kwargs)
 
         self.name = self._validate_name(name)
         self.description = self._validate_description(description)
         self.category = self._validate_category(category)
 
-        self.logger.info(f"Created new Amenity with ID: {self.id}")
-
+    @log_me(component="business")
     def _validate_name(self, name: str) -> str:
-        """Validate amenity name! 🏷️"""
-        self.logger.debug(f"Validating amenity name: {name}")
+        """Validate amenity name! 🏷️."""
         if not name.strip():
-            error_msg = "Name cannot be empty!"
-            self.logger.error(f"Name validation failed: {error_msg}")
-            raise ValueError(error_msg)
+            raise ValueError("Name cannot be empty!")
+
         if not re.match(r"^[\w\s-]+$", name):
-            error_msg = (
+            raise ValueError(
                 "Name can only contain letters, numbers, spaces, and hyphens!"
             )
-            self.logger.error(f"Name validation failed: {error_msg}")
-            raise ValueError(error_msg)
+
+        # Vérifier l'unicité du nom avec SQLAlchemy
+        existing = self.query.filter_by(name=name.strip()).first()
+        if existing and existing.id != self.id:
+            raise ValueError(f"Name '{name}' already exists!")
+
         return name.strip()
 
+    @log_me(component="business")
     def _validate_description(self, description: str) -> str:
-        """Validate amenity description! 📝"""
-        self.logger.debug("Validating amenity description")
+        """Validate amenity description! 📝."""
         if not isinstance(description, str):
-            error_msg = "Description must be a string!"
-            self.logger.error(f"Description validation failed: {error_msg}")
-            raise ValueError(error_msg)
+            raise ValueError("Description must be a string!")
         return description.strip() if description else ""
 
-    def _validate_category(self, category: str) -> str:
-        """Validate amenity category! 🏷️"""
-        self.logger.debug(f"Validating category: {category}")
-        if category not in self.VALID_CATEGORIES:
-            error_msg = (
-                f"Category must be one of: {', '.join(self.VALID_CATEGORIES)}"
+    @log_me(component="business")
+    def _validate_category(self, category: str) -> AmenityCategory:
+        """Validate amenity category! 🏷️."""
+        try:
+            return AmenityCategory(category)
+        except ValueError:
+            raise ValueError(
+                "Category must be one of: "
+                f"{', '.join(c.value for c in AmenityCategory)}"
             )
-            self.logger.error(f"Category validation failed: {error_msg}")
-            raise ValueError(error_msg)
-        return category
 
+    @log_me(component="business")
     def update(self, data: dict) -> "Amenity":
-        """Update amenity attributes! 🔄"""
-        self.logger.debug(f"Attempting to update Amenity: {self.id}")
+        """Update amenity attributes! 🔄."""
         try:
             # Validate name if present
             if "name" in data:
-                existing = self.get_by_attr(name=data["name"])
-                if existing and existing.id != self.id:
-                    error_msg = f"Name '{data['name']}' already exists!"
-                    self.logger.error(f"Update failed: {error_msg}")
-                    raise ValueError(error_msg)
                 data["name"] = self._validate_name(data["name"])
 
             # Validate description if present
@@ -87,65 +106,59 @@ class Amenity(BaseModel):
                     data["description"]
                 )
 
+            # Validate category if present
+            if "category" in data:
+                data["category"] = self._validate_category(data["category"])
+
             return super().update(data)
-        except Exception as e:
-            self.logger.error(f"Failed to update Amenity: {str(e)}")
-            raise
+        except Exception as error:
+            raise ValueError(f"Failed to update Amenity: {str(error)}")
 
+    @log_me(component="business")
     def delete(self) -> bool:
-        """Soft delete this supernatural feature! 🌙"""
+        """Soft delete this supernatural feature! 🌙."""
         try:
-            self.logger.debug(f"Soft deleting Amenity: {self.id}")
-            # Mettre à jour le statut à 'blocked'
-            return self.update({"category": "blocked"})
-        except Exception as e:
-            self.logger.error(f"Failed to soft delete Amenity: {str(e)}")
-            raise
+            return self.update({"category": AmenityCategory.BLOCKED})
+        except Exception as error:
+            raise ValueError(f"Failed to soft delete Amenity: {str(error)}")
 
+    @log_me(component="business")
     def hard_delete(self) -> bool:
-        """Permanently delete amenity and all related links! ⚰️"""
+        """Permanently delete amenity and all related links! ⚰️."""
         try:
-            self.logger.debug(f"Hard deleting Amenity: {self.id}")
+            # Avec SQLAlchemy et la relation many-to-many,
+            # les liens seront automatiquement supprimés
+            db.session.delete(self)
+            db.session.commit()
+            return True
+        except Exception as error:
+            db.session.rollback()
+            raise ValueError(f"Failed to hard delete Amenity: {str(error)}")
 
-            # Supprimer les liens place-amenity
-            try:
-                from app.models.placeamenity import PlaceAmenity
-
-                links = PlaceAmenity.get_by_attr(
-                    multiple=True, amenity_id=self.id
-                )
-                for link in links:
-                    link.hard_delete()
-                    self.logger.info(f"Deleted PlaceAmenity link: {link.id}")
-            except ImportError:
-                self.logger.warning("PlaceAmenity model not implemented yet")
-
-            # Supprimer l'amenity elle-même
-            return super().hard_delete()
-        except Exception as e:
-            self.logger.error(f"Failed to hard delete Amenity: {str(e)}")
-            raise
-
+    @log_me(component="business")
     def get_places(self) -> List["Place"]:
-        """Get all places with this amenity! 🏰"""
-        self.logger.debug(f"Getting places for Amenity: {self.id}")
-        try:
-            from app.models.place import Place
-            from app.models.placeamenity import PlaceAmenity
+        """Get all places with this amenity! 🏰."""
+        # Grâce à la relation SQLAlchemy
+        # on peut directement accéder aux places
+        return [
+            place
+            for place in self.places
+            if not place.is_deleted and place.status != "blocked"
+        ]
 
-            place_amenities = PlaceAmenity.get_by_attr(
-                multiple=True, amenity_id=self.id
-            )
-            return [Place.get_by_id(pa.place_id) for pa in place_amenities]
-        except ImportError:
-            self.logger.warning(
-                "Place/PlaceAmenity models not implemented yet"
-            )
-            return []
-
+    @log_me(component="business")
     def to_dict(self) -> Dict[str, Any]:
-        """Transform amenity into dictionary! 📚"""
-        self.logger.debug(f"Converting amenity {self.id} to dictionary")
+        """Transform amenity into dictionary! 📚."""
         base_dict = super().to_dict()
-        amenity_dict = {"name": self.name, "description": self.description}
+        amenity_dict = {
+            "name": self.name,
+            "description": self.description,
+            "category": self.category.value if self.category else None,
+            # Optionnellement, inclure les places liées
+            "places": [
+                place.to_dict()
+                for place in self.places
+                if not place.is_deleted and place.status != "blocked"
+            ],
+        }
         return {**base_dict, **amenity_dict}
