@@ -1,11 +1,7 @@
 # 🏚️ Haunted-BnB
-
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
-
-[Code Quality](./badges/flake8-badge.svg)
-![Test Coverage](./badges/coverage-badge.svg)
-
 *Where every stay is a spooktacular experience!* 🏚️
+
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/) ![Code Quality](./badges/flake8-badge.svg) ![Test Coverage](./badges/coverage-badge.svg)
 
 ## 📚 Table des Matières
 1. [Project Overview](#-project-overview)

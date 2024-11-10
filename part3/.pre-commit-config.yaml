@@ -4,58 +4,48 @@ repos:
     rev: v4.5.0
     hooks:
     -   id: trailing-whitespace
-        files: ^part3/
     -   id: end-of-file-fixer
-        files: ^part3/
     -   id: check-yaml
-        files: ^part3/
     -   id: detect-private-key
-        files: ^part3/
 
 -   repo: https://github.com/psf/black
     rev: 23.11.0
     hooks:
     -   id: black
         args: [--line-length=79]
-        files: ^part3/
 
 -   repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
     -   id: isort
         args: ["--profile", "black", "--line-length=79"]
-        files: ^part3/
 
 -   repo: https://github.com/PyCQA/flake8
     rev: 6.1.0
     hooks:
     -   id: flake8
-        files: ^part3/
         additional_dependencies: [flake8-docstrings]
 
-# Nouveaux hooks pour les badges
+# Hooks locaux pour les badges
 -   repo: local
     hooks:
     -   id: pytest-coverage
         name: Run tests with coverage
-        entry: poetry run pytest --cov=app --cov-report=xml:reports/coverage/coverage.xml
+        entry: bash -c 'cd part3 && poetry run pytest --cov=app --cov-report=xml:reports/coverage/coverage.xml'
         language: system
         pass_filenames: false
-        always_run: true
-        stages: [commit]
-
+        types: [python]
+        
     -   id: flake8-report
         name: Generate flake8 report
-        entry: poetry run flake8 --statistics --tee --output-file=reports/flake8/flake8stats.txt app/
+        entry: bash -c 'cd part3 && poetry run flake8 --statistics --tee --output-file=reports/flake8/flake8stats.txt app/'
         language: system
         pass_filenames: false
-        always_run: true
-        stages: [commit]
-
+        types: [python]
+        
     -   id: generate-badges
         name: Generate quality badges
-        entry: bash -c 'poetry run genbadge coverage -i reports/coverage/coverage.xml -o badges/coverage-badge.svg && poetry run genbadge flake8 -i reports/flake8/flake8stats.txt -o badges/flake8-badge.svg'
+        entry: bash -c 'cd part3 && poetry run genbadge coverage -i reports/coverage/coverage.xml -o badges/coverage-badge.svg && poetry run genbadge flake8 -i reports/flake8/flake8stats.txt -o badges/flake8-badge.svg'
         language: system
         pass_filenames: false
-        always_run: true
-        stages: [commit]
+        types: [python]
