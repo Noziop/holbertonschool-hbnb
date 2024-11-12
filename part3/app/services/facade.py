@@ -1,5 +1,5 @@
 """The haunted gateway to our supernatural kingdom! 👻"""
-from typing import Type, TypeVar, Union, List
+from typing import List, Type, TypeVar, Union
 
 from app.models import *  # On importe tous nos modèles d'un coup !
 from app.models.basemodel import BaseModel
@@ -24,7 +24,7 @@ class HBnBFacade:
             raise ValueError("This spirit is not registered in our realm! 👻")
         if not user.is_active:
             raise ValueError("This spirit has been exorcised! 👻")
-        
+
         return user
 
     @log_me(component="business")
@@ -66,7 +66,9 @@ class HBnBFacade:
         return instance.update(data)
 
     @log_me(component="business")
-    def delete(self, model_class: Type[T], id: str, hard: bool = False) -> bool:
+    def delete(
+        self, model_class: Type[T], id: str, hard: bool = False
+    ) -> bool:
         """Banish an entity from our realm! ⚡"""
         if not issubclass(model_class, BaseModel):
             raise ValueError("Invalid model class")
@@ -88,10 +90,11 @@ class HBnBFacade:
 
         # Sinon on cherche avec les critères
         return model_class.find_by(multiple=True, **criteria)
-            
 
     @log_me(component="business")
-    def link_place_amenity(self, place_id: str, amenity_id: str) -> PlaceAmenity:
+    def link_place_amenity(
+        self, place_id: str, amenity_id: str
+    ) -> PlaceAmenity:
         """Create a haunted link between place and amenity! 🔗"""
         if not place_id or not amenity_id:
             raise ValueError("Both place_id and amenity_id are required")

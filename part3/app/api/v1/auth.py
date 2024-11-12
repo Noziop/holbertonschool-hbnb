@@ -41,6 +41,7 @@ class Login(Resource):
     Successfull authentication returns :
     a token for accessing protected endpoints.
     """
+
     @log_me(component="api")
     @ns.expect(login_model)
     @ns.doc(
@@ -59,10 +60,9 @@ class Login(Resource):
 
         try:
             user = facade.login(
-                email=data.get("email"),
-                password=data.get("password")
+                email=data.get("email"), password=data.get("password")
             )
-            
+
             # Générer le token avec les claims appropriés
             token = create_access_token(
                 identity=user.id,

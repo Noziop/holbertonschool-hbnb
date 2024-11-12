@@ -12,7 +12,6 @@ from app.utils import log_me
 
 class User(BaseModel):
     """User: A spectral entity in our haunted realm! 👻."""
-    
 
     # SQLAlchemy columns
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -124,21 +123,21 @@ class User(BaseModel):
         if not self.password_hash:
             return False
         return bcrypt.check_password_hash(self.password_hash, password)
-    
+
     @classmethod
     @log_me(component="business")
-    def authenticate(cls, email: str, password: str) -> Optional['User']:
+    def authenticate(cls, email: str, password: str) -> Optional["User"]:
         """Authenticate a user with email and password! 🔐"""
         user = cls.get_by_email(
             email=email,
         )
-        
+
         if user and user.check_password(password):
             return user
         return None
-        
+
     @log_me(component="business")
-    def save(self) -> 'User':
+    def save(self) -> "User":
         """Save this spectral user! 👻"""
         try:
             # Vérifier si l'email existe déjà
@@ -234,8 +233,6 @@ class User(BaseModel):
 
         except Exception as e:
             raise ValueError(f"Reactivate operation failed: {str(e)}")
-        
-
 
     @log_me(component="business")
     def to_dict(self) -> Dict[str, Any]:

@@ -1,8 +1,8 @@
 """User management endpoints for our haunted API! 👻."""
 
 from flask import request
-from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import get_jwt
+from flask_restx import Namespace, Resource, fields
 
 from app.api import admin_only, auth_required, log_me, owner_only
 from app.models.user import User
@@ -156,7 +156,7 @@ class UserList(Resource):
     """Endpoint for managing the collection of spectral users! 👻"""
 
     @log_me(component="api")
-    @admin_only #
+    @admin_only  #
     @ns.doc(
         "list_users",
         responses={
@@ -180,14 +180,14 @@ class UserList(Resource):
                     criteria[field] = request.args[field]
 
             users = facade.find(User, **criteria)
-            
+
             # Retourner une liste vide si pas d'utilisateurs
             if not users:
                 return [], 200
 
             # Filtrer les utilisateurs actifs
             return [user for user in users if user.is_active], 200
-            
+
         except Exception as e:
             return {"message": str(e)}, 400
 
@@ -236,13 +236,13 @@ class UserDetail(Resource):
             if not isinstance(user, User):
                 return {
                     "message": "This spirit has crossed over! 👻",
-                    "user": None
+                    "user": None,
                 }, 404
             return user, 200
         except Exception as e:
             return {
                 "message": f"Spirit not found: {str(e)} 👻",
-                "user": None
+                "user": None,
             }, 404
 
     @log_me(component="api")
@@ -257,14 +257,14 @@ class UserDetail(Resource):
             if not isinstance(user, User):
                 return {
                     "message": "This spirit has crossed over! 👻",
-                    "user": None
+                    "user": None,
                 }, 404
 
             data = ns.payload.copy()
             claims = get_jwt()
-            
+
             # Si pas admin, on ne peut pas modifier certains champs
-            if not claims.get('is_admin'):
+            if not claims.get("is_admin"):
                 data.pop("is_admin", None)
                 data.pop("is_active", None)
                 # Le reste est modifiable par le propriétaire
@@ -275,7 +275,7 @@ class UserDetail(Resource):
         except ValueError as e:
             return {
                 "message": f"Invalid modification parameters: {str(e)} 👻",
-                "user": None
+                "user": None,
             }, 400
 
     @log_me(component="api")
@@ -307,10 +307,6 @@ class UserDetail(Resource):
             hard = request.args.get("hard", "false").lower() == "true"
             if facade.delete(User, user_id, hard=hard):
                 return "", 204
-            return {
-                "message": "Failed to banish the spirit! 👻"
-            }, 400
+            return {"message": "Failed to banish the spirit! 👻"}, 400
         except ValueError as e:
-            return {
-                "message": f"Spirit not found: {str(e)} 👻"
-            }, 404
+            return {"message": f"Spirit not found: {str(e)} 👻"}, 404

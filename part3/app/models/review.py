@@ -37,7 +37,6 @@ class Review(BaseModel):
         db.Enum(ReviewRating), nullable=True  # Pour permettre le soft delete
     )
 
-
     def __init__(
         self, place_id: str, user_id: str, text: str, rating: int, **kwargs
     ):

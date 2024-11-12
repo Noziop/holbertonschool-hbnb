@@ -20,7 +20,7 @@ class BaseModel(db.Model, SQLAlchemyMixin):
     def __init__(self, **kwargs):
         """Initialize a new haunted instance! ✨."""
         super().__init__()
-        
+
         for key, value in kwargs.items():
             if key in ["created_at", "updated_at"]:
                 setattr(self, key, datetime.fromisoformat(value))
@@ -51,7 +51,9 @@ class BaseModel(db.Model, SQLAlchemyMixin):
 
             protected = {"id", "created_at", "is_deleted"}
             if any(attr in data for attr in protected):
-                raise ValueError(f"Cannot modify protected attributes: {protected & data.keys()}")
+                raise ValueError(
+                    f"Cannot modify protected attributes: {protected & data.keys()}"
+                )
 
             for key, value in data.items():
                 setattr(self, key, value)
@@ -79,11 +81,13 @@ class BaseModel(db.Model, SQLAlchemyMixin):
 
     @classmethod
     @log_me(component="business")
-    def find_by(cls, multiple: bool = False, **kwargs) -> Union[Optional[T], List[T]]:
+    def find_by(
+        cls, multiple: bool = False, **kwargs
+    ) -> Union[Optional[T], List[T]]:
         """Find entities by their attributes! 🔮"""
         print(f"BaseModel - kwargs: {kwargs}")
         return cls._get_repo().get_by_attribute(multiple=multiple, **kwargs)
-    
+
     @classmethod
     @log_me(component="business")
     def get_by_email(cls, email: str) -> Optional[T]:
@@ -95,7 +99,7 @@ class BaseModel(db.Model, SQLAlchemyMixin):
     def get_by_id(cls, id: str) -> Optional[T]:
         """Summon an entity by its ID! 🔍"""
         return cls._get_repo().get(id)
-    
+
     @classmethod
     @log_me(component="business")
     def get_all(cls) -> List[T]:

@@ -31,7 +31,9 @@ class Amenity(BaseModel):
     name = db.Column(db.String(120), unique=True, nullable=False)
     description = db.Column(db.Text, nullable=False)
     category = db.Column(
-        db.Enum(AmenityCategory, values_callable=lambda x: [e.value for e in x]),
+        db.Enum(
+            AmenityCategory, values_callable=lambda x: [e.value for e in x]
+        ),
         default=AmenityCategory.SUPERNATURAL,
         nullable=False,
     )

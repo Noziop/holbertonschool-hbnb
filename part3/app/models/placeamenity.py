@@ -8,28 +8,27 @@ from app.utils import log_me
 
 class PlaceAmenity(BaseModel):
     """PlaceAmenity: A supernatural link between places and amenities! 🔗"""
-    
-    __tablename__ = 'place_amenity'
+
+    __tablename__ = "place_amenity"
     __table_args__ = (
         db.UniqueConstraint(
-            "place_id", "amenity_id", 
-            name="unique_place_amenity"
+            "place_id", "amenity_id", name="unique_place_amenity"
         ),
-        {'extend_existing': True}  # Pour éviter l'erreur de double définition
+        {"extend_existing": True},  # Pour éviter l'erreur de double définition
     )
 
     # On ne définit pas id car c'est une table de liaison
     place_id = db.Column(
-        db.String(36), 
-        db.ForeignKey("place.id"), 
+        db.String(36),
+        db.ForeignKey("place.id"),
         primary_key=True,
-        nullable=False
+        nullable=False,
     )
     amenity_id = db.Column(
-        db.String(36), 
-        db.ForeignKey("amenity.id"), 
+        db.String(36),
+        db.ForeignKey("amenity.id"),
         primary_key=True,
-        nullable=False
+        nullable=False,
     )
 
     def __init__(self, place_id: str, amenity_id: str, **kwargs):
@@ -45,6 +44,7 @@ class PlaceAmenity(BaseModel):
             raise ValueError("Place ID must be a non-empty string!")
 
         from app.models.place import Place
+
         if not Place.get_by_id(place_id):
             raise ValueError("Invalid place_id: Place does not exist!")
 
@@ -57,6 +57,7 @@ class PlaceAmenity(BaseModel):
             raise ValueError("Amenity ID must be a non-empty string!")
 
         from app.models.amenity import Amenity
+
         if not Amenity.get_by_id(amenity_id):
             raise ValueError("Invalid amenity_id: Amenity does not exist!")
 
@@ -66,8 +67,5 @@ class PlaceAmenity(BaseModel):
     def to_dict(self) -> Dict[str, Any]:
         """Transform link into dictionary! 📚"""
         base_dict = super().to_dict()
-        link_dict = {
-            "place_id": self.place_id,
-            "amenity_id": self.amenity_id
-        }
+        link_dict = {"place_id": self.place_id, "amenity_id": self.amenity_id}
         return {**base_dict, **link_dict}

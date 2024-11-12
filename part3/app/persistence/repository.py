@@ -25,7 +25,7 @@ class SQLAlchemyRepository:
     def get_all(self):
         """Summon ALL the spirits! 👻"""
         return self.model.query.all()
-    
+
     @log_me(component="persistence")
     def get_by_email(self, email):
         """Find a spirit by their spectral email! 📧"""
@@ -51,7 +51,7 @@ class SQLAlchemyRepository:
     @log_me(component="persistence")
     def get_by_attribute(self, multiple: bool = False, **kwargs):
         """Find spirits by their spectral signatures! 🔍
-        
+
         Args:
             multiple: Want one ghost or a whole haunted house? 🏚️
             **kwargs: The dark specifications for our search
@@ -60,7 +60,7 @@ class SQLAlchemyRepository:
         print(f"REPO - kwargs: {kwargs}")
         print(f"REPO - query: {query}")
         return query.all() if multiple else query.first()
-    
+
     @log_me(component="persistence")
     def save(self, obj):
         """Save or update a spirit in our realm! 💾"""

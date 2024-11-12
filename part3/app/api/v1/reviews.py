@@ -13,7 +13,7 @@ from app.services.facade import HBnBFacade
 ns = Namespace(
     "reviews",
     validate=True,
-    description="Where our beloved Haunted Spirit speaks to us! 🏚️"
+    description="Where our beloved Haunted Spirit speaks to us! 🏚️",
 )
 facade = HBnBFacade()
 
@@ -88,10 +88,16 @@ output_review_model = ns.model(
     },
 )
 
-error_model = ns.model('ErrorResponse', {
-    'message': fields.String(required=True, description="Error message"),
-    'reviews': fields.List(fields.Raw, required=True, description="Empty list for errors")
-})
+error_model = ns.model(
+    "ErrorResponse",
+    {
+        "message": fields.String(required=True, description="Error message"),
+        "reviews": fields.List(
+            fields.Raw, required=True, description="Empty list for errors"
+        ),
+    },
+)
+
 
 @ns.route("/")
 class ReviewList(Resource):
@@ -122,22 +128,22 @@ class ReviewList(Resource):
             for field in ["user_id", "place_id", "rating"]:
                 if field in request.args and request.args[field]:
                     criteria[field] = request.args[field]
-            
+
             reviews = facade.find(Review, **criteria)
-            
+
             # Si reviews est None ou une liste vide
             if not reviews:
                 return {
                     "message": "No haunted reviews found in our realm! 👻",
-                    "reviews": []
+                    "reviews": [],
                 }, 404
-                
+
             return reviews, 200
-            
+
         except Exception as e:
             return {
                 "message": f"A spectral error occurred: {str(e)} 👻",
-                "reviews": []
+                "reviews": [],
             }, 400
 
     @log_me(component="api")

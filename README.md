@@ -25,7 +25,7 @@ Haunted-BnB is a full-stack web application that lets users rent and review haun
 - SQLite integration (development only)
 - SQLAlchemy ORM
 - User authentication
-- JWT implementation 
+- JWT implementation
 - Role-based access control
 - Database migrations
 
@@ -79,7 +79,7 @@ Each part includes its own test suite:
 
 ## 📚 Documentation
 
-- Part 1: UML diagrams and design docs 
+- Part 1: UML diagrams and design docs
 - Part 2: Swagger API documentation
 - Part 3: Database schema and auth flows
 - Part 4: to be defined

@@ -12,9 +12,7 @@ from app.models.user import User
 from app.services.facade import HBnBFacade
 
 ns = Namespace(
-    "places",
-    validate=True,
-    description="Haunted property operations 👻"
+    "places", validate=True, description="Haunted property operations 👻"
 )
 facade = HBnBFacade()
 
@@ -145,10 +143,16 @@ place_review_model = ns.model(
     },
 )
 
-error_model = ns.model('ErrorResponse', {
-    'message': fields.String(required=True, description="Error message"),
-    'reviews': fields.List(fields.Raw, required=True, description="Empty list for errors")
-})
+error_model = ns.model(
+    "ErrorResponse",
+    {
+        "message": fields.String(required=True, description="Error message"),
+        "reviews": fields.List(
+            fields.Raw, required=True, description="Empty list for errors"
+        ),
+    },
+)
+
 
 @ns.route("/")
 class PlaceList(Resource):
@@ -159,12 +163,20 @@ class PlaceList(Resource):
     users can create new properties."""
 
     # D'abord définir les modèles de réponse
-error_model = ns.model('ErrorResponse', {
-    'message': fields.String(required=True, description="Error message"),
-    'places': fields.List(fields.Raw, required=True, description="Empty list for errors")
-})
 
-@ns.route('/')
+
+error_model = ns.model(
+    "ErrorResponse",
+    {
+        "message": fields.String(required=True, description="Error message"),
+        "places": fields.List(
+            fields.Raw, required=True, description="Empty list for errors"
+        ),
+    },
+)
+
+
+@ns.route("/")
 class PlaceList(Resource):
     @log_me(component="api")
     @ns.doc(
@@ -182,7 +194,9 @@ class PlaceList(Resource):
     @ns.param("price_max", "Maximum price per night", type=float)
     @ns.param("latitude", "Latitude for location search", type=float)
     @ns.param("longitude", "Longitude for location search", type=float)
-    @ns.param("radius", "Search radius in kilometers", type=float, default=10.0)
+    @ns.param(
+        "radius", "Search radius in kilometers", type=float, default=10.0
+    )
     def get(self):
         """Browse our haunted catalog! 👻"""
         try:
@@ -194,7 +208,7 @@ class PlaceList(Resource):
                 if not places:
                     return {
                         "message": "No haunted properties found in this price range! 👻",
-                        "places": []
+                        "places": [],
                     }, 404
                 return places, 200
 
@@ -207,12 +221,12 @@ class PlaceList(Resource):
                 if not (-90 <= latitude <= 90):
                     return {
                         "message": "Latitude must be between -90 and 90",
-                        "places": []
+                        "places": [],
                     }, 400
                 if not (-180 <= longitude <= 180):
                     return {
                         "message": "Longitude must be between -180 and 180",
-                        "places": []
+                        "places": [],
                     }, 400
 
                 places = Place.get_by_location(
@@ -223,7 +237,7 @@ class PlaceList(Resource):
                 if not places:
                     return {
                         "message": "No haunted properties found in this area! 👻",
-                        "places": []
+                        "places": [],
                     }, 404
                 return places, 200
 
@@ -232,14 +246,14 @@ class PlaceList(Resource):
             if not places:
                 return {
                     "message": "Our catalog seems to be haunted... by emptiness! 👻",
-                    "places": []
+                    "places": [],
                 }, 404
             return places, 200
 
         except ValueError as e:
             return {
                 "message": f"Invalid parameters: {str(e)} 👻",
-                "places": []
+                "places": [],
             }, 400
 
     @log_me(component="api")

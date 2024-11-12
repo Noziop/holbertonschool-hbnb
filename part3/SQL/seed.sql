@@ -2,9 +2,9 @@
 
 -- Create admin user (password: admin1234)
 INSERT INTO user (
-    id, 
+    id,
     username,
-    email, 
+    email,
     password_hash,
     first_name,
     last_name,
@@ -27,28 +27,28 @@ INSERT INTO user (
 
 -- Create initial amenities
 INSERT INTO amenity (
-    id, 
-    name, 
-    description, 
+    id,
+    name,
+    description,
     category,
     created_at,
     updated_at
 ) VALUES
-    ('550e8400-e29b-41d4-a716-446655440000', 
-     'WiFi', 
-     'High-speed wireless internet', 
+    ('550e8400-e29b-41d4-a716-446655440000',
+     'WiFi',
+     'High-speed wireless internet',
      'comfort',
      CURRENT_TIMESTAMP,
      CURRENT_TIMESTAMP),
-    ('6ba7b810-9dad-11d1-80b4-00c04fd430c8', 
-     'Swimming Pool', 
-     'Outdoor swimming pool', 
+    ('6ba7b810-9dad-11d1-80b4-00c04fd430c8',
+     'Swimming Pool',
+     'Outdoor swimming pool',
      'entertainment',
      CURRENT_TIMESTAMP,
      CURRENT_TIMESTAMP),
-    ('6ba7b811-9dad-11d1-80b4-00c04fd430c9', 
-     'Air Conditioning', 
-     'Climate control system', 
+    ('6ba7b811-9dad-11d1-80b4-00c04fd430c9',
+     'Air Conditioning',
+     'Climate control system',
      'comfort',
      CURRENT_TIMESTAMP,
      CURRENT_TIMESTAMP);

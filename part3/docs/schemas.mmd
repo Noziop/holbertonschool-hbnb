@@ -5,7 +5,7 @@ erDiagram
     Place ||--o{ Review : "has (1:N)"
     Place }|--|| User : "owned by (N:1)"
     Place }|--|{ Amenity : "has (N:N)"
-    
+
     %% Join table for Place-Amenity
     PlaceAmenity }|--|| Place : "belongs to"
     PlaceAmenity }|--|| Amenity : "belongs to"

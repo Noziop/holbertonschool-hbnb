@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS place (
     longitude FLOAT,
     city VARCHAR(100),
     country VARCHAR(100),
-    status VARCHAR(20) NOT NULL DEFAULT 'active' 
+    status VARCHAR(20) NOT NULL DEFAULT 'active'
         CHECK (status IN ('active', 'maintenance', 'blocked')),
     property_type VARCHAR(20) NOT NULL DEFAULT 'apartment'
         CHECK (property_type IN ('house', 'apartment', 'villa')),
