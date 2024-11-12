@@ -21,20 +21,16 @@ Haunted-BnB is a full-stack web application that lets users rent and review haun
 - Comprehensive testing (>80% coverage)
 - Swagger documentation
 
-### Part 3: Database & Authentication 🔐 (from 28.10 to )
-- PostgreSQL integration
+### Part 3: Database & Authentication 🔐 (from 28.10 to 15.11)
+- SQLite integration (development only)
 - SQLAlchemy ORM
 - User authentication
-- JWT implementation
+- JWT implementation 
 - Role-based access control
 - Database migrations
 
-### Part 4: Frontend (Coming Soon!) ✨ (from 29.10 to 18.10)
-- React/Vite.js implementation
-- Material UI components
-- State management
-- API integration
-- Responsive design
+### Part 4: Frontend (Coming Soon!) ✨ (from 18.11 to 29.11)
+- Upcoming on nov. the 18th !(stay tuned !)
 
 ## 🌟 Key Features
 
@@ -76,22 +72,22 @@ cd part4  # Frontend
 ## 🧪 Testing
 Each part includes its own test suite:
 
-- Part 1: Design validation
+- Part 1: No tests, only diagrams
 - Part 2: API & business logic tests
-- Part 3: Database & auth tests
+- Part 3: Database & auth tests + Part2
 - Part 4: Frontend component tests
 
 ## 📚 Documentation
 
-- Part 1: UML diagrams and design docs
+- Part 1: UML diagrams and design docs 
 - Part 2: Swagger API documentation
 - Part 3: Database schema and auth flows
-- Part 4: Component documentation
+- Part 4: to be defined
 
 ## 🎯 Project Status
 - ✅ Part 1: Complete
-- 🏗️ Part 2: In progress
-- 📅 Part 3: Planned
+- ✅ Part 2: Complete
+- 🏗️ Part 3: In Progress
 - 📅 Part 4: Planned
 
 ## 👻 Contributors

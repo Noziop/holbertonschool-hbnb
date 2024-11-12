@@ -14,8 +14,7 @@ from app.services.facade import HBnBFacade
 ns = Namespace(
     "places",
     validate=True,
-    description="Haunted property operations 👻",
-    path="/api/v1/places",
+    description="Haunted property operations 👻"
 )
 facade = HBnBFacade()
 
@@ -146,6 +145,10 @@ place_review_model = ns.model(
     },
 )
 
+error_model = ns.model('ErrorResponse', {
+    'message': fields.String(required=True, description="Error message"),
+    'reviews': fields.List(fields.Raw, required=True, description="Empty list for errors")
+})
 
 @ns.route("/")
 class PlaceList(Resource):
@@ -155,6 +158,14 @@ class PlaceList(Resource):
     Supports advanced filtering by price and location. Only authenticated
     users can create new properties."""
 
+    # D'abord définir les modèles de réponse
+error_model = ns.model('ErrorResponse', {
+    'message': fields.String(required=True, description="Error message"),
+    'places': fields.List(fields.Raw, required=True, description="Empty list for errors")
+})
+
+@ns.route('/')
+class PlaceList(Resource):
     @log_me(component="api")
     @ns.doc(
         "list_places",
@@ -164,28 +175,16 @@ class PlaceList(Resource):
             404: "No places found",
         },
     )
-    @ns.marshal_list_with(place_model)
+    @ns.response(200, "Success", [place_model])
+    @ns.response(404, "Not Found", error_model)
+    @ns.response(400, "Bad Request", error_model)
     @ns.param("price_min", "Minimum price per night", type=float)
     @ns.param("price_max", "Maximum price per night", type=float)
     @ns.param("latitude", "Latitude for location search", type=float)
     @ns.param("longitude", "Longitude for location search", type=float)
-    @ns.param(
-        "radius", "Search radius in kilometers", type=float, default=10.0
-    )
+    @ns.param("radius", "Search radius in kilometers", type=float, default=10.0)
     def get(self):
-        """Browse our haunted catalog! 👻.
-
-        Supports three search modes:
-        1. Price range filtering
-        2. Location-based search with customizable radius
-        3. Complete catalog listing
-
-        Returns:
-            list[Place]: List of haunted properties matching the criteria.
-
-        Raises:
-            400: If the search parameters are invalid.
-            404: If no properties are found."""
+        """Browse our haunted catalog! 👻"""
         try:
             # Filtrage par prix
             if "price_min" in request.args and "price_max" in request.args:
@@ -193,10 +192,11 @@ class PlaceList(Resource):
                 max_price = float(request.args["price_max"])
                 places = Place.filter_by_price(min_price, max_price)
                 if not places:
-                    ns.abort(
-                        404, "No haunted properties found in this price range!"
-                    )
-                return places
+                    return {
+                        "message": "No haunted properties found in this price range! 👻",
+                        "places": []
+                    }, 404
+                return places, 200
 
             # Recherche par localisation
             if all(k in request.args for k in ["latitude", "longitude"]):
@@ -205,9 +205,15 @@ class PlaceList(Resource):
 
                 # Valider les coordonnées
                 if not (-90 <= latitude <= 90):
-                    raise ValueError("Latitude must be between -90 and 90")
+                    return {
+                        "message": "Latitude must be between -90 and 90",
+                        "places": []
+                    }, 400
                 if not (-180 <= longitude <= 180):
-                    raise ValueError("Longitude must be between -180 and 180")
+                    return {
+                        "message": "Longitude must be between -180 and 180",
+                        "places": []
+                    }, 400
 
                 places = Place.get_by_location(
                     latitude,
@@ -215,19 +221,26 @@ class PlaceList(Resource):
                     float(request.args.get("radius", 10.0)),
                 )
                 if not places:
-                    ns.abort(404, "No haunted properties found in this area!")
-                return places
+                    return {
+                        "message": "No haunted properties found in this area! 👻",
+                        "places": []
+                    }, 404
+                return places, 200
 
             # Liste complète
             places = facade.find(Place)
             if not places:
-                ns.abort(
-                    404, "Our catalog seems to be haunted... by emptiness!"
-                )
-            return places
+                return {
+                    "message": "Our catalog seems to be haunted... by emptiness! 👻",
+                    "places": []
+                }, 404
+            return places, 200
 
         except ValueError as e:
-            ns.abort(400, f"Invalid parameters: {str(e)}")
+            return {
+                "message": f"Invalid parameters: {str(e)} 👻",
+                "places": []
+            }, 400
 
     @log_me(component="api")
     @ns.doc(

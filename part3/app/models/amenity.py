@@ -31,15 +31,9 @@ class Amenity(BaseModel):
     name = db.Column(db.String(120), unique=True, nullable=False)
     description = db.Column(db.Text, nullable=False)
     category = db.Column(
-        db.Enum(AmenityCategory),
+        db.Enum(AmenityCategory, values_callable=lambda x: [e.value for e in x]),
         default=AmenityCategory.SUPERNATURAL,
         nullable=False,
-    )
-
-    # Relationships
-    place_amenities = relationship("PlaceAmenity", back_populates="amenity")
-    places = relationship(
-        "Place", secondary="placeamenity", back_populates="amenities"
     )
 
     def __init__(

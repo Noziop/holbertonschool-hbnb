@@ -2,6 +2,7 @@
 
 from flask import request
 from flask_restx import Namespace, Resource, fields
+from flask_jwt_extended import get_jwt
 
 from app.api import admin_only, auth_required, log_me, owner_only
 from app.models.user import User
@@ -152,19 +153,16 @@ output_user_model = ns.model(
 # Winding Routes 🛤️ to the realm of Haunted BnB
 @ns.route("/")
 class UserList(Resource):
-    """Endpoint for managing the collection of spectral users! 👻.
-
-    This endpoint handles listing all users and creating new ones.
-    Only administrators can create new users, but anyone can view
-    the list of active spirits."""
+    """Endpoint for managing the collection of spectral users! 👻"""
 
     @log_me(component="api")
+    @admin_only #
     @ns.doc(
         "list_users",
         responses={
             200: "Success - List of spirits returned",
-            400: "Invalid parameters - Malformed search criteria",
             401: "Unauthorized - Authentication required",
+            403: "Forbidden - Admin privileges required",
             404: "No spirits found in the ethereal plane",
         },
     )
@@ -173,20 +171,8 @@ class UserList(Resource):
     @ns.param("email", "Spirit contact", type=str, required=False)
     @ns.param("first_name", "First haunting name", type=str, required=False)
     @ns.param("last_name", "Last haunting name", type=str, required=False)
-    @auth_required()  # Authenticated users only
     def get(self):
-        """Browse Lilith's List of Lost Souls! 📖.
-
-        Search through our spectral directory with various filters.
-        Only active spirits are shown to protect the privacy of the departed.
-
-        Returns:
-            list[User]: List of spectral users matching the search criteria.
-
-        Raises:
-            401: If the requester is not authenticated.
-            400: If the search parameters are invalid.
-            404: If no spirits match the criteria."""
+        """Browse Lilith's List of Lost Souls! 📖"""
         try:
             criteria = {}
             for field in ["username", "email", "first_name", "last_name"]:
@@ -194,64 +180,46 @@ class UserList(Resource):
                     criteria[field] = request.args[field]
 
             users = facade.find(User, **criteria)
+            
+            # Retourner une liste vide si pas d'utilisateurs
             if not users:
-                ns.abort(404, "No spirits found in this realm! 👻")
+                return [], 200
 
-            # Ne retourner que les utilisateurs actifs
-            return [
-                user
-                for user in users
-                if isinstance(user, User) and user.is_active
-            ]
-        except ValueError as e:
-            ns.abort(400, f"Invalid summoning parameters: {str(e)}")
+            # Filtrer les utilisateurs actifs
+            return [user for user in users if user.is_active], 200
+            
+        except Exception as e:
+            return {"message": str(e)}, 400
 
     @log_me(component="api")
+    @admin_only
     @ns.doc(
         "create_user",
         responses={
             201: "Spirit successfully summoned",
-            400: "Invalid summoning parameters",
             401: "Unauthorized - Authentication required",
             403: "Forbidden - Admin privileges required",
+            400: "Invalid summoning parameters",
         },
     )
     @ns.expect(user_model)
     @ns.marshal_with(output_user_model, code=201)
-    @admin_only  # Seuls les admins peuvent créer des utilisateurs
     def post(self):
-        """Summon a new lost soul to our realm! 🌟.
-
-        Only Head Ghosts (administrators) can perform this ritual.
-        New spirits are created with default mortal privileges.
-
-        Returns:
-            User: The newly summoned spectral entity.
-
-        Raises:
-            401: If the summoner is not authenticated.
-            403: If the summoner lacks Head Ghost privileges.
-            400: If the summoning parameters are invalid."""
+        """Summon a new lost soul to our realm! 🌟."""
         try:
             user = facade.create(User, ns.payload)
-            if not isinstance(user, User):
-                ns.abort(400, "The summoning ritual failed! 👻")
             return user, 201
         except ValueError as e:
-            ns.abort(400, f"Invalid summoning parameters: {str(e)}")
+            return {"message": str(e)}, 400
 
 
 @ns.route("/<string:user_id>")
 @ns.param("user_id", "Spectral identifier")
 class UserDetail(Resource):
-    """Endpoint for managing individual spectral entities! 👻.
-
-    This endpoint handles retrieving, updating, and banishing specific spirits.
-    Users can only modify their own data.
-    Administrators can manage all spirits.
-    """
+    """Endpoint for managing individual spectral entities! 👻"""
 
     @log_me(component="api")
+    @auth_required()
     @ns.doc(
         "get_user",
         responses={
@@ -261,77 +229,57 @@ class UserDetail(Resource):
         },
     )
     @ns.marshal_with(output_user_model, code=200)
-    @auth_required()  # Authentification requise
     def get(self, user_id):
-        """Contact a specific spirit in our realm! 👻.
-
-        Args:
-            user_id (str): The unique identifier of the spirit.
-
-        Returns:
-            User: The requested spectral entity.
-
-        Raises:
-            401: If the requester is not authenticated.
-            404: If the spirit doesn't exist."""
+        """Contact a specific spirit in our realm! 👻"""
         try:
             user = facade.get(User, user_id)
             if not isinstance(user, User):
-                ns.abort(404, "This spirit has crossed over! 👻")
-            return user
-        except ValueError as e:
-            ns.abort(404, f"Spirit not found: {str(e)}")
+                return {
+                    "message": "This spirit has crossed over! 👻",
+                    "user": None
+                }, 404
+            return user, 200
+        except Exception as e:
+            return {
+                "message": f"Spirit not found: {str(e)} 👻",
+                "user": None
+            }, 404
 
     @log_me(component="api")
-    @ns.doc(
-        "update_user",
-        responses={
-            200: "Spirit successfully updated",
-            400: "Invalid modification parameters",
-            401: "Unauthorized - Authentication required",
-            403: "Forbidden - Not your spiritual essence",
-            404: "Spirit not found in this realm",
-        },
-    )
+    @owner_only  # Vérifie auth + propriété/admin
+    @ns.doc(...)
     @ns.expect(user_model)
     @ns.marshal_with(output_user_model, code=200)
-    @owner_only  # Seul le propriétaire ou un admin peut modifier
     def put(self, user_id):
-        """Modify a spirit's ethereal essence! ✨.
-
-        Only the spirit itself or a Head Ghost can perform modifications.
-        Some attributes can only be modified by Head Ghosts.
-
-        Args:
-            user_id (str): The unique identifier of the spirit.
-
-        Returns:
-            User: The updated spectral entity.
-
-        Raises:
-            401: If the requester is not authenticated.
-            403: If the requester lacks proper permissions.
-            404: If the spirit doesn't exist.
-            400: If the modification parameters are invalid."""
+        """Modify a spirit's ethereal essence! ✨"""
         try:
             user = facade.get(User, user_id)
             if not isinstance(user, User):
-                ns.abort(404, "This spirit has crossed over! 👻")
+                return {
+                    "message": "This spirit has crossed over! 👻",
+                    "user": None
+                }, 404
 
             data = ns.payload.copy()
-            # Seuls les admins peuvent modifier ces champs
-            if not user.is_admin:
+            claims = get_jwt()
+            
+            # Si pas admin, on ne peut pas modifier certains champs
+            if not claims.get('is_admin'):
                 data.pop("is_admin", None)
                 data.pop("is_active", None)
+                # Le reste est modifiable par le propriétaire
+            # Si admin, tout est modifiable !
 
             updated = facade.update(User, user_id, data)
-            if not isinstance(updated, User):
-                ns.abort(400, "Failed to modify the spirit! 👻")
-            return updated
+            return updated, 200
         except ValueError as e:
-            ns.abort(400, f"Invalid modification parameters: {str(e)}")
+            return {
+                "message": f"Invalid modification parameters: {str(e)} 👻",
+                "user": None
+            }, 400
 
     @log_me(component="api")
+    @admin_only
     @ns.doc(
         "delete_user",
         responses={
@@ -347,31 +295,22 @@ class UserDetail(Resource):
         type=bool,
         default=False,
     )
-    @admin_only  # Seuls les admins peuvent supprimer
     def delete(self, user_id):
-        """Banish a spirit from our realm! ⚡.
-
-        Only Head Ghosts can perform banishments.
-        Supports both temporary (soft) and permanent (hard) banishments.
-
-        Args:
-            user_id (str): The unique identifier of the spirit.
-
-        Returns:
-            tuple: Empty response with 204 status code.
-
-        Raises:
-            401: If the requester is not authenticated.
-            403: If the requester is not a Head Ghost.
-            404: If the spirit doesn't exist."""
+        """Banish a spirit from our realm! ⚡"""
         try:
             user = facade.get(User, user_id)
             if not isinstance(user, User):
-                ns.abort(404, "This spirit has already crossed over! 👻")
+                return {
+                    "message": "This spirit has already crossed over! 👻"
+                }, 404
 
             hard = request.args.get("hard", "false").lower() == "true"
             if facade.delete(User, user_id, hard=hard):
                 return "", 204
-            ns.abort(400, "Failed to banish the spirit! 👻")
+            return {
+                "message": "Failed to banish the spirit! 👻"
+            }, 400
         except ValueError as e:
-            ns.abort(404, f"Spirit not found: {str(e)}")
+            return {
+                "message": f"Spirit not found: {str(e)} 👻"
+            }, 404

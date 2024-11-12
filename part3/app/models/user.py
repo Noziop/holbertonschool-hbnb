@@ -12,6 +12,7 @@ from app.utils import log_me
 
 class User(BaseModel):
     """User: A spectral entity in our haunted realm! 👻."""
+    
 
     # SQLAlchemy columns
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -75,10 +76,7 @@ class User(BaseModel):
 
     @log_me(component="business")
     def _validate_email(self, email: str) -> str:
-        """Validate ghost gave as a form valid email! 📫."""
-        existing = self.get_by_attr(email=email)
-        if existing:
-            raise ValueError("Email already in use!")
+        """Validate ghost gave as a form valid email! 📫"""
         if not re.match(
             r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email
         ):
@@ -126,6 +124,37 @@ class User(BaseModel):
         if not self.password_hash:
             return False
         return bcrypt.check_password_hash(self.password_hash, password)
+    
+    @classmethod
+    @log_me(component="business")
+    def authenticate(cls, email: str, password: str) -> Optional['User']:
+        """Authenticate a user with email and password! 🔐"""
+        user = cls.get_by_email(
+            email=email,
+        )
+        
+        if user and user.check_password(password):
+            return user
+        return None
+        
+    @log_me(component="business")
+    def save(self) -> 'User':
+        """Save this spectral user! 👻"""
+        try:
+            # Vérifier si l'email existe déjà
+            existing = self.find_by(email=self.email)
+            if existing and existing.id != self.id:
+                raise ValueError("Email already in use! 👻")
+
+            # Vérifier si le username existe déjà
+            existing = self.find_by(username=self.username)
+            if existing and existing.id != self.id:
+                raise ValueError("Username already haunting our realm! 👻")
+
+            # Appeler la méthode save du parent
+            return super().save()
+        except Exception as e:
+            raise ValueError(f"Failed to save user: {str(e)}")
 
     @log_me(component="business")
     def delete(self) -> bool:
@@ -139,12 +168,12 @@ class User(BaseModel):
             from app.models.review import Review  # noqa: F811
 
             # 1. Hard delete des places
-            places = Place.get_by_attr(multiple=True, owner_id=self.id)
+            places = Place.find_by(multiple=True, owner_id=self.id)
             for place in places:
                 place.hard_delete()
 
             # 2. Anonymiser les reviews
-            reviews = Review.get_by_attr(multiple=True, user_id=self.id)
+            reviews = Review.find_by(multiple=True, user_id=self.id)
             for review in reviews:
                 review.anonymize()
 
@@ -168,7 +197,7 @@ class User(BaseModel):
             self.is_active = False
 
             # 2. Cacher les places
-            places = Place.get_by_attr(multiple=True, owner_id=self.id)
+            places = Place.find_by(multiple=True, owner_id=self.id)
             for place in places:
                 place.is_active = False
                 place.save()
@@ -193,7 +222,7 @@ class User(BaseModel):
             try:
                 from app.models.place import Place  # noqa: F811
 
-                places = Place.get_by_attr(multiple=True, owner_id=self.id)
+                places = Place.find_by(multiple=True, owner_id=self.id)
                 for place in places:
                     place.is_active = True
                     place.save()
@@ -205,6 +234,8 @@ class User(BaseModel):
 
         except Exception as e:
             raise ValueError(f"Reactivate operation failed: {str(e)}")
+        
+
 
     @log_me(component="business")
     def to_dict(self) -> Dict[str, Any]:

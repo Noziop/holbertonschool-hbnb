@@ -1,15 +1,9 @@
-# app/services/facade.py
 """The haunted gateway to our supernatural kingdom! 👻"""
+from typing import Type, TypeVar, Union, List
 
-import logging
-from typing import Any, Dict, List, Optional, Type, TypeVar
-
-from app.models.amenity import Amenity
+from app.models import *  # On importe tous nos modèles d'un coup !
 from app.models.basemodel import BaseModel
-from app.models.place import Place
-from app.models.placeamenity import PlaceAmenity
-from app.models.review import Review
-from app.models.user import User
+from app.utils import log_me
 
 # Créer un type générique pour nos modèles
 T = TypeVar("T", bound=BaseModel)
@@ -18,118 +12,97 @@ T = TypeVar("T", bound=BaseModel)
 class HBnBFacade:
     """The haunted gateway to our supernatural kingdom! 👻"""
 
-    def __init__(self):
-        """Summon our mystical repositories! 🔮"""
-        self.logger = logging.getLogger("hbnb_models")
-        self.logger.info("HBnB Facade initialized! ✨")
+    @log_me(component="business")
+    def login(self, email: str, password: str) -> User:
+        """Authenticate a ghost in our realm! 👻"""
+        if not email or not password:
+            raise ValueError("Email and password are required! 👻")
 
+        # On utilise la méthode spécifique du modèle User
+        user = User.authenticate(email, password)
+        if not user:
+            raise ValueError("This spirit is not registered in our realm! 👻")
+        if not user.is_active:
+            raise ValueError("This spirit has been exorcised! 👻")
+        
+        return user
+
+    @log_me(component="business")
     def create(self, model_class: Type[T], data: dict) -> T:
         """Create a new haunted entity! ✨"""
-        try:
-            self.logger.debug(
-                f"Creating {model_class.__name__} with data: {data}"
-            )
-            instance = model_class(**data)
-            instance.save()
-            self.logger.info(
-                f"Created {model_class.__name__} with ID: {instance.id}"
-            )
-            return instance
-        except Exception as e:
-            self.logger.error(
-                f"Failed to create {model_class.__name__}: {str(e)}"
-            )
-            raise
+        if not data:
+            raise ValueError("No data provided for creation")
+        if not issubclass(model_class, BaseModel):
+            raise ValueError("Invalid model class")
 
+        try:
+            instance = model_class(**data)
+            return instance.save()
+        except Exception as e:
+            raise ValueError(f"Failed to create: {str(e)}")
+
+    @log_me(component="business")
     def get(self, model_class: Type[T], id: str) -> T:
         """Find an entity by its spectral ID! 🔍"""
-        try:
-            self.logger.debug(f"Getting {model_class.__name__} with ID: {id}")
-            instance = model_class.get_by_id(id)
-            self.logger.info(f"Found {model_class.__name__} with ID: {id}")
-            return instance
-        except Exception as e:
-            self.logger.error(
-                f"Failed to get {model_class.__name__}: {str(e)}"
-            )
-            raise
+        if not id:
+            raise ValueError("No ID provided")
+        if not issubclass(model_class, BaseModel):
+            raise ValueError("Invalid model class")
 
+        instance = model_class.get_by_id(id)
+        if not instance:
+            raise ValueError(f"{model_class.__name__} not found with ID: {id}")
+        return instance
+
+    @log_me(component="business")
     def update(self, model_class: Type[T], id: str, data: dict) -> T:
         """Update a haunted entity! 🌟"""
-        try:
-            self.logger.debug(
-                f"Updating {model_class.__name__} {id} with data: {data}"
-            )
-            instance = self.get(model_class, id)
-            updated = instance.update(data)
-            self.logger.info(f"Updated {model_class.__name__} with ID: {id}")
-            return updated
-        except Exception as e:
-            self.logger.error(
-                f"Failed to update {model_class.__name__}: {str(e)}"
-            )
-            raise
+        if not data:
+            raise ValueError("No data provided for update")
+        if not issubclass(model_class, BaseModel):
+            raise ValueError("Invalid model class")
 
-    def delete(
-        self, model_class: Type[T], id: str, hard: bool = False
-    ) -> bool:
+        instance = self.get(model_class, id)  # Vérifie déjà l'existence
+        return instance.update(data)
+
+    @log_me(component="business")
+    def delete(self, model_class: Type[T], id: str, hard: bool = False) -> bool:
         """Banish an entity from our realm! ⚡"""
-        try:
-            self.logger.debug(
-                f"{'Hard' if hard else 'Soft'} deleting {model_class.__name__} with ID: {id}"
-            )
-            instance = self.get(model_class, id)
+        if not issubclass(model_class, BaseModel):
+            raise ValueError("Invalid model class")
 
-            if hard:
-                result = instance.hard_delete()
-                self.logger.info(
-                    f"Hard deleted {model_class.__name__} with ID: {id}"
-                )
-            else:
-                result = instance.delete()
-                self.logger.info(
-                    f"Soft deleted {model_class.__name__} with ID: {id}"
-                )
+        instance = self.get(model_class, id)  # Vérifie déjà l'existence
+        return instance.hard_delete() if hard else instance.delete()
 
-            return result
-        except Exception as e:
-            self.logger.error(
-                f"Failed to delete {model_class.__name__}: {str(e)}"
-            )
-            raise
-
+    @log_me(component="business")
     def find(self, model_class: Type[T], **criteria) -> List[T]:
         """Search for entities in our realm! 🔮"""
-        try:
-            self.logger.debug(
-                f"Finding {model_class.__name__} with criteria: {criteria}"
-            )
-            instances = model_class.get_by_attr(multiple=True, **criteria)
-            self.logger.info(
-                f"Found {len(instances)} {model_class.__name__}(s)"
-            )
-            return instances
-        except Exception as e:
-            self.logger.error(
-                f"Failed to find {model_class.__name__}: {str(e)}"
-            )
-            raise
+        if not issubclass(model_class, BaseModel):
+            raise ValueError("Invalid model class")
 
-    # Méthode spéciale pour PlaceAmenity
-    def link_place_amenity(
-        self, place_id: str, amenity_id: str
-    ) -> PlaceAmenity:
+        # Si pas de critères, on retourne tout
+        if not criteria:
+            # Debug print
+            print("SQL Query:", str(model_class.query))
+            return model_class.get_all()
+
+        # Sinon on cherche avec les critères
+        return model_class.find_by(multiple=True, **criteria)
+            
+
+    @log_me(component="business")
+    def link_place_amenity(self, place_id: str, amenity_id: str) -> PlaceAmenity:
         """Create a haunted link between place and amenity! 🔗"""
-        try:
-            self.logger.debug(
-                f"Linking place {place_id} with amenity {amenity_id}"
-            )
-            link = PlaceAmenity(place_id=place_id, amenity_id=amenity_id)
-            link.save()
-            self.logger.info(
-                f"Created link between place {place_id} and amenity {amenity_id}"
-            )
-            return link
-        except Exception as e:
-            self.logger.error(f"Failed to create place-amenity link: {str(e)}")
-            raise
+        if not place_id or not amenity_id:
+            raise ValueError("Both place_id and amenity_id are required")
+
+        # Vérifier que place et amenity existent
+        place = self.get(Place, place_id)
+        amenity = self.get(Amenity, amenity_id)
+
+        if not place or not amenity:
+            raise ValueError("Place or Amenity not found")
+
+        # Créer le lien
+        link = PlaceAmenity(place_id=place_id, amenity_id=amenity_id)
+        return link.save()

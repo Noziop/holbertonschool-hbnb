@@ -13,8 +13,7 @@ from app.services.facade import HBnBFacade
 ns = Namespace(
     "reviews",
     validate=True,
-    description="Where our beloved Haunted Spirit speaks to us! 🏚️",
-    path="/api/v1/reviews",
+    description="Where our beloved Haunted Spirit speaks to us! 🏚️"
 )
 facade = HBnBFacade()
 
@@ -89,6 +88,10 @@ output_review_model = ns.model(
     },
 )
 
+error_model = ns.model('ErrorResponse', {
+    'message': fields.String(required=True, description="Error message"),
+    'reviews': fields.List(fields.Raw, required=True, description="Empty list for errors")
+})
 
 @ns.route("/")
 class ReviewList(Resource):
@@ -106,30 +109,36 @@ class ReviewList(Resource):
             404: "No reviews found",
         },
     )
-    @ns.marshal_list_with(output_review_model)
+    @ns.response(200, "Success", [output_review_model])
+    @ns.response(404, "Not Found", error_model)
+    @ns.response(400, "Bad Request", error_model)
     @ns.param("user_id", "Ghost reviewer ID", type=str, required=False)
     @ns.param("place_id", "Haunted place ID", type=str, required=False)
     @ns.param("rating", "Spooky rating", type=int, required=False)
     def get(self):
-        """List all haunted reviews with optional filtering! 👻.
-
-        Returns:
-            list[Review]: List of haunted reviews matching the criteria.
-
-        Raises:
-            404: If no reviews are found.
-            400: If the filter parameters are invalid."""
+        """List all haunted reviews with optional filtering! 👻"""
         try:
             criteria = {}
             for field in ["user_id", "place_id", "rating"]:
                 if field in request.args and request.args[field]:
                     criteria[field] = request.args[field]
+            
             reviews = facade.find(Review, **criteria)
+            
+            # Si reviews est None ou une liste vide
             if not reviews:
-                ns.abort(404, "No haunted reviews found!")
-            return reviews
+                return {
+                    "message": "No haunted reviews found in our realm! 👻",
+                    "reviews": []
+                }, 404
+                
+            return reviews, 200
+            
         except Exception as e:
-            ns.abort(400, f"Invalid parameters: {str(e)}")
+            return {
+                "message": f"A spectral error occurred: {str(e)} 👻",
+                "reviews": []
+            }, 400
 
     @log_me(component="api")
     @ns.doc(

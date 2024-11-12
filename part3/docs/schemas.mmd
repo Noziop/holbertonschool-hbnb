@@ -1,0 +1,80 @@
+erDiagram
+    %% Entities and their relationships
+    User ||--o{ Place : "owns (1:N)"
+    User ||--o{ Review : "writes (1:N)"
+    Place ||--o{ Review : "has (1:N)"
+    Place }|--|| User : "owned by (N:1)"
+    Place }|--|{ Amenity : "has (N:N)"
+    
+    %% Join table for Place-Amenity
+    PlaceAmenity }|--|| Place : "belongs to"
+    PlaceAmenity }|--|| Amenity : "belongs to"
+
+    User {
+        string id PK "UUID"
+        string username UK
+        string email UK
+        string password_hash
+        string first_name
+        string last_name
+        boolean is_admin
+        boolean is_active
+        boolean is_deleted
+        datetime created_at
+        datetime updated_at
+    }
+
+    Place {
+        string id PK "UUID"
+        string name
+        string description
+        string owner_id FK "References User.id"
+        float price_by_night
+        int number_rooms
+        int number_bathrooms
+        int max_guest
+        float latitude
+        float longitude
+        string city
+        string country
+        string status "enum: active, maintenance, blocked"
+        string property_type "enum: house, apartment, villa"
+        int minimum_stay
+        boolean is_active
+        boolean is_deleted
+        datetime created_at
+        datetime updated_at
+    }
+
+    Review {
+        string id PK "UUID"
+        string place_id FK "References Place.id"
+        string user_id FK "References User.id"
+        text text
+        string rating "enum: 1,2,3,4,5"
+        boolean is_active
+        boolean is_deleted
+        datetime created_at
+        datetime updated_at
+    }
+
+    Amenity {
+        string id PK "UUID"
+        string name UK
+        string description
+        string category "enum: safety, comfort, entertainment, supernatural"
+        boolean is_active
+        boolean is_deleted
+        datetime created_at
+        datetime updated_at
+    }
+
+    PlaceAmenity {
+        string id PK "UUID"
+        string place_id FK "References Place.id"
+        string amenity_id FK "References Amenity.id"
+        boolean is_active
+        boolean is_deleted
+        datetime created_at
+        datetime updated_at
+    }

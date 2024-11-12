@@ -37,9 +37,6 @@ class Review(BaseModel):
         db.Enum(ReviewRating), nullable=True  # Pour permettre le soft delete
     )
 
-    # Relationships
-    place = relationship("Place", back_populates="reviews")
-    author = relationship("User", back_populates="reviews")
 
     def __init__(
         self, place_id: str, user_id: str, text: str, rating: int, **kwargs

@@ -1,5 +1,4 @@
 """Base model module: The dark foundation of our haunted kingdom! 👻."""
-
 from datetime import datetime
 from typing import Any, List, Optional, TypeVar, Union
 
@@ -16,94 +15,96 @@ class BaseModel(db.Model, SQLAlchemyMixin):
     """BaseModel: The supernatural ancestor of all our haunted models! 🏰."""
 
     __abstract__ = True
-    repository = SQLAlchemyRepository()
+    repository = None
 
     def __init__(self, **kwargs):
         """Initialize a new haunted instance! ✨."""
-        super().__init__()  # Important pour SQLAlchemy
-
-        # Handle datetime conversions and other attributes
+        super().__init__()
+        
         for key, value in kwargs.items():
             if key in ["created_at", "updated_at"]:
                 setattr(self, key, datetime.fromisoformat(value))
             else:
                 setattr(self, key, value)
 
+    @classmethod
+    def _get_repo(cls):
+        """Get or create repository for this model! 🏰"""
+        if cls.repository is None:
+            cls.repository = SQLAlchemyRepository(cls)
+        return cls.repository
+
     @log_me(component="business")
     def save(self) -> T:
-        """Save instance to repository! 📜."""
+        """Save this haunted entity to our realm! 💾"""
         try:
-            self.repository.add(self)
-            return self
+            return self._get_repo().save(self)
         except Exception as e:
-            db.session.rollback()
-            raise ValueError(f"Save operation failed: {str(e)} 🔮")
+            raise ValueError(f"Failed to save: {str(e)}")
 
     @log_me(component="business")
     def update(self, data: dict) -> T:
-        """Update instance attributes! ✨."""
+        """Update this haunted entity! 🌟"""
         try:
-            # Garde tes validations actuelles
             if not isinstance(data, dict):
                 raise ValueError("Update data must be a dictionary")
 
             protected = {"id", "created_at", "is_deleted"}
             if any(attr in data for attr in protected):
-                raise ValueError(
-                    f"Cannot modify protected \
-                    attributes: {protected & data.keys()}"
-                )
+                raise ValueError(f"Cannot modify protected attributes: {protected & data.keys()}")
 
-            # Update attributes
             for key, value in data.items():
                 setattr(self, key, value)
 
-            # SQLAlchemy mettra à jour updated_at automatiquement
-            db.session.commit()
-            return self
-
+            return self._get_repo().update(self)
         except Exception as e:
-            db.session.rollback()
-            raise ValueError(f"Update operation failed: {str(e)}")
+            raise ValueError(f"Update failed: {str(e)} 🔮")
+
+    @log_me(component="business")
+    def delete(self) -> bool:
+        """Soft delete this entity! 👻"""
+        try:
+            self.is_deleted = True
+            return self._get_repo().update(self)
+        except Exception as e:
+            raise ValueError(f"Soft delete failed: {str(e)} 🔮")
 
     @log_me(component="business")
     def hard_delete(self) -> bool:
-        """Permanently delete instance from repository! ⚰️."""
+        """Permanently banish this entity! ⚰️"""
         try:
-            db.session.delete(self)
-            db.session.commit()
-            return True
+            return self._get_repo().hard_delete(self)
         except Exception as e:
-            db.session.rollback()
-            raise ValueError(f"Delete operation failed: {str(e)}")
+            raise ValueError(f"Hard delete failed: {str(e)} 🔮")
 
-    @log_me(component="business")
     @classmethod
-    def get_all_by_type(cls) -> List[T]:
-        """Get all instances of specific type! 👻."""
-        return cls.query.filter_by(is_deleted=False).all()
+    @log_me(component="business")
+    def find_by(cls, multiple: bool = False, **kwargs) -> Union[Optional[T], List[T]]:
+        """Find entities by their attributes! 🔮"""
+        print(f"BaseModel - kwargs: {kwargs}")
+        return cls._get_repo().get_by_attribute(multiple=multiple, **kwargs)
+    
+    @classmethod
+    @log_me(component="business")
+    def get_by_email(cls, email: str) -> Optional[T]:
+        """Summon an entity by its email! 📧"""
+        return cls._get_repo().get_by_email(email)
 
-    @log_me(component="business")
     @classmethod
-    def get_by_id(cls: type[T], id: str) -> T:
-        """Retrieve instance by ID! 👻."""
-        obj = cls.query.get(id)
-        if obj is None:
-            raise ValueError(f"Entity not found: {id}")
-        return obj
-
     @log_me(component="business")
+    def get_by_id(cls, id: str) -> Optional[T]:
+        """Summon an entity by its ID! 🔍"""
+        return cls._get_repo().get(id)
+    
     @classmethod
-    def get_by_attr(
-        cls: type[T], multiple: bool = False, **kwargs: Any
-    ) -> Union[Optional[T], List[T]]:
-        """Search instances by attributes! 🔮."""
-        query = cls.query.filter_by(**kwargs, is_deleted=False)
-        return query.all() if multiple else query.first()
+    @log_me(component="business")
+    def get_all(cls) -> List[T]:
+        """Summon all entities of this type! 👻"""
+        return cls._get_repo().get_all()
 
     @log_me(component="business")
     def to_dict(self) -> dict:
-        """Convert instance to dictionary! 📚."""
+        """Transform this entity into a dictionary! 📚"""
         return {
             column.name: getattr(self, column.name)
             for column in self.__table__.columns

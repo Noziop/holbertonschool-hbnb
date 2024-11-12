@@ -1,21 +1,18 @@
 """Place model module: Where haunted houses come to life! 👻."""
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
-
-from sqlalchemy.orm import relationship
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from app import db
 from app.models.basemodel import BaseModel
 from app.utils import log_me
 
-if TYPE_CHECKING:  # noqa: F401
+if TYPE_CHECKING:
     from app.models.amenity import Amenity  # noqa: F401
 
-
+# Enums pour la validation
 class PlaceStatus(str, Enum):
     """The different states a haunted place can be in! 👻."""
-
     ACTIVE = "active"
     MAINTENANCE = "maintenance"
     BLOCKED = "blocked"
@@ -23,10 +20,16 @@ class PlaceStatus(str, Enum):
 
 class PropertyType(str, Enum):
     """The different types of haunted properties! 🏰."""
-
     HOUSE = "house"
     APARTMENT = "apartment"
     VILLA = "villa"
+
+
+# Table d'association pour la relation many-to-many avec Amenity
+place_amenity = db.Table('place_amenity',
+    db.Column('place_id', db.String(60), db.ForeignKey('places.id'), primary_key=True),
+    db.Column('amenity_id', db.String(60), db.ForeignKey('amenities.id'), primary_key=True)
+)
 
 
 class Place(BaseModel):
@@ -35,9 +38,7 @@ class Place(BaseModel):
     # SQLAlchemy columns
     name = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    owner_id = db.Column(
-        db.String(36), db.ForeignKey("user.id"), nullable=False
-    )
+    owner_id = db.Column(db.String(36), db.ForeignKey("user.id"), nullable=False)
     price_by_night = db.Column(db.Float, nullable=False)
     number_rooms = db.Column(db.Integer, default=1)
     number_bathrooms = db.Column(db.Integer, default=1)
@@ -46,23 +47,18 @@ class Place(BaseModel):
     longitude = db.Column(db.Float)
     city = db.Column(db.String(100))
     country = db.Column(db.String(100))
-    status = db.Column(
-        db.Enum(PlaceStatus), default=PlaceStatus.ACTIVE, nullable=False
-    )
-    property_type = db.Column(
-        db.Enum(PropertyType), default=PropertyType.APARTMENT, nullable=False
-    )
+    status = db.Column(db.Enum(PlaceStatus), default=PlaceStatus.ACTIVE, nullable=False)
+    property_type = db.Column(db.Enum(PropertyType), default=PropertyType.APARTMENT, nullable=False)
     minimum_stay = db.Column(db.Integer, default=1)
 
-    # Relationships
-    owner = relationship("User", back_populates="places")
-    place_amenities = relationship("PlaceAmenity", back_populates="place")
-    reviews = relationship(
-        "Review", back_populates="place", cascade="all, delete-orphan"
-    )
-    amenities = relationship(
-        "Amenity", secondary="placeamenity", back_populates="places"
-    )
+    # Relationships simplifiés avec backref
+    reviews = db.relationship('Review', 
+                            backref=db.backref('place', lazy=True),
+                            cascade="all, delete-orphan")
+    amenities = db.relationship('Amenity', 
+                              secondary=place_amenity,
+                              lazy='subquery',
+                              backref=db.backref('places', lazy=True))
 
     def __init__(
         self,
@@ -92,26 +88,16 @@ class Place(BaseModel):
         self.price_by_night = self._validate_price(price_by_night)
 
         # Optional attributes with defaults
-        self.number_rooms = self._validate_positive_integer(
-            number_rooms, "number_rooms"
-        )
-        self.number_bathrooms = self._validate_positive_integer(
-            number_bathrooms, "number_bathrooms"
-        )
-        self.max_guest = self._validate_positive_integer(
-            max_guest, "max_guest"
-        )
+        self.number_rooms = self._validate_positive_integer(number_rooms, "number_rooms")
+        self.number_bathrooms = self._validate_positive_integer(number_bathrooms, "number_bathrooms")
+        self.max_guest = self._validate_positive_integer(max_guest, "max_guest")
         self.latitude = self._validate_latitude(latitude) if latitude else None
-        self.longitude = (
-            self._validate_longitude(longitude) if longitude else None
-        )
+        self.longitude = self._validate_longitude(longitude) if longitude else None
         self.city = city
         self.country = country
         self.status = self._validate_status(status)
         self.property_type = self._validate_property_type(property_type)
-        self.minimum_stay = self._validate_positive_integer(
-            minimum_stay, "minimum_stay"
-        )
+        self.minimum_stay = self._validate_positive_integer(minimum_stay, "minimum_stay")
 
     @log_me(component="business")
     def _validate_name(self, name: str) -> str:
@@ -215,112 +201,101 @@ class Place(BaseModel):
 
     @log_me(component="business")
     @classmethod
-    def filter_by_price(
-        cls, min_price: float, max_price: float
-    ) -> List["Place"]:
-        """Filter places by price range! 💰."""
-        return cls.query.filter(
-            cls.price_by_night >= min_price,
-            cls.price_by_night <= max_price,
-            cls.is_deleted == False,  # noqa: E712
-            cls.status != PlaceStatus.BLOCKED.value,
-        ).all()
+    def filter_by_price(cls, min_price: float, max_price: float) -> List["Place"]:
+        """Filter places by price range! 💰"""
+        return cls.find_by(
+            multiple=True,
+            filters=[
+                cls.price_by_night >= min_price,
+                cls.price_by_night <= max_price,
+                cls.is_deleted == False,  # noqa: E712
+                cls.status != PlaceStatus.BLOCKED.value
+            ]
+        )
 
     @log_me(component="business")
     @classmethod
     def filter_by_capacity(cls, min_guests: int) -> List["Place"]:
-        """Filter places by guest capacity! 👻."""
-        return cls.query.filter(
-            cls.max_guest >= min_guests,
-            cls.is_deleted == False,  # noqa: E712
-            cls.status != PlaceStatus.BLOCKED.value,
-        ).all()
+        """Filter places by guest capacity! 👻"""
+        return cls.find_by(
+            multiple=True,
+            filters=[
+                cls.max_guest >= min_guests,
+                cls.is_deleted == False,  # noqa: E712
+                cls.status != PlaceStatus.BLOCKED.value
+            ]
+        )
 
     @log_me(component="business")
     @classmethod
-    def get_by_location(
-        cls, lat: float, lon: float, radius: float
-    ) -> List["Place"]:
-        """Find places within a radius! 🗺️."""
-        from math import cos, radians  # Import lazy
+    def get_by_location(cls, lat: float, lon: float, radius: float) -> List["Place"]:
+        """Find places within a radius! 🗺️"""
+        from math import cos, radians
 
-        # Pour SQLite, on utilise une approche simplifiée avec un carré
-        lat_range = radius / 111.0  # approximation: 1 degré = 111km
+        lat_range = radius / 111.0
+        lon_range = radius / (111.0 * cos(radians(lat)))
 
-        return cls.query.filter(
-            cls.latitude.between(lat - lat_range, lat + lat_range),
-            cls.longitude.between(
-                lon - (radius / (111.0 * cos(radians(lat)))),
-                lon + (radius / (111.0 * cos(radians(lat)))),
-            ),
-            cls.is_deleted == False,  # noqa: E712
-            cls.status != PlaceStatus.BLOCKED.value,
-        ).all()
+        return cls.find_by(
+            multiple=True,
+            filters=[
+                cls.latitude.between(lat - lat_range, lat + lat_range),
+                cls.longitude.between(lon - lon_range, lon + lon_range),
+                cls.is_deleted == False,  # noqa: E712
+                cls.status != PlaceStatus.BLOCKED.value
+            ]
+        )
 
     @log_me(component="business")
     def add_amenity(self, amenity: "Amenity") -> None:
-        """Add an amenity to this haunted place! ✨."""
-        try:
-            from app.models.placeamenity import PlaceAmenity  # noqa: F811
-
-            link = PlaceAmenity(place_id=self.id, amenity_id=amenity.id)
-            link.save()
-        except Exception as e:
-            raise ValueError(f"Failed to add amenity: {str(e)}")
+        """Add an amenity to this haunted place! ✨"""
+        if amenity not in self.amenities:
+            self.amenities.append(amenity)
+            db.session.commit()
 
     @log_me(component="business")
     def remove_amenity(self, amenity: "Amenity") -> None:
-        """Remove an amenity from this haunted place! 🗑️."""
-        try:
-            from app.models.placeamenity import PlaceAmenity  # noqa: F811
-
-            links = PlaceAmenity.get_by_attr(
-                multiple=True, place_id=self.id, amenity_id=amenity.id
-            )
-            if not links:
-                error_msg = f"No link found between place \
-                            {self.id} and amenity {amenity.id}"
-                raise ValueError(error_msg)
-
-            for link in links:
-                link.hard_delete()
-        except Exception as e:
-            raise ValueError(f"Failed to remove amenity: {str(e)}")
+        """Remove an amenity from this haunted place! 🗑️"""
+        if amenity in self.amenities:
+            self.amenities.remove(amenity)
+            db.session.commit()
+        else:
+            raise ValueError(f"This place doesn't have the amenity {amenity.name}! 👻")
 
     @log_me(component="business")
     def get_amenities(self) -> List["Amenity"]:
-        """Get all amenities of this haunted place! 🎭."""
+        """Get all amenities of this haunted place! 🎭"""
+        return self.amenities
+        
+    @log_me(component="business")
+    def create(self) -> 'Place':
+        """Create a new haunted place! 👻"""
         try:
-            from app.models.amenity import Amenity  # noqa: F811
-            from app.models.placeamenity import PlaceAmenity  # noqa: F811
+            # Vérifier si l'owner existe et est actif
+            if not self.owner:
+                raise ValueError("Owner does not exist in our realm! 👻")
+            if not self.owner.is_active:
+                raise ValueError("Owner's spirit is currently inactive! 👻")
 
-            links = PlaceAmenity.get_by_attr(multiple=True, place_id=self.id)
-            amenities = [Amenity.get_by_id(link.amenity_id) for link in links]
-            return amenities
+            # Appeler la méthode create du parent
+            return super().create()
         except Exception as e:
-            raise ValueError(f"Failed to get amenities: {str(e)}")
+            raise ValueError(f"Failed to create place: {str(e)}")
 
     @log_me(component="business")
     def update(self, data: dict) -> "Place":
-        """Update place attributes! 🏰."""
+        """Update place attributes! 🏰"""
         try:
             # Validate new values before update
             if "name" in data:
                 data["name"] = self._validate_name(data["name"])
             if "description" in data:
-                data["description"] = self._validate_description(
-                    data["description"]
-                )
+                data["description"] = self._validate_description(data["description"])
             if "price_by_night" in data:
-                data["price_by_night"] = self._validate_price(
-                    data["price_by_night"]
-                )
+                data["price_by_night"] = self._validate_price(data["price_by_night"])
             if "status" in data:
                 data["status"] = self._validate_status(data["status"])
             if "property_type" in data:
-                data["property_type"] = self._validate_property_type(
-                    data["property_type"]
-                )
+                data["property_type"] = self._validate_property_type(data["property_type"])
 
             return super().update(data)
         except Exception as e:
@@ -328,7 +303,7 @@ class Place(BaseModel):
 
     @log_me(component="business")
     def delete(self) -> bool:
-        """Soft delete this haunted place! 🌙."""
+        """Soft delete this haunted place! 🌙"""
         try:
             return self.update({"status": PlaceStatus.BLOCKED})
         except Exception as error:
@@ -336,38 +311,17 @@ class Place(BaseModel):
 
     @log_me(component="business")
     def hard_delete(self) -> bool:
-        """Permanently delete place and all related entities! ⚰️."""
+        """Permanently delete place and all related entities! ⚰️"""
         try:
-            # Delete related reviews
-            try:
-                from app.models.review import Review  # noqa: F811
-
-                reviews = Review.get_by_attr(multiple=True, place_id=self.id)
-                for review in reviews:
-                    review.hard_delete()
-            except ImportError:
-                pass  # Review model not implemented yet
-
-            # Delete related place-amenity links
-            try:
-                from app.models.placeamenity import PlaceAmenity  # noqa: F811
-
-                links = PlaceAmenity.get_by_attr(
-                    multiple=True, place_id=self.id
-                )
-                for link in links:
-                    link.hard_delete()
-            except ImportError:
-                pass  # PlaceAmenity model not implemented yet
-
-            # Delete the place itself
+            # Les reviews et les amenities seront automatiquement gérés 
+            # grâce aux cascades SQLAlchemy
             return super().hard_delete()
         except Exception as e:
             raise ValueError(f"Failed to delete Place: {str(e)}")
 
     @log_me(component="business")
     def to_dict(self) -> Dict[str, Any]:
-        """Transform place into dictionary! 📚."""
+        """Transform place into dictionary! 📚"""
         base_dict = super().to_dict()
         place_dict = {
             "name": self.name,
@@ -382,12 +336,10 @@ class Place(BaseModel):
             "city": self.city,
             "country": self.country,
             "status": self.status.value if self.status else None,
-            "property_type": (
-                self.property_type.value if self.property_type else None
-            ),
+            "property_type": self.property_type.value if self.property_type else None,
             "minimum_stay": self.minimum_stay,
-            "owner": self.owner.to_dict(),
+            "owner": self.owner.to_dict() if self.owner else None,
             "reviews": [review.to_dict() for review in self.reviews],
-            "amenities": [amenity.to_dict() for amenity in self.amenities],
+            "amenities": [amenity.to_dict() for amenity in self.amenities]
         }
         return {**base_dict, **place_dict}

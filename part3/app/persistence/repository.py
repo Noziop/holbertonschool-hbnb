@@ -1,133 +1,107 @@
-"""Repository pattern for our haunted database! 👻."""
-
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, List, Optional, TypeVar, Union
-
-from sqlalchemy.exc import SQLAlchemyError
-
+"""Repository pattern for our haunted database! 👻"""
 from app import db
 from app.utils import log_me
 
-if TYPE_CHECKING:
-    from app.models.basemodel import BaseModel
 
-    ModelType = TypeVar("ModelType", bound="BaseModel")
-else:
-    ModelType = TypeVar("ModelType", bound=db.Model)
+class SQLAlchemyRepository:
+    """SQLAlchemy implementation of our haunted repository! 👻"""
 
-
-class Repository(ABC):
-    """Abstract base class for all our haunted repositories! 👻."""
-
-    @abstractmethod
-    def add(self, obj: ModelType) -> ModelType:
-        """Add a new spirit to our realm."""
-        pass
-
-    @abstractmethod
-    def get(self, obj_id: str) -> Optional[ModelType]:
-        """Summon a specific spirit."""
-        pass
-
-    @abstractmethod
-    def get_all(self) -> List[ModelType]:
-        """Summon all spirits."""
-        pass
-
-    @abstractmethod
-    def update(self, obj_id: str, data: dict) -> Optional[ModelType]:
-        """Update a spirit's essence."""
-        pass
-
-    @abstractmethod
-    def delete(self, obj_id: str) -> bool:
-        """Banish a spirit."""
-        pass
-
-    @abstractmethod
-    def get_by_attribute(
-        self, multiple: bool = False, **kwargs: Any
-    ) -> Union[Optional[ModelType], List[ModelType]]:
-        """
-        Get objects by attributes.
-
-        Summoning entities from the storage beyond! 👻.
-
-        Args:
-            multiple: Want one ghost or a whole haunted house? 🏚️
-            **kwargs: The dark specifications (each more cursed than the last!)
-        """
-        pass
-
-
-class SQLAlchemyRepository(Repository):
-    """SQLAlchemy implementation of our haunted repository! 👻."""
-
-    def __init__(self, model: type[ModelType]):
-        """Initialize with a specific model class."""
+    def __init__(self, model):
+        """Initialize with a specific model class! 🎭"""
         self.model = model
 
     @log_me(component="persistence")
-    def add(self, obj: ModelType) -> ModelType:
-        """Add a new spirit to our realm."""
+    def add(self, obj):
+        """Summon a new spirit into our database! ✨"""
+        db.session.add(obj)
+        db.session.commit()
+
+    @log_me(component="persistence")
+    def get(self, obj_id):
+        """Channel a specific spirit from the beyond! 🔮"""
+        return self.model.query.get(obj_id)
+
+    @log_me(component="persistence")
+    def get_all(self):
+        """Summon ALL the spirits! 👻"""
+        return self.model.query.all()
+    
+    @log_me(component="persistence")
+    def get_by_email(self, email):
+        """Find a spirit by their spectral email! 📧"""
+        return self.model.query.filter_by(email=email).first()
+
+    @log_me(component="persistence")
+    def update(self, obj_id, data):
+        """Transform a spirit's essence! 🌟"""
+        obj = self.get(obj_id)
+        if obj:
+            for key, value in data.items():
+                setattr(obj, key, value)
+            db.session.commit()
+
+    @log_me(component="persistence")
+    def delete(self, obj_id):
+        """Banish a spirit back to the void! ⚡"""
+        obj = self.get(obj_id)
+        if obj:
+            db.session.delete(obj)
+            db.session.commit()
+
+    @log_me(component="persistence")
+    def get_by_attribute(self, multiple: bool = False, **kwargs):
+        """Find spirits by their spectral signatures! 🔍
+        
+        Args:
+            multiple: Want one ghost or a whole haunted house? 🏚️
+            **kwargs: The dark specifications for our search
+        """
+        query = self.model.query.filter_by(**kwargs)
+        print(f"REPO - kwargs: {kwargs}")
+        print(f"REPO - query: {query}")
+        return query.all() if multiple else query.first()
+    
+    @log_me(component="persistence")
+    def save(self, obj):
+        """Save or update a spirit in our realm! 💾"""
         try:
             db.session.add(obj)
             db.session.commit()
             return obj
-        except SQLAlchemyError as error:
+        except Exception as e:
             db.session.rollback()
-            raise ValueError(f"Failed to add: {str(error)}")
+            raise ValueError(f"Failed to save: {str(e)}")
 
     @log_me(component="persistence")
-    def get(self, obj_id: str) -> Optional[ModelType]:
-        """Summon a specific spirit."""
-        return self.model.query.get(obj_id)
-
-    @log_me(component="persistence")
-    def get_all(self) -> List[ModelType]:
-        """Summon all spirits."""
-        return self.model.query.filter_by(is_deleted=False).all()
-
-    @log_me(component="persistence")
-    def update(self, obj_id: str, data: dict) -> Optional[ModelType]:
-        """Update a spirit's essence."""
+    def update(self, obj):
+        """Transform a spirit's essence! 🌟"""
         try:
-            obj = self.get(obj_id)
-            if obj:
-                for key, value in data.items():
-                    setattr(obj, key, value)
-                db.session.commit()
+            db.session.add(obj)
+            db.session.commit()
             return obj
-        except SQLAlchemyError as error:
+        except Exception as e:
             db.session.rollback()
-            raise ValueError(f"Failed to update: {str(error)}")
+            raise ValueError(f"Failed to update: {str(e)}")
 
     @log_me(component="persistence")
-    def delete(self, obj_id: str) -> bool:
-        """Banish a spirit."""
+    def delete(self, obj):
+        """Soft delete a spirit! 👻"""
         try:
-            obj = self.get(obj_id)
-            if obj:
-                db.session.delete(obj)
-                db.session.commit()
-                return True
-            return False
-        except SQLAlchemyError as error:
+            obj.is_deleted = True
+            db.session.add(obj)
+            db.session.commit()
+            return True
+        except Exception as e:
             db.session.rollback()
-            raise ValueError(f"Failed to delete: {str(error)}")
+            raise ValueError(f"Failed to delete: {str(e)}")
 
     @log_me(component="persistence")
-    def get_by_attribute(
-        self, multiple: bool = False, **kwargs: Any
-    ) -> Union[Optional[ModelType], List[ModelType]]:
-        """
-        Get objects by attributes.
-
-        Summoning entities from the storage beyond! 👻.
-
-        Args:
-            multiple: Want one ghost or a whole haunted house? 🏚️
-            **kwargs: The dark specifications (each more cursed than the last!)
-        """
-        query = self.model.query.filter_by(**kwargs, is_deleted=False)
-        return query.all() if multiple else query.first()
+    def hard_delete(self, obj):
+        """Permanently banish a spirit! ⚰️"""
+        try:
+            db.session.delete(obj)
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            raise ValueError(f"Failed to hard delete: {str(e)}")

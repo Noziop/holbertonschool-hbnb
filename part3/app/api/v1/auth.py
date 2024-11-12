@@ -41,7 +41,6 @@ class Login(Resource):
     Successfull authentication returns :
     a token for accessing protected endpoints.
     """
-
     @log_me(component="api")
     @ns.expect(login_model)
     @ns.doc(
@@ -53,43 +52,17 @@ class Login(Resource):
             404: "User not found! 👻",
         },
     )
+    @log_me(component="api")
     def post(self):
-        """Authenticate and receive a haunted token! 🎭.
-
-        This endpoint verifies the ghost's credentials and generates
-        a JWT token for accessing protected areas of the haunted realm.
-
-        Returns:
-            dict: Authentication response containing:
-                - message: Welcome message.
-                - token: JWT token for future requests.
-                - user: Basic user information.
-
-        Raises:
-            400: If email or password is missing.
-            401: If credentials are invalid or account is inactive.
-            404: If user doesn't exist."""
+        """Authenticate and receive a haunted token! 🎭"""
         data = request.get_json()
 
-        # Vérifier que les données requises sont présentes
-        if not data or not data.get("email") or not data.get("password"):
-            return {
-                "message": "Ouija board needs email and password to work! 👻"
-            }, 400
-
-        # Trouver l'utilisateur
-        user = facade.find(User, email=data.get("email"))
-        if not isinstance(user, User):
-            return {
-                "message": "This spirit is not registered in our realm! 👻"
-            }, 404
-
-        # Vérifier que le compte est actif
-        if not user.is_active:
-            return {"message": "This spirit has been exorcised! 👻"}, 401
-
-        # Vérifier le mot de passe
-        if user.check_password(data.get("password")):
+        try:
+            user = facade.login(
+                email=data.get("email"),
+                password=data.get("password")
+            )
+            
             # Générer le token avec les claims appropriés
             token = create_access_token(
                 identity=user.id,
@@ -109,4 +82,5 @@ class Login(Resource):
                 },
             }, 200
 
-        return {"message": "Wrong incantation! Try again, mortal! 💀"}, 401
+        except ValueError as e:
+            return {"message": str(e)}, 401

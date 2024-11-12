@@ -1,10 +1,10 @@
 [tool.poetry]
-package-mode = false
 name = "hbnb"
 version = "0.1.0"
 description = "Where ghosts come to REST! 👻"
 authors = ["Noziop <contact@fassih.ch>"]
 readme = "README.md"
+packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -35,12 +35,12 @@ build-backend = "poetry.core.masonry.api"
 
 
 [tool.black]
-line-length = 79  # Pour respecter PEP8/pycodestyle
-target-version = ['py310']  # Tu as python 3.10 dans tes dépendances
+line-length = 79
+target-version = ['py310']
 
 [tool.flake8]
 max-line-length = 79
-extend-ignore = "E203"  # Pour que flake8 et black s'entendent bien
+extend-ignore = "E203"
 exclude = [
     ".git",
     "__pycache__",
@@ -62,5 +62,5 @@ python_files = "test_*.py"
 
 [tool.poetry.scripts]
 test = "pytest:main"
-test-v = "pytest:main -v"
-test-cov = "pytest:main --cov=app --cov-report=term-missing --cov-report=html"
+test-v = "pytest -v:main"
+test-cov = "pytest -v:main [--cov=app --cov-report=term-missing --cov-report=html]"
