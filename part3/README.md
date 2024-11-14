@@ -6,8 +6,8 @@
 
 ## 📚 Table of Contents
 - I  - [From Part2 to Part3](#from-part2-to-part3-)
-- II - [Technical Choices](#technical-choices-)
-    - a - [Poetry](#-poetry-the-modern-spellbook-)
+- II - [Technical Choices](#technical-choices-️)
+    - a - [Poetry](#poetry-the-modern-spellbook-)
     - b - [Code Quality Tools](#code-quality-guardians-)
         - [Black](#black-the-uncompromising-code-formatter-)
         - [Isort](#isort-the-import-organizer-)
