@@ -1,4 +1,5 @@
 """The haunted gateway to our supernatural kingdom! 👻"""
+
 from typing import List, Type, TypeVar, Union
 
 from app.models import *  # On importe tous nos modèles d'un coup !
@@ -55,25 +56,47 @@ class HBnBFacade:
         return instance
 
     @log_me(component="business")
-    def update(self, model_class: Type[T], id: str, data: dict) -> T:
+    def update(
+        self,
+        model_class: Type[T],
+        id: str,
+        data: dict,
+        user_id: str = None,
+        is_admin: bool = False,
+    ) -> T:
         """Update a haunted entity! 🌟"""
         if not data:
             raise ValueError("No data provided for update")
         if not issubclass(model_class, BaseModel):
             raise ValueError("Invalid model class")
 
-        instance = self.get(model_class, id)  # Vérifie déjà l'existence
+        instance = self.get(model_class, id)
+
+        # Vérifier les permissions
+        if not instance.can_be_managed_by(user_id, is_admin):
+            raise ValueError("You cannot modify this resource! 👻")
+
         return instance.update(data)
 
     @log_me(component="business")
     def delete(
-        self, model_class: Type[T], id: str, hard: bool = False
+        self,
+        model_class: Type[T],
+        id: str,
+        user_id: str = None,
+        is_admin: bool = False,
+        hard: bool = False,
     ) -> bool:
         """Banish an entity from our realm! ⚡"""
         if not issubclass(model_class, BaseModel):
             raise ValueError("Invalid model class")
 
         instance = self.get(model_class, id)  # Vérifie déjà l'existence
+
+        # Vérifier les permissions
+        if not instance.can_be_managed_by(user_id, is_admin):
+            raise ValueError("You cannot delete this resource! 👻")
+
         return instance.hard_delete() if hard else instance.delete()
 
     @log_me(component="business")
@@ -85,7 +108,6 @@ class HBnBFacade:
         # Si pas de critères, on retourne tout
         if not criteria:
             # Debug print
-            print("SQL Query:", str(model_class.query))
             return model_class.get_all()
 
         # Sinon on cherche avec les critères
@@ -93,7 +115,11 @@ class HBnBFacade:
 
     @log_me(component="business")
     def link_place_amenity(
-        self, place_id: str, amenity_id: str
+        self,
+        place_id: str,
+        amenity_id: str,
+        user_id: str = None,
+        is_admin: bool = False,
     ) -> PlaceAmenity:
         """Create a haunted link between place and amenity! 🔗"""
         if not place_id or not amenity_id:
@@ -105,6 +131,10 @@ class HBnBFacade:
 
         if not place or not amenity:
             raise ValueError("Place or Amenity not found")
+
+        # Vérifier que l'utilisateur a les droits sur la place
+        if not place.can_be_managed_by(user_id, is_admin):
+            raise ValueError("You cannot modify this place! 👻")
 
         # Créer le lien
         link = PlaceAmenity(place_id=place_id, amenity_id=amenity_id)

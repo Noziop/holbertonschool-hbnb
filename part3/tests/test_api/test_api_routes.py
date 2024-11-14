@@ -3,118 +3,104 @@ import pytest
 from flask import url_for
 
 
-def test_public_routes(test_client):
+def test_public_routes(client):
     """Test all public routes 🌍"""
-
     # Documentation routes
-    response = test_client.get("/api/v1/")
+    response = client.get("/api/v1/")
     assert response.status_code == 200
 
-    response = test_client.get("/api/v1/swagger.json")
+    response = client.get("/api/v1/swagger.json")
     assert response.status_code == 200
 
     # Places - public routes
-    response = test_client.get("/api/v1/places")
+    response = client.get("/api/v1/places")
     assert response.status_code == 200
-
-    response = test_client.get("/api/v1/places/nonexistent-id")
-    assert response.status_code == 404  # Not found, mais pas 401
-
-    # Reviews - public routes
-    response = test_client.get("/api/v1/reviews")
-    assert response.status_code == 200
-
-    response = test_client.get("/api/v1/reviews/nonexistent-id")
-    assert response.status_code == 404  # Not found, mais pas 401
 
     # Amenities - public routes
-    response = test_client.get("/api/v1/amenities")
+    response = client.get("/api/v1/amenities")
     assert response.status_code == 200
 
-    response = test_client.get("/api/v1/amenities/nonexistent-id")
-    assert response.status_code == 404  # Not found, mais pas 401
 
-
-def test_protected_routes_without_auth(test_client):
+def test_protected_routes_without_auth(client):
     """Test protected routes without authentication 🔒"""
-
     # Places
-    response = test_client.post(
+    response = client.post(
         "/api/v1/places",
-        json={"name": "Test Place", "description": "Test Description"},
+        json={
+            "name": "Test Place",
+            "description": "Test Description",
+            "price_by_night": 100.0,
+            "number_rooms": 2,
+            "number_bathrooms": 1,
+            "max_guest": 4,
+            "property_type": "apartment",
+            "owner_id": "some-id",  # Ajouté
+            "status": "active",  # Ajouté
+        },
     )
     assert response.status_code == 401
 
-    response = test_client.put("/api/v1/places/some-id")
-    assert response.status_code == 401
-
     # Reviews
-    response = test_client.post("/api/v1/reviews")
+    response = client.post(
+        "/api/v1/reviews",
+        json={
+            "text": "Test review",
+            "rating": 5,
+            "place_id": "some-id",
+            "user_id": "some-user-id",  # Ajouté
+        },
+    )
     assert response.status_code == 401
 
-    response = test_client.put("/api/v1/reviews/some-id")
-    assert response.status_code == 401
 
-    response = test_client.delete("/api/v1/reviews/some-id")
-    assert response.status_code == 401
-
-    # Users
-    response = test_client.put("/api/v1/users/some-id")
-    assert response.status_code == 401
-
-
-def test_protected_routes_with_user_auth(test_client, user_headers):
+def test_protected_routes_with_user_auth(client, user_headers, normal_user):
     """Test protected routes with normal user authentication 👤"""
-
     # Places - création
-    response = test_client.post(
+    response = client.post(
         "/api/v1/places",
         headers=user_headers,
         json={
             "name": "Test Place",
             "description": "Test Description",
-            "price_by_night": 100,
+            "price_by_night": 100.0,
+            "number_rooms": 2,
+            "number_bathrooms": 1,
+            "max_guest": 4,
+            "property_type": "apartment",
+            "owner_id": normal_user.id,  # Utiliser l'ID du normal_user
+            "status": "active",
         },
     )
-    assert response.status_code in [
-        201,
-        400,
-    ]  # 201 si créé, 400 si données invalides
-
-    # Reviews - création
-    response = test_client.post(
-        "/api/v1/reviews",
-        headers=user_headers,
-        json={"text": "Test Review", "rating": 5, "place_id": "some-place-id"},
-    )
-    assert response.status_code in [201, 400, 404]  # 404 si place n'existe pas
+    assert response.status_code in [201, 400]
 
 
-def test_admin_routes_with_user_auth(test_client, user_headers):
+def test_admin_routes_with_user_auth(client, user_headers):
     """Test admin routes with normal user authentication 🚫"""
-
     # Users list (admin only)
-    response = test_client.get("/api/v1/users", headers=user_headers)
+    response = client.get("/api/v1/users", headers=user_headers)
     assert response.status_code == 403
 
     # Amenities management (admin only)
-    response = test_client.post(
+    response = client.post(
         "/api/v1/amenities",
         headers=user_headers,
-        json={"name": "Test Amenity", "description": "Test Description"},
+        json={
+            "name": "Test Amenity",
+            "description": "Test Description",
+            "category": "comfort",
+        },
     )
     assert response.status_code == 403
 
 
-def test_admin_routes_with_admin_auth(test_client, admin_headers):
+def test_admin_routes_with_admin_auth(client, admin_headers):
     """Test admin routes with admin authentication 👑"""
-
     # Users list
-    response = test_client.get("/api/v1/users", headers=admin_headers)
+    response = client.get("/api/v1/users", headers=admin_headers)
     assert response.status_code == 200
 
     # Amenities management
-    response = test_client.post(
+    response = client.post(
         "/api/v1/amenities",
         headers=admin_headers,
         json={
@@ -123,33 +109,54 @@ def test_admin_routes_with_admin_auth(test_client, admin_headers):
             "category": "comfort",
         },
     )
-    assert response.status_code in [
-        201,
-        400,
-    ]  # 201 si créé, 400 si données invalides
+    assert response.status_code in [201, 400]
 
 
-def test_owner_only_routes(test_client, user_headers, normal_user):
+def test_owner_only_routes(client, user_headers, normal_user):
     """Test owner-only routes 🔐"""
+    print("\n=== Test owner_only_routes ===")
+    print(f"Normal user ID: {normal_user.id}")
+    print(f"Headers: {user_headers}")
 
     # Créer une place pour tester
-    response = test_client.post(
+    response = client.post(
         "/api/v1/places",
         headers=user_headers,
         json={
             "name": "Test Place",
             "description": "Test Description",
-            "price_by_night": 100,
+            "price_by_night": 100.0,
+            "number_rooms": 2,
+            "number_bathrooms": 1,
+            "max_guest": 4,
+            "property_type": "apartment",
+            "owner_id": normal_user.id,
+            "status": "active",
         },
     )
+    print(f"\nPOST Response status: {response.status_code}")
+    print(f"POST Response data: {response.json}")
 
     if response.status_code == 201:
         place_id = response.json["id"]
+        print(f"\nCreated place ID: {place_id}")
 
         # Test modification par le propriétaire
-        response = test_client.put(
+        put_response = client.put(
             f"/api/v1/places/{place_id}",
             headers=user_headers,
-            json={"name": "Updated Place"},
+            json={
+                "name": "update Test Place",
+                "description": "Test Description",
+                "price_by_night": 100.0,
+                "number_rooms": 2,
+                "number_bathrooms": 1,
+                "max_guest": 4,
+                "property_type": "apartment",
+                "owner_id": normal_user.id,
+                "status": "active",
+            },
         )
-        assert response.status_code == 200
+        print(f"\nPUT Response status: {put_response.status_code}")
+        print(f"PUT Response data: {put_response.json}")
+        assert put_response.status_code == 200

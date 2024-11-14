@@ -45,14 +45,20 @@ amenity_model = ns.model(
     },
 )
 
+error_model = ns.model(
+    "ErrorResponse",
+    {
+        "message": fields.String(required=True, description="Error message"),
+        "reviews": fields.List(
+            fields.Raw, required=True, description="Empty list for errors"
+        ),
+    },
+)
+
 
 @ns.route("/")
 class AmenityList(Resource):
-    """Endpoint for managing the collection of supernatural features! 👻.
-
-    This endpoint handles listing all amenities and creating new ones.
-    Only administrators can create new features, but anyone can view them.
-    Supports filtering by category."""
+    """Endpoint for managing supernatural features! 👻"""
 
     @log_me(component="api")
     @ns.doc(
@@ -60,39 +66,30 @@ class AmenityList(Resource):
         responses={
             200: "Success",
             400: "Invalid parameters",
-            404: "No amenities found",
         },
     )
     @ns.marshal_list_with(amenity_model)
     @ns.param("category", "Feature category", type=str, required=False)
     def get(self):
-        """Browse our supernatural features catalog! 🎭.
-
-        Supports filtering by category.
-        (safety, comfort, entertainment, supernatural).
-
-        Returns:
-            list[Amenity]: List of supernatural features matching the criteria.
-
-        Raises:
-            404: If no features are found.
-            400: If the filter parameters are invalid."""
+        """Browse our supernatural features catalog! 🎭"""
         try:
             criteria = {}
             if "category" in request.args:
                 criteria["category"] = request.args["category"]
             amenities = facade.find(Amenity, **criteria)
-            if not amenities:
-                ns.abort(404, "No supernatural features found!")
-            return amenities
-        except ValueError as e:
-            ns.abort(400, str(e))
+            return amenities or [], 200
+        except Exception as e:
+            return {
+                "message": f"A spectral error occurred: {str(e)} 👻",
+                "amenities": [],
+            }, 400
 
     @log_me(component="api")
+    @admin_only
     @ns.doc(
         "create_amenity",
         responses={
-            201: "Amenity created",
+            201: "Feature created",
             400: "Invalid parameters",
             401: "Unauthorized",
             403: "Forbidden - Admin only",
@@ -100,61 +97,45 @@ class AmenityList(Resource):
     )
     @ns.expect(amenity_model)
     @ns.marshal_with(amenity_model, code=201)
-    @admin_only
     def post(self):
-        """Add a new supernatural feature! ✨.
-
-        Only administrators can create new features.
-
-        Returns:
-            Amenity: The newly created supernatural feature.
-
-        Raises:
-            401: If the user is not authenticated.
-            403: If the user is not an administrator.
-            400: If the feature data is invalid."""
+        """Create a new supernatural feature! ✨"""
         try:
             amenity = facade.create(Amenity, ns.payload)
-            if not isinstance(amenity, Amenity):
-                ns.abort(400, "Failed to materialize the feature!")
             return amenity, 201
-        except ValueError as e:
-            ns.abort(400, str(e))
+        except Exception as e:
+            return {
+                "message": f"Failed to create feature: {str(e)} 👻",
+                "amenity": None,
+            }, 400
 
 
 @ns.route("/<string:amenity_id>")
 @ns.param("amenity_id", "The supernatural feature identifier")
 class AmenityDetail(Resource):
-    """Endpoint for managing individual supernatural features! 👻.
-
-    This endpoint handles :
-    retrieving, updating, and deleting specific features.
-    Only administrators can modify or delete features.
-    Yet anyone can view them.
-    """
+    """Endpoint for managing individual features! 👻"""
 
     @log_me(component="api")
-    @ns.doc(
-        "get_amenity", responses={200: "Success", 404: "Amenity not found"}
-    )
-    @ns.marshal_with(amenity_model)
+    @ns.doc("get_amenity")
+    @ns.response(200, "Success", amenity_model)
+    @ns.response(404, "Not Found", error_model)
     def get(self, amenity_id):
-        """Find a specific supernatural feature! 🔍.
-
-        Args:
-            amenity_id (str): The unique identifier of the feature.
-
-        Returns:
-            Amenity: The requested supernatural feature.
-
-        Raises:
-            404: If the feature doesn't exist."""
-        amenity = facade.get(Amenity, amenity_id)
-        if not isinstance(amenity, Amenity):
-            ns.abort(404, "This feature has vanished!")
-        return amenity
+        """Find a specific supernatural feature! 🔍"""
+        try:
+            amenity = facade.get(Amenity, amenity_id)
+            if not isinstance(amenity, Amenity):
+                return {
+                    "message": "This feature has vanished! 👻",
+                    "amenity": None,
+                }, 404
+            return amenity, 200
+        except Exception as e:
+            return {
+                "message": f"Failed to find feature: {str(e)} 👻",
+                "amenity": None,
+            }, 404
 
     @log_me(component="api")
+    @admin_only
     @ns.doc(
         "update_amenity",
         responses={
@@ -167,36 +148,29 @@ class AmenityDetail(Resource):
     )
     @ns.expect(amenity_model)
     @ns.marshal_with(amenity_model)
-    @admin_only
     def put(self, amenity_id):
-        """Update a supernatural feature! 📝.
-
-        Only administrators can update features.
-
-        Args:
-            amenity_id (str): The unique identifier of the feature.
-
-        Returns:
-            Amenity: The updated supernatural feature.
-
-        Raises:
-            401: If the user is not authenticated.
-            403: If the user is not an administrator.
-            404: If the feature doesn't exist.
-            400: If the update data is invalid."""
+        """Update a supernatural feature! 📝"""
         try:
+            from flask_jwt_extended import get_jwt
+
+            claims = get_jwt()
             amenity = facade.get(Amenity, amenity_id)
             if not isinstance(amenity, Amenity):
                 ns.abort(404, "This feature has vanished!")
 
-            updated = facade.update(Amenity, amenity_id, ns.payload)
-            if not isinstance(updated, Amenity):
-                ns.abort(400, "Failed to update the feature!")
-            return updated
+            updated = facade.update(
+                Amenity,
+                amenity_id,
+                ns.payload,
+                user_id=claims.get("user_id"),
+                is_admin=claims.get("is_admin", False),
+            )
+            return updated, 200
         except ValueError as e:
             ns.abort(400, str(e))
 
     @log_me(component="api")
+    @admin_only
     @ns.doc(
         "delete_amenity",
         responses={
@@ -206,30 +180,23 @@ class AmenityDetail(Resource):
             404: "Amenity not found",
         },
     )
-    @admin_only
     def delete(self, amenity_id):
-        """Banish a feature from our realm! ⚡.
-
-        Only administrators can delete features.
-        All deletions are permanent (hard delete).
-
-        Args:
-            amenity_id (str): The unique identifier of the feature.
-
-        Returns:
-            tuple: Empty response with 204 status code.
-
-        Raises:
-            401: If the user is not authenticated.
-            403: If the user is not an administrator.
-            404: If the feature doesn't exist.
-            400: If the deletion fails."""
-        amenity = facade.get(Amenity, amenity_id)
-        if not isinstance(amenity, Amenity):
-            ns.abort(404, "This feature has vanished!")
-
+        """Banish a feature from our realm! ⚡"""
         try:
-            facade.delete(Amenity, amenity_id, hard=True)
+            from flask_jwt_extended import get_jwt
+
+            claims = get_jwt()
+            amenity = facade.get(Amenity, amenity_id)
+            if not isinstance(amenity, Amenity):
+                ns.abort(404, "This feature has vanished!")
+
+            facade.delete(
+                Amenity,
+                amenity_id,
+                user_id=claims.get("user_id"),
+                is_admin=claims.get("is_admin", False),
+                hard=True,
+            )
             return "", 204
         except ValueError as e:
             ns.abort(400, str(e))

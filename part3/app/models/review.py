@@ -82,12 +82,22 @@ class Review(BaseModel):
             raise ValueError("User ID must be a non-empty string!")
 
         # Vérifier que l'user existe
-        from app.models.user import User  # noqa: F811
+        from app.models.place import Place
+        from app.models.user import User
 
         if not User.query.get(user_id):
             raise ValueError("Invalid user ID: user does not exist!")
 
-        return user_id.strip()
+        # Vérifier si c'est une nouvelle review ou une mise à jour
+        existing_review = Review.query.filter_by(
+            user_id=user_id, place_id=self.place_id
+        ).first()
+
+        if existing_review and existing_review.id != self.id:
+            # Si une review existe déjà et ce n'est pas celle qu'on modifie
+            raise ValueError("User already reviewed this place!")
+
+        return user_id
 
     @log_me(component="business")
     def _validate_text(self, text: str) -> str:

@@ -1,4 +1,5 @@
 """CLI commands for the haunted database! 👻"""
+
 import os
 
 import click

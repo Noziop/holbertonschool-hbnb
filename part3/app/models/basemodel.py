@@ -1,4 +1,5 @@
 """Base model module: The dark foundation of our haunted kingdom! 👻."""
+
 from datetime import datetime
 from typing import Any, List, Optional, TypeVar, Union
 
@@ -35,6 +36,40 @@ class BaseModel(db.Model, SQLAlchemyMixin):
         return cls.repository
 
     @log_me(component="business")
+    def can_be_managed_by(self, user_id: str, is_admin: bool = False) -> bool:
+        """Check if a user can manage (modify/delete) this resource! 🔑"""
+        print("\n=== Debug can_be_managed_by ===")
+        print(f"Resource type: {self.__class__.__name__}")
+        print(f"Resource ID: {self.id}")
+        print(f"User ID: {user_id}")
+        print(f"Is Admin: {is_admin}")
+
+        # Admin peut tout faire !
+        if is_admin:
+            print("Admin access granted!")
+            return True
+
+        # Cas spécial pour User : l'utilisateur peut se modifier lui-même
+        if self.__class__.__name__ == "User":
+            print("User self-management check")
+            print(f"Self ID: {self.id}")
+            print(f"Comparison result: {self.id == user_id}")
+            return self.id == user_id
+
+        # Cas spécial pour Review : le créateur peut modifier sa review
+        if self.__class__.__name__ == "Review":
+            print("Review owner check")
+            print(f"Review user_id: {self.user_id}")
+            print(f"Comparison result: {self.user_id == user_id}")
+            return self.user_id == user_id
+
+        # Pour les autres modèles, vérifier owner_id
+        owner_id = getattr(self, "owner_id", None)
+        print(f"Owner ID: {owner_id}")
+        print(f"Comparison result: {owner_id == user_id}")
+        return owner_id == user_id
+
+    @log_me(component="business")
     def save(self) -> T:
         """Save this haunted entity to our realm! 💾"""
         try:
@@ -52,13 +87,14 @@ class BaseModel(db.Model, SQLAlchemyMixin):
             protected = {"id", "created_at", "is_deleted"}
             if any(attr in data for attr in protected):
                 raise ValueError(
-                    f"Cannot modify protected attributes: {protected & data.keys()}"
+                    f"Cannot modify protected attributes: \
+                        {protected & data.keys()}"
                 )
 
             for key, value in data.items():
                 setattr(self, key, value)
 
-            return self._get_repo().update(self)
+            return self._get_repo().save(self)
         except Exception as e:
             raise ValueError(f"Update failed: {str(e)} 🔮")
 
@@ -85,7 +121,6 @@ class BaseModel(db.Model, SQLAlchemyMixin):
         cls, multiple: bool = False, **kwargs
     ) -> Union[Optional[T], List[T]]:
         """Find entities by their attributes! 🔮"""
-        print(f"BaseModel - kwargs: {kwargs}")
         return cls._get_repo().get_by_attribute(multiple=multiple, **kwargs)
 
     @classmethod

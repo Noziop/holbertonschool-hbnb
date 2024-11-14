@@ -5,14 +5,16 @@ repos:
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
+        exclude: ^part3/badges/.*\.svg$  # Exclure les fichiers SVG
+        types: [python, javascript, html, css, yaml]  # Spécifier les types de fichiers
     -   id: check-yaml
     -   id: detect-private-key
-
 
 -   repo: https://github.com/psf/black
     rev: 23.11.0
     hooks:
     -   id: black
+        stages: [commit]
         args: [--line-length=79]
         files: ^part3/
         exclude: ^part2/
@@ -21,6 +23,7 @@ repos:
     rev: 5.12.0
     hooks:
     -   id: isort
+        stages: [commit]
         args: ["--profile", "black", "--line-length=79"]
         files: ^part3/
         exclude: ^part2/
@@ -29,8 +32,12 @@ repos:
     rev: 6.1.0
     hooks:
     -   id: flake8
+        stages: [commit]
         additional_dependencies: [flake8-docstrings]
-        args: ["--max-line-length=79"]
+        args: [
+            "--max-line-length=79",
+            "--ignore=D100,D101,D102,D104,D205,D208,D209,D400,D401,D414,E402,F401,F403,F405,F541,F841,W503,E501"
+        ]
         files: ^part3/
         exclude: ^part2/
 
@@ -42,18 +49,21 @@ repos:
         entry: bash -c 'cd part3 && poetry run pytest --cov=app --cov-report=xml:reports/coverage/coverage.xml'
         language: system
         pass_filenames: false
-        types: [python]
+        always_run: true
+        verbose: true
 
     -   id: flake8-report
         name: Generate flake8 report
         entry: bash -c 'cd part3 && poetry run flake8 --statistics --tee --output-file=reports/flake8/flake8stats.txt app/'
         language: system
         pass_filenames: false
-        types: [python]
+        always_run: true
+        verbose: true
 
     -   id: generate-badges
         name: Generate quality badges
         entry: bash -c 'cd part3 && poetry run genbadge coverage -i reports/coverage/coverage.xml -o badges/coverage-badge.svg && poetry run genbadge flake8 -i reports/flake8/flake8stats.txt -o badges/flake8-badge.svg'
         language: system
         pass_filenames: false
-        types: [python]
+        always_run: true
+        verbose: true

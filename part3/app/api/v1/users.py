@@ -4,7 +4,7 @@ from flask import request
 from flask_jwt_extended import get_jwt
 from flask_restx import Namespace, Resource, fields
 
-from app.api import admin_only, auth_required, log_me, owner_only
+from app.api import admin_only, auth_required, log_me, owner_only, user_only
 from app.models.user import User
 from app.services.facade import HBnBFacade
 
@@ -156,7 +156,7 @@ class UserList(Resource):
     """Endpoint for managing the collection of spectral users! 👻"""
 
     @log_me(component="api")
-    @admin_only  #
+    @admin_only
     @ns.doc(
         "list_users",
         responses={
@@ -219,12 +219,12 @@ class UserDetail(Resource):
     """Endpoint for managing individual spectral entities! 👻"""
 
     @log_me(component="api")
-    @auth_required()
+    @user_only
     @ns.doc(
         "get_user",
         responses={
             200: "Spirit successfully contacted",
-            401: "Unauthorized - Authentication required",
+            401: "Unauthorized - i find your lack of faith disturbing",
             404: "Spirit not found in this realm",
         },
     )
@@ -246,7 +246,7 @@ class UserDetail(Resource):
             }, 404
 
     @log_me(component="api")
-    @owner_only  # Vérifie auth + propriété/admin
+    @owner_only
     @ns.doc(...)
     @ns.expect(user_model)
     @ns.marshal_with(output_user_model, code=200)
@@ -255,38 +255,37 @@ class UserDetail(Resource):
         try:
             user = facade.get(User, user_id)
             if not isinstance(user, User):
-                return {
-                    "message": "This spirit has crossed over! 👻",
-                    "user": None,
-                }, 404
+                ns.abort(404, "This spirit has crossed over! 👻")
 
-            data = ns.payload.copy()
             claims = get_jwt()
 
-            # Si pas admin, on ne peut pas modifier certains champs
+            data = ns.payload.copy()
+
             if not claims.get("is_admin"):
                 data.pop("is_admin", None)
                 data.pop("is_active", None)
-                # Le reste est modifiable par le propriétaire
-            # Si admin, tout est modifiable !
 
-            updated = facade.update(User, user_id, data)
+            updated = facade.update(
+                User,
+                user_id,
+                data,
+                user_id=claims.get("user_id"),
+                is_admin=claims.get("is_admin", False),
+            )
             return updated, 200
         except ValueError as e:
-            return {
-                "message": f"Invalid modification parameters: {str(e)} 👻",
-                "user": None,
-            }, 400
+            print(f"Error in route: {str(e)}")
+            ns.abort(400, str(e))
 
     @log_me(component="api")
-    @admin_only
+    @admin_only  # On vérifie juste l'authentification
     @ns.doc(
         "delete_user",
         responses={
             204: "Spirit successfully banished",
-            401: "Unauthorized - Authentication required",
-            403: "Forbidden - Admin privileges required",
-            404: "Spirit not found in this realm",
+            401: "Unauthorized - i find your lack of faith disturbing",
+            403: "Forbidden - You shall not pass!",
+            404: "Spirit not found",
         },
     )
     @ns.param(
@@ -299,14 +298,19 @@ class UserDetail(Resource):
         """Banish a spirit from our realm! ⚡"""
         try:
             user = facade.get(User, user_id)
-            if not isinstance(user, User):
-                return {
-                    "message": "This spirit has already crossed over! 👻"
-                }, 404
+            if not isinstance(user, User) or user.is_deleted:
+                ns.abort(404, "This spirit has already crossed over! 👻")
 
+            claims = get_jwt()
             hard = request.args.get("hard", "false").lower() == "true"
-            if facade.delete(User, user_id, hard=hard):
-                return "", 204
-            return {"message": "Failed to banish the spirit! 👻"}, 400
+
+            facade.delete(
+                User,
+                user_id,
+                user_id=claims.get("user_id"),
+                is_admin=claims.get("is_admin", False),
+                hard=hard,
+            )
+            return "", 204
         except ValueError as e:
-            return {"message": f"Spirit not found: {str(e)} 👻"}, 404
+            ns.abort(403, str(e))

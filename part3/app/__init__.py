@@ -1,4 +1,5 @@
 """Initialize our haunted application! 👻."""
+
 from flask import Flask
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
@@ -18,6 +19,8 @@ from app.cli import init_db_command
 
 def create_app(config_name="default"):
     """Summon our haunted API! 👻."""
+    from app.api import api_bp  # NOQA : E402
+
     # write everything in the Grimoire
     haunted_logger.setup_logging()
 
@@ -49,7 +52,6 @@ def create_app(config_name="default"):
     )
 
     # Winding Routes 🛤️ to the realm of Haunted BnB
-    from app.api import api_bp
 
     app.register_blueprint(api_bp)
 

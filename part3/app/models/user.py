@@ -1,4 +1,5 @@
 """User model module: The ghostly users of our haunted kingdom! 👻."""
+
 import re
 from typing import Any, Dict, Optional
 
@@ -139,21 +140,18 @@ class User(BaseModel):
     @log_me(component="business")
     def save(self) -> "User":
         """Save this spectral user! 👻"""
-        try:
-            # Vérifier si l'email existe déjà
-            existing = self.find_by(email=self.email)
-            if existing and existing.id != self.id:
-                raise ValueError("Email already in use! 👻")
+        # Vérifier si l'email existe déjà
+        existing = self.find_by(email=self.email)
+        if (
+            existing and existing.id != self.id
+        ):  # Important de vérifier que ce n'est pas le même user
+            raise ValueError("Email already in use! 👻")
+        return super().save()
 
-            # Vérifier si le username existe déjà
-            existing = self.find_by(username=self.username)
-            if existing and existing.id != self.id:
-                raise ValueError("Username already haunting our realm! 👻")
-
-            # Appeler la méthode save du parent
-            return super().save()
-        except Exception as e:
-            raise ValueError(f"Failed to save user: {str(e)}")
+    @classmethod
+    @log_me(component="business")
+    def get_all_by_type(cls):
+        return cls.get_all()
 
     @log_me(component="business")
     def delete(self) -> bool:
@@ -238,6 +236,8 @@ class User(BaseModel):
     def to_dict(self) -> Dict[str, Any]:
         """Transform user into dictionary! 📚."""
         base_dict = super().to_dict()
+        if "password_hash" in base_dict:
+            del base_dict["password_hash"]
         user_dict = {
             "username": self.username,
             "email": self.email,

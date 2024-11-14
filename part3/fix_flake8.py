@@ -1,4 +1,5 @@
 """Script de correction automatique des erreurs flake8 les plus courantes."""
+
 import re
 from pathlib import Path
 from typing import List

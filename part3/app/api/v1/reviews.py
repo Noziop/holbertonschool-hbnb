@@ -4,7 +4,7 @@ from flask import request
 from flask_jwt_extended import get_jwt_identity
 from flask_restx import Namespace, Resource, fields
 
-from app.api import admin_only, auth_required, log_me, owner_only
+from app.api import admin_only, auth_required, log_me, owner_only, user_only
 from app.models.place import Place
 from app.models.review import Review
 from app.models.user import User
@@ -102,7 +102,6 @@ error_model = ns.model(
 @ns.route("/")
 class ReviewList(Resource):
     """Endpoint for managing the collection of haunted reviews! 👻.
-
     This endpoint handles listing all reviews and creating new ones.
     Supports filtering by user, place, and rating."""
 
@@ -112,11 +111,9 @@ class ReviewList(Resource):
         responses={
             200: "Success",
             400: "Invalid parameters",
-            404: "No reviews found",
         },
     )
     @ns.response(200, "Success", [output_review_model])
-    @ns.response(404, "Not Found", error_model)
     @ns.response(400, "Bad Request", error_model)
     @ns.param("user_id", "Ghost reviewer ID", type=str, required=False)
     @ns.param("place_id", "Haunted place ID", type=str, required=False)
@@ -131,14 +128,8 @@ class ReviewList(Resource):
 
             reviews = facade.find(Review, **criteria)
 
-            # Si reviews est None ou une liste vide
-            if not reviews:
-                return {
-                    "message": "No haunted reviews found in our realm! 👻",
-                    "reviews": [],
-                }, 404
-
-            return reviews, 200
+            # Retourner une liste vide avec 200 si pas de reviews
+            return reviews or [], 200
 
         except Exception as e:
             return {
@@ -147,6 +138,7 @@ class ReviewList(Resource):
             }, 400
 
     @log_me(component="api")
+    @user_only
     @ns.doc(
         "create_review",
         responses={
@@ -158,36 +150,28 @@ class ReviewList(Resource):
     )
     @ns.expect(input_review_model)
     @ns.marshal_with(output_review_model, code=201)
-    @auth_required()
     def post(self):
-        """Create a new haunted review! ✍️.
-
-        The user_id is automatically set to the authenticated user's ID.
-
-        Returns:
-            Review: The newly created review.
-
-        Raises:
-            401: If the user is not authenticated.
-            404: If the place or user doesn't exist.
-            400: If the review data is invalid."""
+        """Create a new haunted review! ✍️"""
         try:
-            current_user_id = get_jwt_identity()
-            data = ns.payload.copy()
-            data["user_id"] = current_user_id
+            from flask_jwt_extended import get_jwt
 
-            # Validate place and user existence
-            place = facade.get(Place, data["place_id"])
-            user = facade.get(User, current_user_id)
-
+            claims = get_jwt()
+            place = facade.get(Place, ns.payload["place_id"])
             if not isinstance(place, Place):
-                ns.abort(404, "This haunted place doesn't exist!")
-            if not isinstance(user, User):
-                ns.abort(404, "This ghost reviewer doesn't exist!")
+                ns.abort(404, "This haunted property has vanished!")
 
-            review = facade.create(Review, data)
-            if not isinstance(review, Review):
-                ns.abort(400, "Failed to materialize the review!")
+            # Vérifier si l'utilisateur est le propriétaire
+            if place.owner_id == claims["user_id"]:
+                return {"message": "Cannot review your own place! 👻"}, 403
+
+            # Créer la review
+            review_data = {
+                "user_id": claims["user_id"],
+                "place_id": ns.payload["place_id"],
+                "text": ns.payload["text"],
+                "rating": ns.payload["rating"],
+            }
+            review = facade.create(Review, review_data)
             return review, 201
         except ValueError as e:
             ns.abort(400, str(e))
@@ -196,32 +180,30 @@ class ReviewList(Resource):
 @ns.route("/<string:review_id>")
 @ns.param("review_id", "The haunted review identifier")
 class ReviewDetail(Resource):
-    """Endpoint for managing individual haunted reviews! 👻.
-
-    This endpoint handles retrieving, updating, and deleting
-    specific reviews by their unique identifier. Only owners
-    can update their reviews, while admins can delete any review."""
+    """Endpoint for managing individual haunted reviews! 👻"""
 
     @log_me(component="api")
-    @ns.doc("get_review", responses={200: "Success", 404: "Review not found"})
-    @ns.marshal_with(output_review_model)
+    @ns.doc("get_review")
+    @ns.response(200, "Success", output_review_model)
+    @ns.response(404, "Not Found", error_model)
     def get(self, review_id):
-        """Find a specific haunted review! 🔍.
-
-        Args:
-            review_id (str): The unique identifier of the review.
-
-        Returns:
-            Review: The requested haunted review.
-
-        Raises:
-            404: If the review doesn't exist or has been deleted."""
-        review = facade.get(Review, review_id)
-        if not isinstance(review, Review) or review.rating is None:
-            ns.abort(404, "This review has vanished!")
-        return review
+        """Find a specific haunted review! 🔍"""
+        try:
+            review = facade.get(Review, review_id)
+            if not isinstance(review, Review) or review.rating is None:
+                return {
+                    "message": "This review has vanished! 👻",
+                    "review": None,
+                }, 404
+            return review, 200
+        except ValueError as e:
+            return {
+                "message": f"Failed to find review: {str(e)} 👻",
+                "review": None,
+            }, 404
 
     @log_me(component="api")
+    @owner_only
     @ns.doc(
         "update_review",
         responses={
@@ -234,40 +216,32 @@ class ReviewDetail(Resource):
     )
     @ns.expect(input_review_model)
     @ns.marshal_with(output_review_model)
-    @owner_only
     def put(self, review_id):
-        """Update a haunted review! 📝.
+        """Update a haunted review! 📝"""
+        from flask_jwt_extended import get_jwt
 
-        Only the review owner can update their own review.
-        The user_id cannot be changed during update.
-
-        Args:
-            review_id (str): The unique identifier of the review.
-
-        Returns:
-            Review: The updated haunted review.
-
-        Raises:
-            401: If the user is not authenticated.
-            403: If the user is not the review owner.
-            404: If the review doesn't exist.
-            400: If the update data is invalid."""
         try:
             review = facade.get(Review, review_id)
             if not isinstance(review, Review):
                 ns.abort(404, "This review has vanished!")
 
+            claims = get_jwt()
             data = ns.payload.copy()
             data["user_id"] = review.user_id  # Empêcher le changement d'auteur
 
-            updated_review = facade.update(Review, review_id, data)
-            if not isinstance(updated_review, Review):
-                ns.abort(400, "Failed to update the review!")
+            updated_review = facade.update(
+                Review,
+                review_id,
+                data,
+                user_id=claims.get("user_id"),
+                is_admin=claims.get("is_admin", False),
+            )
             return updated_review
         except ValueError as e:
-            ns.abort(400, str(e))
+            ns.abort(403, str(e))
 
     @log_me(component="api")
+    @owner_only  # On vérifie juste l'authentification
     @ns.doc(
         "delete_review",
         responses={
@@ -281,31 +255,25 @@ class ReviewDetail(Resource):
     @ns.param(
         "hard", "Perform hard delete (permanent)", type=bool, default=False
     )
-    @admin_only
     def delete(self, review_id):
-        """Banish a review from our realm! ⚡.
+        """Banish a review from our realm! ⚡"""
+        from flask_jwt_extended import get_jwt
 
-        Only administrators can delete reviews.
-        Supports both soft and hard deletion.
-
-        Args:
-            review_id (str): The unique identifier of the review.
-
-        Returns:
-            tuple: Empty response with 204 status code.
-
-        Raises:
-            401: If the user is not authenticated.
-            403: If the user is not an administrator.
-            404: If the review doesn't exist.
-            400: If the deletion fails."""
-        review = facade.get(Review, review_id)
-        if not isinstance(review, Review):
-            ns.abort(404, "This review has already vanished!")
-
-        hard = request.args.get("hard", "false").lower() == "true"
         try:
-            facade.delete(Review, review_id, hard=hard)
+            review = facade.get(Review, review_id)
+            if not isinstance(review, Review):
+                ns.abort(404, "This review has already vanished!")
+
+            claims = get_jwt()
+            hard = request.args.get("hard", "false").lower() == "true"
+
+            facade.delete(
+                Review,
+                review_id,
+                user_id=claims.get("user_id"),
+                is_admin=claims.get("is_admin", False),
+                hard=hard,
+            )
             return "", 204
         except ValueError as e:
-            ns.abort(400, str(e))
+            ns.abort(403, str(e))

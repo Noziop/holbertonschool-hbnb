@@ -1,4 +1,5 @@
 """models module for the application."""
+
 """Initialize our haunted models! 👻."""
 from app.models.amenity import Amenity
 from app.models.place import Place

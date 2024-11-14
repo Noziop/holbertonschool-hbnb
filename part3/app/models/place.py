@@ -29,8 +29,8 @@ class PropertyType(str, Enum):
 
 
 # Table d'association pour la relation many-to-many avec Amenity
-place_amenity = db.Table(
-    "place_amenity",
+placeamenity = db.Table(
+    "placeamenity",
     db.Column(
         "place_id", db.String(60), db.ForeignKey("places.id"), primary_key=True
     ),
@@ -76,7 +76,7 @@ class Place(BaseModel):
     )
     amenities = db.relationship(
         "Amenity",
-        secondary=place_amenity,
+        secondary=placeamenity,
         lazy="subquery",
         backref=db.backref("places", lazy=True),
     )
@@ -379,9 +379,9 @@ class Place(BaseModel):
             "city": self.city,
             "country": self.country,
             "status": self.status.value if self.status else None,
-            "property_type": self.property_type.value
-            if self.property_type
-            else None,
+            "property_type": (
+                self.property_type.value if self.property_type else None
+            ),
             "minimum_stay": self.minimum_stay,
             "owner": self.owner.to_dict() if self.owner else None,
             "reviews": [review.to_dict() for review in self.reviews],

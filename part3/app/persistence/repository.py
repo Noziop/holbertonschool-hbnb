@@ -1,4 +1,5 @@
 """Repository pattern for our haunted database! 👻"""
+
 from app import db
 from app.utils import log_me
 
@@ -57,8 +58,6 @@ class SQLAlchemyRepository:
             **kwargs: The dark specifications for our search
         """
         query = self.model.query.filter_by(**kwargs)
-        print(f"REPO - kwargs: {kwargs}")
-        print(f"REPO - query: {query}")
         return query.all() if multiple else query.first()
 
     @log_me(component="persistence")
@@ -72,28 +71,28 @@ class SQLAlchemyRepository:
             db.session.rollback()
             raise ValueError(f"Failed to save: {str(e)}")
 
-    @log_me(component="persistence")
-    def update(self, obj):
-        """Transform a spirit's essence! 🌟"""
-        try:
-            db.session.add(obj)
-            db.session.commit()
-            return obj
-        except Exception as e:
-            db.session.rollback()
-            raise ValueError(f"Failed to update: {str(e)}")
+    # @log_me(component="persistence")
+    # def update(self, obj):
+    #     """Transform a spirit's essence! 🌟"""
+    #     try:
+    #         db.session.add(obj)
+    #         db.session.commit()
+    #         return obj
+    #     except Exception as e:
+    #         db.session.rollback()
+    #         raise ValueError(f"Failed to update: {str(e)}")
 
-    @log_me(component="persistence")
-    def delete(self, obj):
-        """Soft delete a spirit! 👻"""
-        try:
-            obj.is_deleted = True
-            db.session.add(obj)
-            db.session.commit()
-            return True
-        except Exception as e:
-            db.session.rollback()
-            raise ValueError(f"Failed to delete: {str(e)}")
+    # @log_me(component="persistence")
+    # def delete(self, obj):
+    #     """Soft delete a spirit! 👻"""
+    #     try:
+    #         obj.is_deleted = True
+    #         db.session.add(obj)
+    #         db.session.commit()
+    #         return True
+    #     except Exception as e:
+    #         db.session.rollback()
+    #         raise ValueError(f"Failed to delete: {str(e)}")
 
     @log_me(component="persistence")
     def hard_delete(self, obj):

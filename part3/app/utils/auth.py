@@ -2,49 +2,108 @@
 
 from functools import wraps
 
+import werkzeug.exceptions
 from flask_jwt_extended import get_jwt, verify_jwt_in_request
-from flask_restx import abort
 
 
-def auth_required(admin_only: bool = False, owner_only: bool = False):
-    """Protège nos endpoints avec des pouvoirs mystiques ! 🔮
+def auth_required(check_property: bool = False, admin_only: bool = False):
+    """Protège nos endpoints avec des pouvoirs mystiques ! 🔮"""
 
-    Args:
-        admin_only (bool): Réservé au Head Ghost 👑
-        owner_only (bool): Vérifie si le fantôme est propriétaire 👻
-    """
-
-    def wrapper(fn):
+    def actual_decorator(fn):
         @wraps(fn)
-        def decorator(*args, **kwargs):
-            # Vérifie le token JWT
-            verify_jwt_in_request()
-            claims = get_jwt()
+        def wrapper(*args, **kwargs):
+            print("\n=== Debug auth_required decorator ===")
+            print(f"check_property: {check_property}")
+            print(f"admin_only: {admin_only}")
+            print(f"kwargs: {kwargs}")
 
-            # Vérifie si le fantôme n'a pas été exorcisé
-            if not claims.get("is_active"):
-                abort(401, "This ghost has been exorcised! 👻")
+            try:
+                verify_jwt_in_request()
+                claims = get_jwt()
+                print(f"Claims: {claims}")
 
-            # Vérifie les droits admin si nécessaire
-            if admin_only and not claims.get("is_admin"):
-                abort(403, "Only the Head Ghost can do that! 👑")
+                if not claims.get("is_active"):
+                    print("User not active -> 401")
+                    return {"message": "This ghost has been exorcised! 👻"}, 401
 
-            # Vérifie la propriété si nécessaire
-            if owner_only:
-                resource_id = kwargs.get("id")  # ou user_id, place_id, etc.
-                if not (
-                    claims.get("is_admin")
-                    or claims.get("user_id") == resource_id
-                ):
-                    abort(403, "This isn't your haunt! 👻")
+                if not claims.get("user_id"):
+                    print("No user_id -> 401")
+                    return {"message": "Authentication required! 👻"}, 401
 
-            return fn(*args, **kwargs)
+                if admin_only and not claims.get("is_admin"):
+                    print("Admin required but user is not admin -> 403")
+                    return {
+                        "message": "Only the Head Ghost can do that! 👑"
+                    }, 403
 
-        return decorator
+                if check_property:
+                    print("Checking property...")
+                    # Si admin, tout est permis
+                    if claims.get("is_admin"):
+                        print("Admin bypass -> continue")
+                        return fn(*args, **kwargs)
 
-    return wrapper
+                    # Pour les places
+                    if "place_id" in kwargs:
+                        print(f"Checking place_id: {kwargs['place_id']}")
+                        from app.models.place import Place
+
+                        place = Place.get_by_id(kwargs["place_id"])
+                        if not place:
+                            print("Place not found -> 404")
+                            return {"message": "Place not found! 👻"}, 404
+                        if claims.get("user_id") != place.owner_id:
+                            print("User is not place owner -> 403")
+                            return {"message": "This isn't your haunt! 👻"}, 403
+
+                    if "review_id" in kwargs:
+                        from app.models.review import Review
+
+                        print(f"Review ID: {kwargs['review_id']}")
+                        review = Review.get_by_id(kwargs["review_id"])
+                        if not review:
+                            print("Review not found!")
+                            return {"message": "Review not found! 👻"}, 404
+                        if not (
+                            claims.get("is_admin")
+                            or claims.get("user_id") == review.user_id
+                        ):
+                            print("Not admin or owner!")
+                            return {"message": "This isn't your haunt! 👻"}, 403
+
+                    # Pour les utilisateurs
+                    elif "user_id" in kwargs:
+                        from app.models.user import User
+
+                        user = User.get_by_id(kwargs["user_id"])
+                        if not user or not user.is_active:
+                            return {
+                                "message": "This ghost has been exorcised! 👻"
+                            }, 401
+                        if claims.get("user_id") != kwargs["user_id"]:
+                            return {"message": "This isn't your haunt! 👻"}, 403
+
+                print("All checks passed -> continue to route")
+                return fn(*args, **kwargs)
+            except werkzeug.exceptions.NotFound as e:
+                print(f"NotFound exception -> 404: {str(e)}")
+                return {"message": "Resource not found! 👻"}, 404
+            except werkzeug.exceptions.Forbidden as e:
+                print(f"Forbidden exception -> 403: {str(e)}")
+                return {"message": "This isn't your haunt! 👻"}, 403
+            except ValueError as e:
+                print(f"ValueError -> 403: {str(e)}")
+                return {"message": str(e)}, 403
+            except Exception as e:
+                print(f"Unexpected error -> 401: {str(e)}")
+                return {"message": "Authentication required! 👻"}, 401
+
+        return wrapper
+
+    return actual_decorator
 
 
 # Alias pratiques
-admin_only = auth_required(admin_only=True)
-owner_only = auth_required(owner_only=True)
+user_only = auth_required()  # Authentification simple
+admin_only = auth_required(admin_only=True)  # Vérification admin
+owner_only = auth_required(check_property=True)  # Vérification propriété

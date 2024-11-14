@@ -9,7 +9,7 @@ from app.services.facade import HBnBFacade
 from app.utils import log_me
 
 ns = Namespace(
-    "auth",
+    "login",
     validate=True,
     description="Where keys can't help you, but ouija board does 🔐.",
 )
@@ -33,7 +33,7 @@ login_model = ns.model(
 )
 
 
-@ns.route("/login")
+@ns.route("/")
 class Login(Resource):
     """Authentication endpoint for spectral entities! 👻.
 
@@ -53,7 +53,6 @@ class Login(Resource):
             404: "User not found! 👻",
         },
     )
-    @log_me(component="api")
     def post(self):
         """Authenticate and receive a haunted token! 🎭"""
         data = request.get_json()

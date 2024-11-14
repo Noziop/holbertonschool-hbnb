@@ -1,4 +1,5 @@
 """Configuration for our haunted application! 👻"""
+
 import os
 from datetime import timedelta
 

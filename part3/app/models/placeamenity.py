@@ -1,4 +1,5 @@
 """PlaceAmenity : The bridge between haunted places and their features! 👻"""
+
 from typing import Any, Dict
 
 from app import db
@@ -9,7 +10,7 @@ from app.utils import log_me
 class PlaceAmenity(BaseModel):
     """PlaceAmenity: A supernatural link between places and amenities! 🔗"""
 
-    __tablename__ = "place_amenity"
+    __tablename__ = "placeamenity"
     __table_args__ = (
         db.UniqueConstraint(
             "place_id", "amenity_id", name="unique_place_amenity"
