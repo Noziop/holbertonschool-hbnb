@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS user (
     is_admin BOOLEAN NOT NULL DEFAULT FALSE
 );
 
+-- Table for places with status and property_type enums
 CREATE TABLE IF NOT EXISTS place (
     id VARCHAR(36) PRIMARY KEY,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
