@@ -8,11 +8,11 @@
 - I  - [From Part2 to Part3](#from-part2-to-part3-)
 - II - [Technical Choices](#technical-choices-️)
     - a - [Poetry](#poetry-the-modern-spellbook-)
-    - b - [Code Quality Tools](#code-quality-guardians-)
+    - b - [Pre-commit](#pre-commit-magic-)
+    - c - [Code Quality Tools](#code-quality-guardians-)
         - [Black](#black-the-uncompromising-code-formatter-)
         - [Isort](#isort-the-import-organizer-)
         - [Flake8](#flake8-the-strict-code-guardian-️)
-    - c - [Pre-commit](#pre-commit-magic-)
 - III - [Implementation](#implementation-)
     - a - [Development Configuration](#development-configuration-)
     - b - [Bcrypt](#bcrypt-password-protection-)
@@ -45,6 +45,14 @@ Unlike the ancient scrolls of `pip`, Poetry brings:
 - Lock file to ensure consistent installations across haunted machines
 - Simple command interface (`poetry add` vs `pip install + requirements.txt`)
 
+### Pre-commit Magic 🔮
+- Runs all these tools automatically before each commit
+- Currently learning to tame these powerful spells
+- Sometimes requires `--no-verify` when we're in a hurry (shh, don't tell anyone! 🤫)
+- Future plans include better configuration to balance strictness with practicality
+
+It was indeed some extra work, but it was fun all the way ! you should try this at ~ (at home)
+
 ### Code Quality Guardians 🧹
 
 #### Black: The Uncompromising Code Formatter
@@ -70,14 +78,6 @@ Unlike the ancient scrolls of `pip`, Poetry brings:
   - `flake8-docstrings`: Ensures proper documentation
   - `flake8-import-order`: Double-checks import organization
   - `flake8-bugbear`: Catches common bugs and design problems
-
-### Pre-commit Magic 🔮
-- Runs all these tools automatically before each commit
-- Currently learning to tame these powerful spells
-- Sometimes requires `--no-verify` when we're in a hurry (shh, don't tell anyone! 🤫)
-- Future plans include better configuration to balance strictness with practicality
-
-It was indeed some extra work, but it was fun all the way ! you should try this at ~ (at home)
 
 ## Implementation 💫
 
