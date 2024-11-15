@@ -1,0 +1,264 @@
+<!-- user.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HauntedBnB - Ghost Profile 👻</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        header {
+            background: #2c2c2c;
+            padding: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .profile-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .profile-header {
+            background: #2c2c2c;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info h1 {
+            margin: 0;
+            color: #7c4dff;
+        }
+
+        .admin-badge {
+            background: #6200ea;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .places-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .place-card {
+            background: #2c2c2c;
+            border-radius: 8px;
+            padding: 1rem;
+            transition: transform 0.3s;
+        }
+
+        .place-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .logout-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #cc0000;
+        }
+
+        .profile-details {
+            margin-top: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .info-card {
+            background: #3c3c3c;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .info-card h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: #7c4dff;
+        }
+
+        .info-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .info-item {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .info-item label {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .info-item p {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto;">
+            <div class="logo">🏰 HauntedBnB</div>
+            <button class="logout-btn" onclick="logout()">Exorcise Me! 👻</button>
+        </nav>
+    </header>
+
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="user-info">
+                <h1>Welcome back, <span id="username">Ghost</span>! 👻</h1>
+                <div class="profile-details">
+                    <div class="info-card">
+                        <h3>Personal Information 📝</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>First Name:</label>
+                                <p id="first_name">Loading...</p>
+                            </div>
+                            <div class="info-item">
+                                <label>Last Name:</label>
+                                <p id="last_name">Loading...</p>
+                            </div>
+                            <div class="info-item">
+                                <label>Email:</label>
+                                <p id="email">Loading...</p>
+                            </div>
+                            <div class="info-item">
+                                <label>Phone:</label>
+                                <p id="phone">Loading...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <h3>Address 🏠</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Street:</label>
+                                <p id="address">Loading...</p>
+                            </div>
+                            <div class="info-item">
+                                <label>City:</label>
+                                <p id="city">Loading...</p>
+                            </div>
+                            <div class="info-item">
+                                <label>Postal Code:</label>
+                                <p id="postal_code">Loading...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="admin-badge" style="display: none;" class="admin-badge">
+                Head Ghost 👑
+            </div>
+        </div>
+        <hr>
+
+
+        <h2>Your Haunted Properties 🏰</h2>
+        <div class="places-grid" id="user-places">
+            <!-- Places will be loaded here -->
+        </div>
+    </div>
+
+    <script>
+        // Vérifier l'authentification
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+            loadUserProfile();
+            loadUserPlaces();
+        }
+
+        // Charger le profil utilisateur
+        function loadUserProfile() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user) {
+                document.getElementById('username').textContent = user.username;
+                document.getElementById('first_name').textContent = user.first_name || 'Not specified';
+                document.getElementById('last_name').textContent = user.last_name || 'Not specified';
+                document.getElementById('email').textContent = user.email;
+                document.getElementById('phone').textContent = user.phone || 'Not specified';
+                document.getElementById('address').textContent = user.address || 'Not specified';
+                document.getElementById('city').textContent = user.city || 'Not specified';
+                document.getElementById('postal_code').textContent = user.postal_code || 'Not specified';
+
+                if (user.is_admin) {
+                    document.getElementById('admin-badge').style.display = 'block';
+                }
+            }
+        }
+
+
+        // Charger les propriétés de l'utilisateur
+        async function loadUserPlaces() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://127.0.0.1:5000/api/v1/places', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const places = await response.json();
+
+                const grid = document.getElementById('user-places');
+                places.forEach(place => {
+                    const card = document.createElement('div');
+                    card.className = 'place-card';
+                    card.innerHTML = `
+                        <h3>${place.name} 👻</h3>
+                        <p>${place.description}</p>
+                        <p>Price: $${place.price_by_night}/night</p>
+                        <p>Status: ${place.status || 'Available'} ✨</p>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error loading places:', error);
+            }
+        }
+
+        // Déconnexion
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/index.html';
+        }
+
+        // Vérifier l'auth au chargement
+        document.addEventListener('DOMContentLoaded', checkAuth);
+    </script>
+</body>
+</html>

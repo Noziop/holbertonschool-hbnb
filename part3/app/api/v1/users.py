@@ -8,11 +8,27 @@ from app.api import admin_only, auth_required, log_me, owner_only, user_only
 from app.models.user import User
 from app.services.facade import HBnBFacade
 
+authorizations = {
+    "Bearer Auth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": (
+            "JWT token format: **Bearer &lt;token&gt;**\n\n"
+            "Get your token by logging in at **/api/v1/auth/login**\n\n"
+            "Token contains:\n"
+            "- identity: user ID\n"
+            "- claims: is_admin, is_active"
+        ),
+    }
+}
+
 ns = Namespace(
     "users",
     validate=True,
     description="Where lost souls come to REST! 👻",
     path="api/v1/users",
+    authorizations=authorizations,
 )
 facade = HBnBFacade()
 
@@ -158,7 +174,8 @@ class UserList(Resource):
     @log_me(component="api")
     @admin_only
     @ns.doc(
-        "list_users",
+        "list All Users - Admin Only",
+        security="Bearer Auth",
         responses={
             200: "Success - List of spirits returned",
             401: "Unauthorized - Authentication required",
@@ -194,7 +211,8 @@ class UserList(Resource):
     @log_me(component="api")
     @admin_only
     @ns.doc(
-        "create_user",
+        "Create a user - Admin Only",
+        security="Bearer Auth",
         responses={
             201: "Spirit successfully summoned",
             401: "Unauthorized - Authentication required",
@@ -221,7 +239,8 @@ class UserDetail(Resource):
     @log_me(component="api")
     @user_only
     @ns.doc(
-        "get_user",
+        "Get a user details - Authenticated User Only",
+        security="Bearer Auth",
         responses={
             200: "Spirit successfully contacted",
             401: "Unauthorized - i find your lack of faith disturbing",
@@ -247,7 +266,17 @@ class UserDetail(Resource):
 
     @log_me(component="api")
     @owner_only
-    @ns.doc(...)
+    @ns.doc(
+        "Modify a user - Authenticated User Only + Admin",
+        security="Bearer Auth",
+        responses={
+            200: "Spirit successfully modified",
+            401: "Unauthorized - i find your lack of faith disturbing",
+            403: "Forbidden - You shall not pass!",
+            404: "Spirit not found",
+            400: "Invalid modification parameters",
+        },
+    )
     @ns.expect(user_model)
     @ns.marshal_with(output_user_model, code=200)
     def put(self, user_id):
@@ -280,7 +309,8 @@ class UserDetail(Resource):
     @log_me(component="api")
     @admin_only  # On vérifie juste l'authentification
     @ns.doc(
-        "delete_user",
+        "delete a user - Admin Only",
+        security="Bearer Auth",
         responses={
             204: "Spirit successfully banished",
             401: "Unauthorized - i find your lack of faith disturbing",

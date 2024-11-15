@@ -10,10 +10,20 @@ from app.models.review import Review
 from app.models.user import User
 from app.services.facade import HBnBFacade
 
+authorizations = {
+    "Bearer Auth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "Enter: **Bearer &lt;JWT&gt;**",
+    },
+}
+
 ns = Namespace(
     "reviews",
     validate=True,
     description="Where our beloved Haunted Spirit speaks to us! 🏚️",
+    authorizations=authorizations,
 )
 facade = HBnBFacade()
 
@@ -107,7 +117,7 @@ class ReviewList(Resource):
 
     @log_me(component="api")
     @ns.doc(
-        "list_reviews",
+        "List all_reviews - Public endpoint",
         responses={
             200: "Success",
             400: "Invalid parameters",
@@ -140,12 +150,14 @@ class ReviewList(Resource):
     @log_me(component="api")
     @user_only
     @ns.doc(
-        "create_review",
+        "Create a new review - Authenticated endpoint",
+        security="Bearer Auth",
         responses={
             201: "Review created",
             400: "Invalid parameters",
             404: "User or Place not found",
             401: "Unauthorized",
+            403: "Forbidden",
         },
     )
     @ns.expect(input_review_model)
@@ -183,7 +195,10 @@ class ReviewDetail(Resource):
     """Endpoint for managing individual haunted reviews! 👻"""
 
     @log_me(component="api")
-    @ns.doc("get_review")
+    @ns.doc(
+        "Get a specific review - Public endpoint",
+        responses={200: "Success", 404: "Not Found"},
+    )
     @ns.response(200, "Success", output_review_model)
     @ns.response(404, "Not Found", error_model)
     def get(self, review_id):
@@ -205,7 +220,8 @@ class ReviewDetail(Resource):
     @log_me(component="api")
     @owner_only
     @ns.doc(
-        "update_review",
+        "Update a review - Authenticated endpoint",
+        security="Bearer Auth",
         responses={
             200: "Success",
             400: "Invalid parameters",
@@ -243,7 +259,8 @@ class ReviewDetail(Resource):
     @log_me(component="api")
     @owner_only  # On vérifie juste l'authentification
     @ns.doc(
-        "delete_review",
+        "Delete a review - Authenticated endpoint Admin only",
+        security="Bearer Auth",
         responses={
             204: "Review deleted",
             400: "Invalid operation",

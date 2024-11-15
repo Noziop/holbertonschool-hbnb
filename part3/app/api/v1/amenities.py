@@ -7,11 +7,21 @@ from app.api import admin_only, log_me
 from app.models.amenity import Amenity
 from app.services.facade import HBnBFacade
 
+authorizations = {
+    "Bearer Auth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "Enter: **Bearer &lt;JWT&gt;**",
+    },
+}
+
 ns = Namespace(
     "amenities",
     validate=True,
     description="Supernatural features operations 🎭",
     path="/api/v1/amenities",
+    security="Bearer Auth",
 )
 facade = HBnBFacade()
 
@@ -62,7 +72,7 @@ class AmenityList(Resource):
 
     @log_me(component="api")
     @ns.doc(
-        "list_amenities",
+        "List all amenities - Public",
         responses={
             200: "Success",
             400: "Invalid parameters",
@@ -87,7 +97,8 @@ class AmenityList(Resource):
     @log_me(component="api")
     @admin_only
     @ns.doc(
-        "create_amenity",
+        "Creata a new amenity - Admin only",
+        security="Bearer Auth",
         responses={
             201: "Feature created",
             400: "Invalid parameters",
@@ -115,7 +126,13 @@ class AmenityDetail(Resource):
     """Endpoint for managing individual features! 👻"""
 
     @log_me(component="api")
-    @ns.doc("get_amenity")
+    @ns.doc(
+        "Get a specific amenity details - Public Endpoint",
+        responses={
+            200: "Success",
+            404: "Amenity not found",
+        },
+    )
     @ns.response(200, "Success", amenity_model)
     @ns.response(404, "Not Found", error_model)
     def get(self, amenity_id):
@@ -137,7 +154,8 @@ class AmenityDetail(Resource):
     @log_me(component="api")
     @admin_only
     @ns.doc(
-        "update_amenity",
+        "Update a feature - Admin only",
+        security="Bearer Auth",
         responses={
             200: "Success",
             400: "Invalid parameters",
@@ -172,7 +190,8 @@ class AmenityDetail(Resource):
     @log_me(component="api")
     @admin_only
     @ns.doc(
-        "delete_amenity",
+        "Delete a feature - Admin only",
+        security="Bearer Auth",
         responses={
             204: "Amenity deleted",
             401: "Unauthorized",
@@ -214,7 +233,7 @@ class AmenityPlaces(Resource):
 
     @log_me(component="api")
     @ns.doc(
-        "get_amenity_places",
+        "Get places with a specific amenity - Public endpoint",
         responses={200: "Success", 404: "Amenity not found"},
     )
     def get(self, amenity_id):

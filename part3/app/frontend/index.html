@@ -1,163 +1,191 @@
+<!-- index.html -->
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>HBnB Test Interface 👻</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HauntedBnB 👻</title>
     <style>
+        /* Style rapide et efficace */
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        header {
+            background: #2c2c2c;
+            padding: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
-            background: #f0f0f0;
         }
-        .container {
-            background: white;
-            padding: 20px;
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .menu {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .menu a {
+            color: #fff;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .menu a:hover {
+            background: #3c3c3c;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .places-grid, .amenities-grid, .reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 25px;
+        }
+
+        .place-card, .amenities-card, .reviews-card {
+            background: #2c2c2c;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            padding: 1rem;
+            transition: transform 0.3s;
         }
-        .token-display {
-            word-break: break-all;
-            background: #f8f8f8;
-            padding: 10px;
-            border-radius: 4px;
-            margin: 10px 0;
+
+        .place-card:hover,
+        .amenities-card:hover,
+        .reviews-card:hover {
+            transform: translateY(-5px);
         }
-        input, textarea {
+
+        footer {
+            background: #2c2c2c;
+            padding: 1rem;
+            text-align: center;
+            position: fixed;
+            bottom: 0;
             width: 100%;
-            padding: 8px;
-            margin: 5px 0 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        button {
-            background: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #45a049;
-        }
-        .response {
-            margin-top: 10px;
-            padding: 10px;
-            background: #e8f5e9;
-            border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>👻 Login</h2>
-        <form id="loginForm">
-            <div>
-                <label for="email">Email:</label>
-                <input type="email" id="email" value="admin@hbnb.io">
+    <header>
+        <nav>
+            <div class="logo">🏰 HauntedBnB</div>
+            <div class="menu">
+                <a href="#places">Places</a>
+                <a href="#amenities">Amenities</a>
+                <a href="#reviews">Reviews</a>
+                <a href="login.html">Login</a>
             </div>
-            <div>
-                <label for="password">Password:</label>
-                <input type="password" id="password" value="admin1234">
-            </div>
-            <button type="submit">Login</button>
-        </form>
-        <div id="tokenDisplay" class="token-display"></div>
-    </div>
+        </nav>
+    </header>
 
-    <div class="container">
-        <h2>🏰 Create Place</h2>
-        <form id="placeForm">
-            <div>
-                <label for="name">Name:</label>
-                <input type="text" id="name" required>
-            </div>
-            <div>
-                <label for="description">Description:</label>
-                <textarea id="description" required></textarea>
-            </div>
-            <div>
-                <label for="price">Price per night:</label>
-                <input type="number" id="price" required>
-            </div>
-            <div>
-                <label for="rooms">Number of rooms:</label>
-                <input type="number" id="rooms" value="1">
-            </div>
-            <div>
-                <label for="bathrooms">Number of bathrooms:</label>
-                <input type="number" id="bathrooms" value="1">
-            </div>
-            <div>
-                <label for="maxGuest">Max guests:</label>
-                <input type="number" id="maxGuest" value="2">
-            </div>
-            <button type="submit">Create Place</button>
-        </form>
-        <div id="placeResponse" class="response"></div>
-    </div>
+    <main>
+        <div class="places-grid" id="places">
+            <!-- JavaScript injectera les places ici -->
+        </div>
+        <div class="amenities-grid" id="amenities">
+            <!-- JavaScript injectera les amenities ici -->
+        </div>
+        <div class="reviews-grid" id="reviews">
+            <!-- JavaScript injectera les amenities ici -->
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 - Made with ❤️ by Fassih and his numerous personalities 🦇 Happy Haunting! © 2024</p>
+    </footer>
 
     <script>
-        let token = '';
-        const API_URL = 'http://localhost:5000/api/v1';
-
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Fonction pour charger les places
+        async function loadPlaces() {
             try {
-                const response = await fetch(`${API_URL}/auth/login`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email: document.getElementById('email').value,
-                        password: document.getElementById('password').value
-                    })
+                const response = await fetch('http://127.0.0.1:5000/api/v1/places');
+                const places = await response.json();
+
+                const grid = document.querySelector('.places-grid');
+                places.forEach(place => {
+                    const card = document.createElement('div');
+                    card.className = 'place-card';
+                    card.innerHTML = `
+                        <h3>${place.name} 👻</h3>
+                        <p>${place.description}</p>
+                        <p>Price: $${place.price_by_night}/night</p>
+                    `;
+                    grid.appendChild(card);
                 });
-                const data = await response.json();
-                token = data.token;
-                document.getElementById('tokenDisplay').textContent = `Token: ${token}`;
             } catch (error) {
-                console.error('Login error:', error);
+                console.error('Error loading places:', error);
             }
-        });
+        }
 
-        document.getElementById('placeForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!token) {
-                alert('Please login first!');
-                return;
-            }
-
+        async function loadAmenities() {
             try {
-                const response = await fetch(`${API_URL}/places`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        name: document.getElementById('name').value,
-                        description: document.getElementById('description').value,
-                        price_by_night: parseFloat(document.getElementById('price').value),
-                        number_rooms: parseInt(document.getElementById('rooms').value),
-                        number_bathrooms: parseInt(document.getElementById('bathrooms').value),
-                        max_guest: parseInt(document.getElementById('maxGuest').value),
-                        owner_id: "36c9050e-ddd3-4c3b-9731-9f487208bbc1", // Admin ID
-                        status: "active",
-                        property_type: "apartment"
-                    })
+                const response = await fetch('http://127.0.0.1:5000/api/v1/amenities');
+                const amenities = await response.json();
+
+                const grid = document.querySelector('.amenities-grid');
+                amenities.forEach(amenitie => {
+                    const card = document.createElement('div');
+                    card.className = 'amenities-card';
+                    card.innerHTML = `
+                        <h3>${amenitie.name} 👻</h3>
+                        <p>${amenitie.description}</p>
+                        <p>Category: $${amenitie.category}/night</p>
+                    `;
+                    grid.appendChild(card);
                 });
-                const data = await response.json();
-                document.getElementById('placeResponse').textContent =
-                    JSON.stringify(data, null, 2);
             } catch (error) {
-                console.error('Create place error:', error);
+                console.error('Error loading places:', error);
             }
-        });
+        }
+
+        async function loadReviews() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/v1/reviews');
+                const reviews = await response.json();
+
+                const grid = document.querySelector('.reviews-grid');
+                reviews.forEach(review => {
+                    const card = document.createElement('div');
+                    card.className = 'amenities-card';
+                    card.innerHTML = `
+                        <h3>${review.name} 👻</h3>
+                        <p>${review.text}</p>
+                        <p>Rating: $${review.category}/night</p>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error loading places:', error);
+            }
+        }
+
+
+        // Charger les places au chargement de la page
+        loadPlaces();
+        loadAmenities();
+        loadReviews();
     </script>
 </body>
 </html>

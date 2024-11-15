@@ -12,8 +12,26 @@ from app.models.review import Review
 from app.models.user import User
 from app.services.facade import HBnBFacade
 
+authorizations = {
+    "Bearer Auth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": (
+            "JWT token format: **Bearer &lt;token&gt;**\n\n"
+            "Get your token by logging in at **/api/v1/auth/login**\n\n"
+            "Token contains:\n"
+            "- identity: user ID\n"
+            "- claims: is_admin, is_active"
+        ),
+    }
+}
+
 ns = Namespace(
-    "places", validate=True, description="Haunted property operations 👻"
+    "places",
+    validate=True,
+    description="Haunted property operations 👻",
+    authorizations=authorizations,
 )
 facade = HBnBFacade()
 
@@ -183,7 +201,7 @@ class PlaceList(Resource):
 
     @log_me(component="api")
     @ns.doc(
-        "list_places",
+        "list all places - Public endpoint",
         responses={
             200: "Success",
             400: "Invalid parameters",
@@ -233,7 +251,8 @@ class PlaceList(Resource):
     @log_me(component="api")
     @user_only
     @ns.doc(
-        "create_place",
+        "Create a new place - Authenticated endpoint",
+        security="Bearer Auth",
         responses={
             201: "Place created successfully",
             400: "Invalid input",
@@ -272,7 +291,10 @@ class PlaceResource(Resource):
     """
 
     @log_me(component="api")
-    @ns.doc("get_place")
+    @ns.doc(
+        "Get a place details - Public endpoint",
+        responses={200: "Success", 400: "Bad Request", 404: "Place not found"},
+    )
     @ns.response(200, "Success", place_model)
     @ns.response(404, "Not Found", error_model)
     def get(self, place_id):
@@ -288,7 +310,8 @@ class PlaceResource(Resource):
     @log_me(component="api")
     @owner_only
     @ns.doc(
-        "update_place",
+        "Uodate a place - Authenticated endpoint",
+        security="Bearer Auth",
         responses={
             200: "Success",
             400: "Invalid parameters",
@@ -326,7 +349,8 @@ class PlaceResource(Resource):
     @log_me(component="api")
     @owner_only
     @ns.doc(
-        "delete_place",
+        "Delete a place - Authenticated endpoint",
+        security="Bearer Auth",
         responses={
             204: "Place deleted",
             401: "Unauthorized",
@@ -375,8 +399,8 @@ class PlaceAmenities(Resource):
 
     @log_me(component="api")
     @ns.doc(
-        "get_place_amenities",
-        responses={200: "Success", 404: "Place not found"},
+        "Get place amenities - Public endpoint",
+        responses={200: "Success", 400: "Bad Request", 404: "Place not found"},
     )
     @ns.marshal_list_with(place_amenity_model)
     def get(self, place_id):
@@ -410,7 +434,8 @@ class PlaceAmenities(Resource):
     @log_me(component="api")
     @owner_only  # On vérifie juste l'authentification
     @ns.doc(
-        "add_amenity",
+        "Add a new amenity to a place - Authenticated endpoint",
+        security="Bearer Auth",
         responses={
             201: "Amenity added",
             400: "Invalid parameters",
@@ -474,7 +499,8 @@ class PlaceReviews(Resource):
 
     @log_me(component="api")
     @ns.doc(
-        "get_place_reviews", responses={200: "Success", 404: "Place not found"}
+        "Get a specific place reviews - Public endpoint",
+        responses={200: "Success", 400: "Bad Request", 404: "Place not found"},
     )
     @ns.marshal_list_with(place_review_model)
     def get(self, place_id):
@@ -501,7 +527,8 @@ class PlaceReviews(Resource):
     @log_me(component="api")
     @user_only
     @ns.doc(
-        "add_review",
+        "Add a review to a place - Authenticated endpoint",
+        security="Bearer Auth",
         responses={
             201: "Review added",
             400: "Invalid parameters",
