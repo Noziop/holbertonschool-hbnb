@@ -1,6 +1,6 @@
 # 🏰 HBnB - The Haunted AirBnB API 👻
 
-![Coverage](badges/coverage-badge.svg) ![Flake8](badges/flake8-badge.svg)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/) ![Coverage](badges/coverage-badge.svg) ![Flake8](badges/flake8-badge.svg)
 
 > *Welcome to the spookiest vacation rental API in the netherworld!*
 
@@ -46,12 +46,18 @@ Unlike the ancient scrolls of `pip`, Poetry brings:
 - Simple command interface (`poetry add` vs `pip install + requirements.txt`)
 
 ### Pre-commit Magic 🔮
-- Runs all these tools automatically before each commit
+At first, i had some trouble to figure out, but as soon as you get how it works. it's pure magic :
+
+- Runs all these tools automatically before each commit (black/isort/flake8/pytest/generate-badges)
 - Currently learning to tame these powerful spells
 - Sometimes requires `--no-verify` when we're in a hurry (shh, don't tell anyone! 🤫)
 - Future plans include better configuration to balance strictness with practicality
 
-It was indeed some extra work, but it was fun all the way ! you should try this at ~ (at home)
+It can be very stressful, because if one tool exit with error, you won't be able to commit ans push. your work will still stay staged. but, eh quality over quantity, right ?
+
+It was indeed some extra work and i still have room for improvment, obviously, but it was fun all the way !
+
+you should definitly try this at ~/ (at home)
 
 ### Code Quality Guardians 🧹
 
