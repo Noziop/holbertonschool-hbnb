@@ -26,6 +26,10 @@
     - b - [Quick Start](#quick-start-)
     - c - [testing](#testing-)
     - d - [Coverage report](#coverage-report-)
+- [Known Issues](#known-issues-)
+    - a - [Flake8 Badge Status](#flake8-badge-status)
+    - b - [Documentation](#documentation)
+    - c - [Future Improvements](#future-improvements)
 - [Coming Next](#coming-next-)
 - [Authors](#authors-)
 
@@ -206,6 +210,32 @@ Our current mystical achievements:
 
 *Note: Some areas still need more enchantments, but we're proud of our current magical prowess!* 🧙‍♀️
 
+## Known Issues 🐛
+
+### Flake8 Badge Status
+Our red Flake8 badge (532C, 207w, 0 I) reflects some current code style challenges:
+- Unused imports haunting our codebase 👻
+- Some lines exceeding length limits 📏
+- Import order mysteries 🔍
+
+We're aware of these style issues and plan to address them in future updates. For now, we prioritize:
+- Functional correctness ✅
+- Test coverage (currently at 76%) 📊
+- Core features implementation 🎯
+
+### Documentation
+- Some API endpoints could use more detailed descriptions 📝
+
+### Future Improvements
+- Clean up unused imports
+- Reorganize code structure
+- Enhance API documentation
+- Add more comprehensive error handling
+- cleaninng up the repository
+- winning lottery
+
+*Note: None of these issues affect the core functionality of our haunted API!* 👻
+
 ## Coming Next: Part4 🎃
 Stay tuned for our next spooky adventure where we'll add:
 - A haunted frontend
@@ -213,6 +243,6 @@ Stay tuned for our next spooky adventure where we'll add:
 - And more supernatural features!
 
 ## Authors 👻
-Created with love and dark magic by Fassih
+Created with love and dark magic by Fassih & his many personnalities.
 
 *Happy Haunting! 🦇*
