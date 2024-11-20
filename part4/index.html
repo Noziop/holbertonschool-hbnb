@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HBnB - What a project, eh ?</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" icon>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="index.html" class="logo"><img src="assets/img/logo.png" alt="hbnb logo"></a>
+            <div class="nav-links">
+                <a href="login.html" id="login-link">Login</a>
+                <a href="#" id="logout-link" style="display: none;">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <h1>Available Places</h1>
+        <div class="container">
+            <div class="filters">
+                <select id="price-filter">
+                    <option value="10">Under $10</option>
+                    <option value="50">Under $50</option>
+                    <option value="100">Under $100</option>
+                    <option value="all">All</option>
+                </select>
+            </div>
+            <div id="places-list" class="places-grid"></div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 HBnB. All rights reserved.</p>
+    </footer>
+
+    <script src="assets/js/script.js"></script>
+</body>
+</html>

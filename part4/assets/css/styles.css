@@ -1,0 +1,326 @@
+:root {
+    --background-color: #1A1A1A;
+    --text-color: #F5F5F5;
+    --accent-color: #FF6F91;
+    --soft-accent: #FFC3D0;
+    --shadow: rgba(0, 0, 0, 0.5);
+    --glass-effect: rgba(255, 111, 145, 0.1);
+}
+
+@keyframes diagonalGlow {
+    0% {
+        background-position: -200% -200%;
+    }
+    100% {
+        background-position: 200% 200%;
+    }
+}
+
+.gradient-background {
+    background: linear-gradient(300deg,#ff6f91,#1a1a1a);
+    background-size: 120% 120%;
+    animation: gradient-animation 12s ease infinite;
+  }
+
+/* Base styles */
+body {
+    background-color: var(--background-color);
+    background-image: linear-gradient(
+        45deg,
+        var(--background-color) 0%,
+        var(--background-color) 45%,
+        rgba(255, 195, 208, 0.1) 50%, /* soft-accent très transparent */
+        var(--background-color) 55%,
+        var(--background-color) 100%
+    );
+    background-size: 400% 400%;
+    animation: diagonalGlow 15s ease infinite;
+    color: var(--text-color);
+    font-family: 'Raleway', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header & Navigation */
+header {
+    position: sticky;
+    top: 0;
+    background: rgba( 255, 255, 255, 0.1 );
+    box-shadow:  19px 19px 30px #0f0f0f,
+             -19px -19px 30px #252525;
+    backdrop-filter: blur( 2.5px );
+    -webkit-backdrop-filter: blur( 2.5px );
+    border-radius: 10px;
+    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    border-bottom: 2px solid var(--accent-color);
+    padding: 1rem;
+    z-index: 1;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav img {
+    height: 50px;
+    filter: drop-shadow(2px 2px 2px var(--text-color)) 
+    drop-shadow(0 0 10px var(--accent-color)) 
+    drop-shadow(0 0 30px var(--accent-color));
+}
+
+.nav-links a {
+    color: var(--text-color);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    margin-left: 1rem;
+    border: 1px solid var(--accent-color);
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.nav-links a:hover {
+    background-color: var(--accent-color);
+    color: var(--background-color);
+}
+
+/* Main content */
+main {
+    flex: 1;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+h1 {
+    color: var(--text-color);
+    margin: 2.5rem 0;
+    text-align: center;
+}
+
+.addReview {
+    text-align: center;
+}
+
+/* Price Filter */
+
+.filters {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+#price-filter {
+    background: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--accent-color);
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(255, 111, 145, 0.1);
+}
+
+#price-filter:hover {
+    border-color: var(--soft-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 111, 145, 0.2);
+}
+
+#price-filter:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px rgba(255, 111, 145, 0.3);
+}
+
+/* Style des options du select */
+#price-filter option {
+    background: var(--background-color);
+    color: var(--text-color);
+    padding: 10px;
+}
+
+#price-filter option:hover {
+    background: var(--accent-color);
+}
+
+/* Place Cards */
+.places-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    gap: 2rem;
+    padding: 1rem;
+}
+
+.place-card {
+    flex: 0 1 calc(25% - 2rem); /* pour 4 cartes par ligne avec le gap */
+    min-width: 250px; /* on réduit la taille minimum */
+    margin: 0; /* on enlève la marge puisqu'on a déjà un gap */
+    background: var(--background-color);
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 8px 8px 15px var(--shadow),
+                -5px -5px 15px rgba(255, 111, 145, 0.1);
+    transition: all 0.3s ease;
+}
+
+.place-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 12px 12px 20px var(--shadow),
+                -8px -8px 20px rgba(255, 111, 145, 0.2);
+}
+
+.place-card h3 {
+    color: var(--accent-color);
+    margin-bottom: 1rem;
+}
+
+.place-card a {
+    color: var(--soft-accent);
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 1rem;
+    transition: color 0.3s ease;
+}
+
+/* Forms */
+form {
+    background: var(--glass-effect);
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+    border-radius: 15px;
+    border: 1px solid var(--accent-color);
+    max-width: 500px;
+    margin: 2rem auto;
+}
+
+input, textarea {
+    background: var(--background-color);
+    border: 1px solid var(--accent-color);
+    color: var(--text-color);
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+    border-radius: 5px;
+    width: 95%;
+}
+
+button {
+    background: var(--accent-color);
+    color: var(--background-color);
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: var(--soft-accent);
+    transform: translateY(-2px);
+}
+
+/* Reviews */
+.review-card,
+.place-info {
+    background: var(--glass-effect);
+    backdrop-filter: blur(5px);
+    border: 1px solid var(--accent-color);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.review-card strong,
+.place-info strong {
+    color: var(--accent-color);
+}
+
+/* Style pour les petits coeur du rating*/
+.rating > label {
+    margin-right: 4px;
+  }
+  
+  .rating:not(:checked) > input {
+    display: none;
+  }
+  
+  .rating:not(:checked) > label {
+    float: right;
+    cursor: pointer;
+    font-size: 24px;
+  }
+  
+  .rating:not(:checked) > label > svg {
+    fill: #666;
+    transition: fill 0.3s ease, transform 0.3s ease;
+  }
+  
+  .rating > input:checked ~ label > svg {
+    transform: scale(1.1);
+  }
+  
+  .rating:not(:checked) > label:hover ~ label > svg,
+  .rating:not(:checked) > label:hover > svg {
+    transform: scale(1.05);
+  }
+  
+  /* Joli dégradé de couleurs pour les cœurs */
+  #heart1:checked ~ label > svg {
+    fill: #FF69B4; /* Rose clair */
+  }
+  
+  #heart2:checked ~ label > svg {
+    fill: #FF1493; /* Rose vif */
+  }
+  
+  #heart3:checked ~ label > svg {
+    fill: #FF00FF; /* Magenta */
+  }
+  
+  #heart4:checked ~ label > svg {
+    fill: #DA70D6; /* Orchidée */
+  }
+  
+  #heart5:checked ~ label > svg {
+    fill: #9400D3; /* Violet */
+  }
+  
+  /* Effets hover */
+  #heart1:hover ~ label > svg,
+  #heart1:hover > svg {
+    fill: #FF69B4 !important;
+  }
+  
+  #heart2:hover ~ label > svg,
+  #heart2:hover > svg {
+    fill: #FF1493 !important;
+  }
+  
+  #heart3:hover ~ label > svg,
+  #heart3:hover > svg {
+    fill: #FF00FF !important;
+  }
+  
+  #heart4:hover ~ label > svg,
+  #heart4:hover > svg {
+    fill: #DA70D6 !important;
+  }
+  
+  #heart5:hover ~ label > svg,
+  #heart5:hover > svg {
+    fill: #9400D3 !important;
+  }
+
+/* Footer */
+footer {
+    background-color: var(--background-color);
+    border-top: 2px solid var(--accent-color);
+    padding: 1rem;
+    text-align: center;
+    margin-top: auto;
+}
