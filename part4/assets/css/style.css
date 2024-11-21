@@ -60,73 +60,73 @@ a:hover, button:hover {
 .rating > label {
     margin-right: 4px;
   }
-  
+
   .rating:not(:checked) > input {
     display: none;
   }
-  
+
   .rating:not(:checked) > label {
     float: right;
     cursor: pointer;
     font-size: 24px;
   }
-  
+
   .rating:not(:checked) > label > svg {
     fill: #666;
     transition: fill 0.3s ease, transform 0.3s ease;
   }
-  
+
   .rating > input:checked ~ label > svg {
     transform: scale(1.1);
   }
-  
+
   .rating:not(:checked) > label:hover ~ label > svg,
   .rating:not(:checked) > label:hover > svg {
     transform: scale(1.05);
   }
-  
+
   /* Joli dégradé de couleurs pour les cœurs */
   #heart1:checked ~ label > svg {
     fill: #FF69B4; /* Rose clair */
   }
-  
+
   #heart2:checked ~ label > svg {
     fill: #FF1493; /* Rose vif */
   }
-  
+
   #heart3:checked ~ label > svg {
     fill: #FF00FF; /* Magenta */
   }
-  
+
   #heart4:checked ~ label > svg {
     fill: #DA70D6; /* Orchidée */
   }
-  
+
   #heart5:checked ~ label > svg {
     fill: #9400D3; /* Violet */
   }
-  
+
   /* Effets hover */
   #heart1:hover ~ label > svg,
   #heart1:hover > svg {
     fill: #FF69B4 !important;
   }
-  
+
   #heart2:hover ~ label > svg,
   #heart2:hover > svg {
     fill: #FF1493 !important;
   }
-  
+
   #heart3:hover ~ label > svg,
   #heart3:hover > svg {
     fill: #FF00FF !important;
   }
-  
+
   #heart4:hover ~ label > svg,
   #heart4:hover > svg {
     fill: #DA70D6 !important;
   }
-  
+
   #heart5:hover ~ label > svg,
   #heart5:hover > svg {
     fill: #9400D3 !important;

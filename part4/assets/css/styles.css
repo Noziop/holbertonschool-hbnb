@@ -55,6 +55,7 @@ header {
     border: 1px solid rgba( 255, 255, 255, 0.18 );
     border-bottom: 2px solid var(--accent-color);
     padding: 1rem;
+    min-width: 98%;
     z-index: 1;
 }
 
@@ -150,17 +151,13 @@ h1 {
 
 /* Place Cards */
 .places-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 2rem;
     padding: 1rem;
 }
 
 .place-card {
-    flex: 0 1 calc(25% - 2rem); /* pour 4 cartes par ligne avec le gap */
-    min-width: 250px; /* on réduit la taille minimum */
-    margin: 0; /* on enlève la marge puisqu'on a déjà un gap */
     background: var(--background-color);
     border-radius: 15px;
     padding: 1.5rem;
@@ -238,6 +235,11 @@ button:hover {
 .review-card strong,
 .place-info strong {
     color: var(--accent-color);
+}
+
+.review-card hr {
+    border: 1px solid var(--soft-accent);
+    margin: 1rem 0;
 }
 
 /* Style pour les petits coeur du rating*/

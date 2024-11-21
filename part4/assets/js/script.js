@@ -67,6 +67,35 @@ function displayPlaces(places) {
     });
 }
 
+// Gestion du filtre de prix
+function setupPriceFilter() {
+    const priceFilter = document.getElementById('price-filter');
+    if (!priceFilter) return; // On sort si l'élément n'existe pas
+
+    priceFilter.addEventListener('change', function() {
+        const selectedValue = this.value;
+        const token = getCookie('token');
+        
+        fetch('http://localhost:5000/api/v1/places', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => response.json())
+        .then(places => {
+            let filteredPlaces;
+            if (selectedValue === 'all') {
+                filteredPlaces = places;
+            } else {
+                const selectedPrice = parseInt(selectedValue);
+                filteredPlaces = places.filter(place => place.price_by_night <= selectedPrice);
+            }
+            displayPlaces(filteredPlaces);
+        })
+        .catch(error => console.error('Error:', error));
+    });
+}
+
 // Gestion des détails d'une place
 async function handlePlaceDetails() {
     const placeDetails = document.getElementById('place-details');
@@ -97,7 +126,7 @@ async function handlePlaceDetails() {
 async function displayPlaceDetails(place) {
     const placeInfo = document.querySelector('.place-info');
     const token = getCookie('token');
-    
+
     placeInfo.innerHTML = `
         <h2>${place.name}</h2>
         <p><strong>Host:</strong> You must be logged in to see this name...</p>
@@ -114,7 +143,7 @@ async function displayPlaceDetails(place) {
                 'Content-Type': 'application/json'
             }
         });
-        
+
         if (ownerResponse.ok) {
             const owner = await ownerResponse.json();
             const hostElement = placeInfo.querySelector('p:nth-child(2)');
@@ -132,7 +161,7 @@ async function displayPlaceDetails(place) {
                 'Content-Type': 'application/json'
             }
         });
-        
+
         if (reviewsResponse.ok) {
             const reviews = await reviewsResponse.json();
             displayReviews(reviews);
@@ -158,7 +187,7 @@ async function displayReviews(reviews) {
                         'Content-Type': 'application/json'
                     }
                 });
-                
+
                 if (userResponse.ok) {
                     const user = await userResponse.json();
                     return {
@@ -177,7 +206,9 @@ async function displayReviews(reviews) {
             <div class="review-card">
                 <p><strong>${token ? (review.userName || review.user_id) : 'You must be logged in to see this name'}</strong></p>
                 <p>${review.text}</p>
-                <p><em>Created: not implemented yet, come back in a few years if it really upsets you 👻</em></p>
+                <hr>
+                <p><em>Date: not implemented yet, come back in a few years if it really upsets you 👻<br> Yup, i didn't serialized the created_at from my API review output.</em></p>
+                <hr>
                 <p><strong>Rating:</strong> ${'❤️'.repeat(review.rating)}</p>
             </div>
         `).join('');
@@ -195,7 +226,7 @@ async function displayReviews(reviews) {
 function setupReviewForm(place) {
     const addReviewSection = document.getElementById('add-review');
     if (!addReviewSection) return;
-    
+
     const token = getCookie('token');
     if (!token) {
         addReviewSection.style.display = 'none';
@@ -204,34 +235,34 @@ function setupReviewForm(place) {
 
     addReviewSection.style.display = 'block';
     const reviewForm = document.getElementById('review-form');
-    
+
     reviewForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        
+
         console.log("Formulaire soumis!");
-        
+
         const reviewText = document.getElementById('review-text').value;
         const rating = document.querySelector('input[name="rate"]:checked')?.value || 5;
-        
+
         console.log("Review text:", reviewText);
         console.log("Rating:", rating);
-        
+
         // Récupérer le user_id du token
         const tokenParts = token.split('.');
         const tokenPayload = JSON.parse(atob(tokenParts[1]));
         const userId = tokenPayload.sub;
-        
+
         console.log("Token payload:", tokenPayload);
         console.log("User ID:", userId);
         console.log("Place owner ID:", place.owner_id);
-        
-        const reviewData = { 
+
+        const reviewData = {
             user_id: userId,
             place_id: place.id,
             text: reviewText,
             rating: parseInt(rating)
         };
-        
+
         console.log("Review data to send:", reviewData);
 
         try {
@@ -264,7 +295,8 @@ document.addEventListener('DOMContentLoaded', () => {
     handleAuth();
     handlePlaces();
     handlePlaceDetails();
-    
+    setupPriceFilter(); 
+
     // Gestion du formulaire de login
     const loginForm = document.getElementById('login-form');
     if (loginForm) {

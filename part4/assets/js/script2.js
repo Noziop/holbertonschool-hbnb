@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cards.forEach(card => {
                     const priceText = card.querySelector('p').textContent;
                     const price = parseInt(priceText.replace(/[^0-9]/g, ''));
-                    card.style.display = 
+                    card.style.display =
                         maxPrice === 'all' || price <= parseInt(maxPrice) ? 'block' : 'none';
                 });
             });
@@ -173,7 +173,7 @@ if (placeDetails) {
     const displayPlaceDetails = async (place) => {
         const placeInfo = document.querySelector('.place-info');
         const token = getCookie('token');
-        
+
         placeInfo.innerHTML = `
             <h2>${place.name}</h2>
             <p><strong>Host:</strong> Loading...</p>
@@ -181,7 +181,7 @@ if (placeDetails) {
             <p><strong>Description:</strong> ${place.description}</p>
             <p><strong>Amenities:</strong> ${place.amenities ? place.amenities.join(', ') : 'None'}</p>
         `;
-    
+
         try {
             // On s'assure d'avoir exactement le même format de header que dans curl
             const ownerResponse = await fetch(`http://localhost:5000/api/v1/users/${place.owner_id}`, {
@@ -190,7 +190,7 @@ if (placeDetails) {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (ownerResponse.ok) {
                 const owner = await ownerResponse.json();
                 const hostElement = placeInfo.querySelector('p:nth-child(2)');
@@ -199,7 +199,7 @@ if (placeDetails) {
         } catch (error) {
             console.error('Error fetching owner details:', error);
         }
-        
+
         // Afficher les reviews
         const reviewsSection = document.getElementById('reviews');
         if (place.reviews && place.reviews.length > 0) {
@@ -248,37 +248,37 @@ if (placeDetails) {
     const addReviewSection = document.getElementById('add-review');
     if (addReviewSection && token) {
         addReviewSection.style.display = 'block';
-        
+
         const reviewForm = document.getElementById('review-form');
         reviewForm.addEventListener('submit', async (event) => {
             event.preventDefault();
-            
+
             // Ajoutons des logs ici
             console.log("Formulaire soumis!");
-            
+
             const reviewText = document.getElementById('review-text').value;
             const rating = document.querySelector('input[name="rate"]:checked')?.value || 5;
-            
+
             // Log des valeurs récupérées
             console.log("Review text:", reviewText);
             console.log("Rating:", rating);
-            
+
             // Récupérer le user_id du token
             const tokenParts = token.split('.');
             const tokenPayload = JSON.parse(atob(tokenParts[1]));
             const userId = tokenPayload.sub;
-            
+
             // Log du token décodé
             console.log("Token payload:", tokenPayload);
             console.log("User ID:", userId);
-            
-            const reviewData = { 
+
+            const reviewData = {
                 user_id: userId,
                 place_id: place.id,  // On utilise place.id au lieu de placeId
                 text: reviewText,
                 rating: parseInt(rating)
             };
-            
+
             // Log des données à envoyer
             console.log("Review data to send:", reviewData);
 
