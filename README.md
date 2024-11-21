@@ -29,8 +29,10 @@ Haunted-BnB is a full-stack web application that lets users rent and review haun
 - Role-based access control
 - Database migrations
 
-### Part 4: Frontend (Coming Soon!) ✨ (from 18.11 to 29.11)
-- Upcoming on nov. the 18th !(stay tuned !)
+### Part 4: Frontend  ✨ (from 18.11 to 29.11)
+- Simple WEB client (using HTML/CSS/JS(vanilla))
+- client side rendering and filtering
+- Semantic HTML
 
 ## 🌟 Key Features
 
@@ -69,6 +71,27 @@ cd part3  # Database & Auth
 cd part4  # Frontend
 ```
 
+to see the server in action :
+
+1. Clone the repository
+2. Start the backend and frontend servers (see documentation in each part)
+3. Open `index.html` in your browser
+4. Get spooked! 👻
+
+or you can use my little treat :
+
+```bash
+# 1 Clone this repo
+git clone https://www.github.com/Noziop/holbertonschool-hbnb.git
+
+# 2 Start BOTH back&front servers from a fingersnap :
+cd holbertonschool-hbnb
+gnome-terminal -- ./start.sh
+
+# 3 open part4/index.html in your system's default web browser :
+xdg-open part4/index.html
+```
+
 ## 🧪 Testing
 Each part includes its own test suite:
 
@@ -87,11 +110,12 @@ Each part includes its own test suite:
 ## 🎯 Project Status
 - ✅ Part 1: Complete
 - ✅ Part 2: Complete
-- 🏗️ Part 3: In Progress
-- 📅 Part 4: Planned
+- 🏗️ Part 3: Complete
+- 📅 Part 4: Complete
 
 ## 👻 Contributors
 Fassih Belmokhtar (Ghost Whisperer Extraordinaire)
+
 ## 🌙 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
